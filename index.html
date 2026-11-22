@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Off Script Diaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        obsidian: '#0B0C0E',
+                        charcoal: '#14161A',
+                        slatecard: '#1B1E24',
+                        champagne: '#E5C39C',
+                        rosegold: '#D49A89'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0B0C0E; color: #F4F1EA; }
+        .glass-nav { background: rgba(11, 12, 14, 0.82); backdrop-filter: blur(16px); }
+        .circular-logo {
+            border-radius: 9999px;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-champagne selection:text-obsidian">
+
+    <!-- STICKY LUXURY HEADER -->
+    <header class="fixed top-0 inset-x-0 z-50 glass-nav border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-5 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3.5 group">
+                <div class="w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-champagne to-rosegold shadow-lg shadow-champagne/10">
+                    <img id="nav-logo" src="" alt="Brand Logo" class="w-full h-full circular-logo bg-charcoal" />
+                </div>
+                <div>
+                    <span id="nav-site-name" class="font-serif text-2xl font-semibold tracking-wide text-white block leading-none">Off Script Diaries</span>
+                    <span id="nav-couple-names" class="text-[11px] uppercase tracking-[0.2em] text-champagne/80 mt-1 block">Aarav & Meera</span>
+                </div>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-8 text-xs uppercase tracking-[0.18em] text-white/70">
+                <a href="#origin" class="hover:text-champagne transition">Story</a>
+                <a href="#magazine" class="hover:text-champagne transition">E-Magazine</a>
+                <a href="#milestones" class="hover:text-champagne transition">Timeline</a>
+                <a href="#notes" class="hover:text-champagne transition">Vault</a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <a href="emagazine.html" class="px-4 py-2 rounded-full bg-champagne text-obsidian text-xs font-semibold uppercase tracking-wider hover:bg-white transition">
+                    Read Issue
+                </a>
+                <a href="admin.html" title="Site Admin" class="p-2 rounded-full border border-white/15 text-white/60 hover:text-champagne hover:border-champagne transition text-xs">
+                    Admin
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECTION 1: CINEMATIC FULL-BLEED EDITORIAL HERO -->
+    <section id="sec-1-hero" class="relative min-h-screen flex items-end pb-20 pt-32 overflow-hidden">
+        <img id="hero-bg" src="" alt="Hero Cover" class="absolute inset-0 w-full h-full object-cover opacity-45 scale-105 transition-transform duration-1000" />
+        <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 w-full">
+            <p id="hero-eyebrow" class="text-xs uppercase tracking-[0.3em] text-champagne mb-4"></p>
+            <h1 id="hero-headline" class="font-serif text-5xl sm:text-7xl lg:text-8xl font-semibold leading-[0.98] max-w-4xl text-white mb-6"></h1>
+            <p id="hero-subheadline" class="text-base sm:text-lg text-white/75 max-w-2xl leading-relaxed mb-8"></p>
+            <div class="flex flex-wrap items-center gap-4">
+                <a href="emagazine.html" id="hero-cta" class="px-7 py-3.5 rounded-full bg-champagne text-obsidian font-semibold text-sm tracking-wide hover:bg-white transition"></a>
+                <span id="hero-location" class="text-xs uppercase tracking-[0.2em] text-white/50 px-4"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: ASYMMETRIC ORIGIN MANIFESTO -->
+    <section id="origin" class="py-24 border-t border-white/10 bg-charcoal">
+        <div class="max-w-7xl mx-auto px-5 grid lg:grid-cols-12 gap-12 items-center">
+            <div class="lg:col-span-5 relative">
+                <div class="aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                    <img id="origin-img" src="" alt="Our Origin" class="w-full h-full object-cover" />
+                </div>
+                <div class="absolute -bottom-5 -right-4 bg-obsidian border border-champagne/40 px-5 py-3 rounded-xl">
+                    <span class="text-[10px] uppercase tracking-widest text-champagne block">Chapter Zero</span>
+                    <span id="origin-date" class="font-serif text-lg text-white"></span>
+                </div>
+            </div>
+            <div class="lg:col-span-7 lg:pl-8">
+                <span class="text-xs uppercase tracking-[0.25em] text-rosegold">02 / The Beginning</span>
+                <h2 id="origin-title" class="font-serif text-4xl sm:text-5xl text-white mt-3 mb-6"></h2>
+                <p id="origin-story" class="text-white/75 text-lg leading-relaxed mb-8"></p>
+                <blockquote id="origin-quote" class="font-serif italic text-2xl sm:text-3xl text-champagne border-l-2 border-champagne pl-6 py-1"></blockquote>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: LIVE RELATIONSHIP TELEMETRY STRIP -->
+    <section id="sec-3-telemetry" class="py-16 bg-obsidian border-y border-white/10">
+        <div class="max-w-7xl mx-auto px-5">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="p-6 rounded-2xl bg-slatecard/60 border border-white/5">
+                    <span class="text-xs uppercase tracking-widest text-white/50">Days Unscripted</span>
+                    <div id="stat-days" class="font-serif text-4xl sm:text-5xl text-champagne mt-2 font-semibold">0</div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slatecard/60 border border-white/5">
+                    <span class="text-xs uppercase tracking-widest text-white/50">Cities Explored</span>
+                    <div id="stat-cities" class="font-serif text-4xl sm:text-5xl text-white mt-2 font-semibold">0</div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slatecard/60 border border-white/5">
+                    <span class="text-xs uppercase tracking-widest text-white/50">Coffees Shared</span>
+                    <div id="stat-coffee" class="font-serif text-4xl sm:text-5xl text-white mt-2 font-semibold">0</div>
+                </div>
+                <div class="p-6 rounded-2xl bg-slatecard/60 border border-white/5">
+                    <span class="text-xs uppercase tracking-widest text-white/50">Midnight Calls</span>
+                    <div id="stat-calls" class="font-serif text-4xl sm:text-5xl text-rosegold mt-2 font-semibold">0</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: THE E-MAGAZINE SHOWCASE (LIVE FEED FROM EMAGAZINEADMIN) -->
+    <section id="magazine" class="py-24 bg-charcoal">
+        <div class="max-w-7xl mx-auto px-5">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
+                <div>
+                    <span class="text-xs uppercase tracking-[0.25em] text-champagne">04 / Featured Publication</span>
+                    <h2 id="mag-heading" class="font-serif text-4xl sm:text-6xl text-white mt-2"></h2>
+                    <p id="mag-desc" class="text-white/70 max-w-xl mt-3"></p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="emagazine.html" class="px-6 py-3 rounded-full bg-white text-obsidian text-xs font-semibold uppercase tracking-wider hover:bg-champagne transition">
+                        Explore Full Magazine →
+                    </a>
+                    <a href="emagazineadmin.html" class="px-5 py-3 rounded-full border border-white/20 text-white/80 text-xs uppercase tracking-wider hover:border-champagne transition">
+                        + Manage Posts
+                    </a>
+                </div>
+            </div>
+            <!-- Dynamic Top 3 E-Magazine Stories -->
+            <div id="home-magazine-grid" class="grid md:grid-cols-3 gap-8"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: INTERACTIVE ADVENTURE BUCKET LIST -->
+    <section id="sec-5-bucket" class="py-24 bg-obsidian border-t border-white/10">
+        <div class="max-w-5xl mx-auto px-5">
+            <div class="text-center mb-12">
+                <span class="text-xs uppercase tracking-[0.25em] text-rosegold">05 / Shared Horizons</span>
+                <h2 class="font-serif text-4xl sm:text-5xl text-white mt-2">The Unscripted Bucket List</h2>
+            </div>
+            <div id="bucket-list-container" class="grid sm:grid-cols-2 gap-4"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: DUAL PERSPECTIVES (SPLIT MONOLOGUE) -->
+    <section id="sec-6-perspectives" class="py-24 bg-gradient-to-b from-charcoal to-obsidian border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-5">
+            <span class="text-xs uppercase tracking-[0.25em] text-champagne block text-center mb-3">06 / Two Sides Of The Frame</span>
+            <h2 class="font-serif text-4xl sm:text-5xl text-center text-white mb-14">In Our Own Words</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="p-8 sm:p-10 rounded-3xl bg-slatecard border border-white/10 relative">
+                    <span class="text-xs uppercase tracking-widest text-champagne font-semibold" id="pov-one-name"></span>
+                    <p class="font-serif text-2xl sm:text-3xl text-white/90 leading-relaxed mt-4" id="pov-one-note"></p>
+                </div>
+                <div class="p-8 sm:p-10 rounded-3xl bg-slatecard border border-rosegold/30 relative">
+                    <span class="text-xs uppercase tracking-widest text-rosegold font-semibold" id="pov-two-name"></span>
+                    <p class="font-serif text-2xl sm:text-3xl text-white/90 leading-relaxed mt-4" id="pov-two-note"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: CHRONOLOGICAL MILESTONE TIMELINE -->
+    <section id="milestones" class="py-24 bg-obsidian border-t border-white/10">
+        <div class="max-w-6xl mx-auto px-5">
+            <span class="text-xs uppercase tracking-[0.25em] text-champagne">07 / Key Chapters</span>
+            <h2 class="font-serif text-4xl sm:text-5xl text-white mt-2 mb-14">The Journey So Far</h2>
+            <div id="timeline-container" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 8: SOUNDTRACK OF US (VINYL / AUDIO ARCHIVE) -->
+    <section id="sec-8-soundtrack" class="py-24 bg-charcoal border-t border-white/10">
+        <div class="max-w-5xl mx-auto px-5 bg-obsidian rounded-3xl p-8 sm:p-12 border border-white/10 flex flex-col md:flex-row gap-10 items-center">
+            <div class="w-44 h-44 rounded-full bg-gradient-to-tr from-zinc-900 via-zinc-800 to-champagne/40 border-4 border-white/10 flex items-center justify-center shrink-0 shadow-2xl">
+                <div class="w-14 h-14 rounded-full bg-champagne flex items-center justify-center text-obsidian font-serif font-bold text-xs">OSD</div>
+            </div>
+            <div class="flex-1 w-full">
+                <span class="text-xs uppercase tracking-[0.25em] text-champagne">08 / Acoustic Memory</span>
+                <h3 id="soundtrack-title" class="font-serif text-3xl sm:text-4xl text-white mt-1"></h3>
+                <p id="soundtrack-note" class="text-sm text-white/60 mt-1 mb-6"></p>
+                <div id="soundtrack-list" class="divide-y divide-white/10"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 9: UNSCRIPTED LOVE NOTES VAULT -->
+    <section id="notes" class="py-24 bg-obsidian border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-5">
+            <div class="text-center mb-14">
+                <span class="text-xs uppercase tracking-[0.25em] text-rosegold">09 / Time-Capsule Letters</span>
+                <h2 class="font-serif text-4xl sm:text-5xl text-white mt-2">Notes Left On The Counter</h2>
+            </div>
+            <div id="lovenotes-container" class="grid md:grid-cols-3 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 10: FUTURE CAPSULE & BESPOKE COLOPHON FOOTER -->
+    <footer class="py-24 bg-charcoal border-t border-white/10">
+        <div class="max-w-4xl mx-auto px-5 text-center">
+            <img id="footer-logo" src="" alt="Footer Emblem" class="w-20 h-20 circular-logo mx-auto border-2 border-champagne/50 mb-6" />
+            <span class="text-xs uppercase tracking-[0.3em] text-champagne">10 / Next Horizon</span>
+            <h2 id="capsule-heading" class="font-serif text-4xl sm:text-6xl text-white mt-3 mb-4"></h2>
+            <p id="capsule-message" class="text-white/70 max-w-xl mx-auto leading-relaxed mb-6"></p>
+            <div class="inline-block px-5 py-2 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-widest text-champagne mb-12">
+                Next Pin On The Map: <span id="capsule-destination" class="text-white font-semibold"></span>
+            </div>
+
+            <div class="pt-10 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
+                <p>© <span id="footer-year"></span> <span id="footer-brand"></span>. Privately Curated.</p>
+                <div class="flex gap-6">
+                    <a href="emagazine.html" class="hover:text-white transition">E-Magazine</a>
+                    <a href="admin.html" class="hover:text-champagne transition">Home Admin</a>
+                    <a href="emagazineadmin.html" class="hover:text-champagne transition">Magazine Admin</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/store.js"></script>
+    <script>
+        function renderHomePage() {
+            const data = getOSDData();
+            const parsedLogo = parseDriveMedia(data.brand.logoUrl, 'image');
+
+            // Brand & Circular Logos
+            document.title = data.brand.siteName;
+            document.getElementById('nav-logo').src = parsedLogo;
+            document.getElementById('footer-logo').src = parsedLogo;
+            document.getElementById('nav-site-name').textContent = data.brand.siteName;
+            document.getElementById('nav-couple-names').textContent = data.brand.coupleNames;
+            document.getElementById('footer-brand').textContent = data.brand.siteName;
+            document.getElementById('footer-year').textContent = data.brand.establishedYear;
+
+            // Section 1: Hero
+            document.getElementById('hero-bg').src = parseDriveMedia(data.sections.hero.bgImage, 'image');
+            document.getElementById('hero-eyebrow').textContent = data.sections.hero.eyebrow;
+            document.getElementById('hero-headline').textContent = data.sections.hero.headline;
+            document.getElementById('hero-subheadline').textContent = data.sections.hero.subheadline;
+            document.getElementById('hero-cta').textContent = data.sections.hero.ctaText;
+            document.getElementById('hero-location').textContent = data.brand.location;
+
+            // Section 2: Origin
+            document.getElementById('origin-img').src = parseDriveMedia(data.sections.origin.image, 'image');
+            document.getElementById('origin-date').textContent = data.sections.origin.date;
+            document.getElementById('origin-title').textContent = data.sections.origin.title;
+            document.getElementById('origin-story').textContent = data.sections.origin.story;
+            document.getElementById('origin-quote').textContent = data.sections.origin.quote;
+
+            // Section 3: Telemetry
+            const start = new Date(data.sections.telemetry.startDate);
+            const diffDays = Math.max(1, Math.floor((new Date() - start) / (1000 * 60 * 60 * 24)));
+            document.getElementById('stat-days').textContent = isNaN(diffDays) ? '365+' : diffDays.toLocaleString();
+            document.getElementById('stat-cities').textContent = data.sections.telemetry.citiesExplored;
+            document.getElementById('stat-coffee').textContent = data.sections.telemetry.coffeeCups;
+            document.getElementById('stat-calls').textContent = data.sections.telemetry.midnightCalls;
+
+            // Section 4: E-Magazine Spotlight (Top 3 Posts)
+            document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
+            document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
+            const magGrid = document.getElementById('home-magazine-grid');
+            magGrid.innerHTML = data.posts.slice(0, 3).map(post => {
+                const resolvedUrl = parseDriveMedia(post.mediaUrl, post.mediaType);
+                const mediaHtml = post.mediaType === 'video'
+                    ? `<iframe src="${resolvedUrl}" class="w-full h-full border-0" allow="autoplay; fullscreen"></iframe>`
+                    : `<img src="${resolvedUrl}" alt="${post.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" />`;
+
+                return `
+                <article class="group rounded-2xl overflow-hidden bg-obsidian border border-white/10 flex flex-col">
+                    <div class="aspect-[16/10] bg-black overflow-hidden relative">
+                        ${mediaHtml}
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] uppercase tracking-widest text-champagne mb-2">
+                                <span>${post.category || 'DIARY'}</span>
+                                <span>${post.date}</span>
+                            </div>
+                            <h3 class="font-serif text-2xl text-white mb-2">${post.title}</h3>
+                            <p class="text-sm text-white/65 line-clamp-3">${post.description}</p>
+                        </div>
+                        <a href="emagazine.html" class="mt-5 inline-block text-xs uppercase tracking-widest text-champagne hover:underline">Open Story →</a>
+                    </div>
+                </article>`;
+            }).join('');
+
+            // Section 5: Bucket List
+            document.getElementById('bucket-list-container').innerHTML = data.sections.bucketList.map(item => `
+                <div class="p-5 rounded-2xl bg-charcoal border border-white/10 flex items-center gap-4">
+                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs ${item.completed ? 'bg-champagne text-obsidian font-bold' : 'border border-white/30 text-transparent'}">✓</span>
+                    <span class="${item.completed ? 'line-through text-white/45' : 'text-white'} text-sm sm:text-base">${item.task}</span>
+                </div>
+            `).join('');
+
+            // Section 6: Perspectives
+            document.getElementById('pov-one-name').textContent = data.sections.perspectives.partnerOneName;
+            document.getElementById('pov-one-note').textContent = `"${data.sections.perspectives.partnerOneNote}"`; document.getElementById('pov-two-name').textContent = data.sections.perspectives.partnerTwoName; document.getElementById('pov-two-note').textContent = `"${data.sections.perspectives.partnerTwoNote}"`;
+
+            // Section 7: Timeline
+            document.getElementById('timeline-container').innerHTML = data.sections.milestones.map(m => `
+                <div class="p-6 rounded-2xl bg-charcoal border border-white/10">
+                    <span class="text-xs font-semibold tracking-widest text-champagne">${m.date}</span>
+                    <h3 class="font-serif text-2xl text-white mt-2 mb-2">${m.title}</h3>
+                    <p class="text-sm text-white/65 leading-relaxed">${m.desc}</p>
+                </div>
+            `).join('');
+
+            // Section 8: Soundtrack
+            document.getElementById('soundtrack-title').textContent = data.sections.soundtrack.albumTitle;
+            document.getElementById('soundtrack-note').textContent = data.sections.soundtrack.curatorNote;
+            document.getElementById('soundtrack-list').innerHTML = data.sections.soundtrack.tracks.map((t, idx) => `
+                <div class="py-3 flex items-center justify-between text-sm">
+                    <div>
+                        <span class="text-white/40 mr-3">0${idx + 1}</span>
+                        <span class="text-white font-medium">${t.title}</span>
+                        <span class="text-white/50 ml-2">— ${t.artist}</span>
+                    </div>
+                    <span class="text-xs text-champagne font-mono">${t.duration}</span>
+                </div>
+            `).join('');
+
+            // Section 9: Love Notes
+            document.getElementById('lovenotes-container').innerHTML = data.sections.loveNotes.map(n => `
+                <div class="p-7 rounded-2xl bg-charcoal border border-white/10 flex flex-col justify-between">
+                    <span class="text-[10px] uppercase tracking-[0.2em] text-rosegold mb-4 block">${n.tag}</span>
+                    <p class="font-serif text-xl text-white/90 leading-relaxed">"${n.message}"</p>
+                </div>
+            `).join('');
+
+            // Section 10: Capsule
+            document.getElementById('capsule-heading').textContent = data.sections.capsule.heading;
+            document.getElementById('capsule-message').textContent = data.sections.capsule.message;
+            document.getElementById('capsule-destination').textContent = data.sections.capsule.nextDestination;
+        }
+
+        window.addEventListener('DOMContentLoaded', renderHomePage);
+        window.addEventListener('storage', renderHomePage);
+        window.addEventListener('osd_data_updated', renderHomePage);
+    </script>
+</body>
+</html>
