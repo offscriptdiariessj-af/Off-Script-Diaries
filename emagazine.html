@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .post-card {
+            transform-origin: center top;
             transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), padding 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
         }
     </style>
@@ -41,12 +42,62 @@
 
     <script src="js/store.js"></script>
     <script>
-        let activePostId = null;
+        const MAG_ACTIVE_POST_KEY = 'osd_mag_active_post_v1';
+        const MAG_SCROLL_KEY = 'osd_mag_scroll_v1';
+        let activePostId = sessionStorage.getItem(MAG_ACTIVE_POST_KEY) || null;
+        let stageHistory = activePostId ? [activePostId] : [null];
+        let isApplyingPopstate = false;
 
-        function toggleExpandPost(postId) {
-            activePostId = activePostId === postId ? null : postId;
+        function persistStageState() {
+            if (activePostId) {
+                sessionStorage.setItem(MAG_ACTIVE_POST_KEY, activePostId);
+            } else {
+                sessionStorage.removeItem(MAG_ACTIVE_POST_KEY);
+            }
+        }
+
+        function setPostStage(nextPostId, pushStage = true) {
+            if (activePostId === nextPostId) {
+                nextPostId = null;
+            }
+
+            if (pushStage && !isApplyingPopstate) {
+                stageHistory.push(nextPostId);
+                try {
+                    history.pushState({ osdMagStage: nextPostId }, '', window.location.href);
+                } catch {}
+            }
+
+            activePostId = nextPostId;
+            persistStageState();
             renderMagazine(document.getElementById('search-posts').value);
         }
+
+        function toggleExpandPost(postId) {
+            setPostStage(postId, true);
+        }
+
+        window.addEventListener('popstate', (event) => {
+            if (stageHistory.length > 1) {
+                stageHistory.pop();
+                const prevStage = stageHistory[stageHistory.length - 1] ?? null;
+                isApplyingPopstate = true;
+                activePostId = prevStage;
+                persistStageState();
+                renderMagazine(document.getElementById('search-posts').value);
+                isApplyingPopstate = false;
+                return;
+            }
+
+            const stateStage = event.state && Object.prototype.hasOwnProperty.call(event.state, 'osdMagStage')
+                ? event.state.osdMagStage
+                : null;
+            isApplyingPopstate = true;
+            activePostId = stateStage;
+            persistStageState();
+            renderMagazine(document.getElementById('search-posts').value);
+            isApplyingPopstate = false;
+        });
 
         function renderMagazine(q = '') {
             const data = getOSDData();
@@ -69,6 +120,7 @@
 
             const hasExpanded = activePostId !== null && posts.some(p => p.id === activePostId);
 
+            // Expanded post stands big at top with full details; other posts become smaller below
             const orderedPosts = hasExpanded
                 ? [...posts.filter(p => p.id === activePostId), ...posts.filter(p => p.id !== activePostId)]
                 : posts;
@@ -82,9 +134,9 @@
                     return `
                     <article
                         onclick="toggleExpandPost('${post.id}')"
-                        class="post-card cursor-pointer rounded-xl bg-[#1E2126]/80 border border-white/10 p-2.5 flex items-center gap-3 scale-[0.97] opacity-85"
+                        class="post-card cursor-pointer rounded-xl bg-[#1E2126]/85 border border-white/10 p-2.5 flex items-center gap-3 scale-[0.95] opacity-85"
                     >
-                        <div class="w-14 h-14 rounded-lg overflow-hidden bg-black shrink-0 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-lg overflow-hidden bg-black shrink-0 flex items-center justify-center">
                             ${post.mediaType === 'video'
                                 ? `<span class="text-[10px] font-bold text-blue-400">▶ VID</span>`
                                 : `<img src="${media}" alt="${post.title}" class="w-full h-full object-cover" />`}
@@ -95,7 +147,7 @@
                                 <span>${post.date}</span>
                             </div>
                             <h3 class="text-xs font-bold text-white/90 truncate mt-0.5">${post.title}</h3>
-                            <p class="text-[11px] text-white/50 truncate">${post.description}</p>
+                            <p class="text-[11px] text-white/55 line-clamp-1">${post.description}</p>
                         </div>
                     </article>`;
                 }
@@ -104,10 +156,27 @@
                     ? `<div class="${isExpanded ? 'aspect-video' : 'aspect-[4/3]'} w-full bg-black"><iframe src="${media}" class="w-full h-full border-0" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`
                     : `<div class="${isExpanded ? 'aspect-square' : 'aspect-[4/3]'} w-full bg-black"><img src="${media}" alt="${post.title}" class="w-full h-full object-cover" /></div>`;
 
+                const detailsBlock = isExpanded
+                    ? `
+                    <div class="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/60">
+                        <span>Category: <strong class="text-blue-300">${post.category || 'JOURNAL'}</strong></span>
+                        <span>Date: <strong class="text-white/85">${post.date}</strong></span>
+                        <span>Media: <strong class="text-white/85 uppercase">${post.mediaType || 'image'}</strong></span>
+                    </div>
+                    <p class="text-sm mt-3 text-white/90 leading-relaxed whitespace-pre-line">${post.description}</p>
+                    <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                        Expanded • Tap or press Back to return
+                    </div>`
+                    : `
+                    <p class="text-xs mt-2 line-clamp-2 text-white/75 leading-relaxed">${post.description}</p>
+                    <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                        Tap for full details
+                    </div>`;
+
                 return `
                 <article
                     onclick="toggleExpandPost('${post.id}')"
-                    class="post-card cursor-pointer rounded-3xl bg-[#1E2126] ${isExpanded ? 'border-2 border-blue-500 shadow-2xl shadow-blue-950/50 p-1.5' : 'border border-white/10'}"
+                    class="post-card cursor-pointer rounded-3xl bg-[#1E2126] ${isExpanded ? 'border-2 border-blue-500 shadow-2xl shadow-blue-950/60 scale-[1.02] p-1.5' : 'border border-white/10'}"
                 >
                     <div class="rounded-2xl overflow-hidden">
                         ${mediaBlock}
@@ -117,19 +186,27 @@
                                 <span class="text-white/50 font-normal">${post.date}</span>
                             </div>
                             <h2 class="${isExpanded ? 'text-2xl mt-1.5' : 'text-lg mt-1'} font-extrabold text-white leading-snug">${post.title}</h2>
-                            <p class="${isExpanded ? 'text-sm mt-2.5' : 'text-xs mt-2 line-clamp-3'} text-white/80 leading-relaxed whitespace-pre-line">${post.description}</p>
-                            <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
-                                ${isExpanded ? 'Tap to minimize' : 'Tap to expand'}
-                            </div>
+                            ${detailsBlock}
                         </div>
                     </div>
                 </article>`;
             }).join('');
         }
 
+        window.addEventListener('scroll', () => {
+            sessionStorage.setItem(MAG_SCROLL_KEY, String(window.scrollY));
+        }, { passive: true });
+
         document.getElementById('search-posts').addEventListener('input', e => renderMagazine(e.target.value));
         window.addEventListener('DOMContentLoaded', () => {
+            try {
+                history.replaceState({ osdMagStage: activePostId }, '', window.location.href);
+            } catch {}
             renderMagazine();
+            const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
+            if (savedScroll > 0) {
+                requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+            }
             enforceRoleLock('magazine', 'E-Magazine');
         });
         window.addEventListener('storage', () => renderMagazine());
