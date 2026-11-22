@@ -12,69 +12,115 @@
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
             <div>
                 <h1 class="text-sm font-bold text-white">Admin Console</h1>
-                <p class="text-[10px] text-blue-400">Home, Logo & Passwords</p>
+                <p class="text-[10px] text-blue-400">Home & Circular Logo</p>
             </div>
             <div class="flex items-center gap-2">
                 <a href="emagazineadmin.html" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
-                <button onclick="saveAllChanges()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
+                <button type="button" onclick="saveAllChanges()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
+                <button type="button" onclick="openSettingsMenu()" aria-label="Settings" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- SETTINGS DRAWER / MENU (WITH PASSWORD MENU) -->
+    <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <span class="text-sm font-bold text-white">Settings</span>
+                <button type="button" onclick="closeSettingsMenu()" class="text-xs text-white/60 hover:text-white px-2 py-1">Close ✕</button>
+            </div>
+
+            <!-- Menu Item: Password -->
+            <button
+                type="button"
+                onclick="togglePasswordSubmenu()"
+                class="w-full p-3.5 rounded-2xl bg-[#121417] border border-blue-500/30 flex items-center justify-between text-left"
+            >
+                <div>
+                    <div class="text-xs font-bold text-blue-400">Password</div>
+                    <div class="text-[10px] text-white/55">Index & Magazine toggles + password change</div>
+                </div>
+                <span id="password-menu-chevron" class="text-xs text-blue-400 font-bold">▾</span>
+            </button>
+
+            <!-- All Password Controls Inside Password Menu -->
+            <div id="password-submenu" class="p-3.5 rounded-2xl bg-[#121417] border border-white/10 space-y-3">
+                <!-- Index Password Toggle -->
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
+                    <div>
+                        <div class="text-xs font-semibold text-white">Index Password</div>
+                        <div id="index-lock-label" class="text-[10px] text-blue-400">ON — Required for index</div>
+                    </div>
+                    <button
+                        id="toggle-index-lock-btn"
+                        type="button"
+                        role="switch"
+                        aria-checked="true"
+                        onclick="handleToggleLock('index')"
+                        class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
+                    >
+                        <span id="toggle-index-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                    </button>
+                </div>
+
+                <!-- Magazine Password Toggle -->
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
+                    <div>
+                        <div class="text-xs font-semibold text-white">Magazine Password</div>
+                        <div id="magazine-lock-label" class="text-[10px] text-blue-400">ON — Required for magazine</div>
+                    </div>
+                    <button
+                        id="toggle-magazine-lock-btn"
+                        type="button"
+                        role="switch"
+                        aria-checked="true"
+                        onclick="handleToggleLock('magazine')"
+                        class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
+                    >
+                        <span id="toggle-magazine-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123). Company code is permanent.</p>
+
+                <div>
+                    <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
+                    <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] text-blue-300 mb-1">New Index Password</label>
+                        <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
+                        <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                    </div>
+                </div>
+
+                <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                    Update Passwords
+                </button>
+                <p id="auth-feedback" class="text-xs hidden"></p>
+
+                <button type="button" onclick="lockRoleSession('admin')" class="w-full h-9 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/80 transition">
+                    Lock Admin Now
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
         Saved!
     </div>
 
     <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
-
-        <!-- PASSWORD SETTINGS + INDEX LOCK ON/OFF TOGGLE -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-blue-500/30 space-y-3">
-            <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold text-blue-400">Password Settings</h2>
-                <button type="button" onclick="lockRoleSession('admin')" class="text-[11px] text-white/60 hover:text-white">Lock Admin</button>
-            </div>
-
-            <!-- Index Password Toggle -->
-            <div class="flex items-center justify-between p-3 rounded-xl bg-[#121417] border border-white/10">
-                <div>
-                    <div class="text-xs font-semibold text-white">Index Password Required</div>
-                    <div id="index-lock-label" class="text-[10px] text-blue-400">ON — Password asked on index</div>
-                </div>
-                <button
-                    id="toggle-index-lock-btn"
-                    type="button"
-                    role="switch"
-                    aria-checked="true"
-                    onclick="handleToggleIndexLock()"
-                    class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
-                >
-                    <span id="toggle-index-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
-                </button>
-            </div>
-
-            <p class="text-[11px] text-white/60">Index and Admin use separate passwords (default: 123). Company code is permanent.</p>
-
-            <div>
-                <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
-                <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block text-[11px] text-blue-300 mb-1">New Index Password</label>
-                    <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                </div>
-                <div>
-                    <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
-                    <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                </div>
-            </div>
-
-            <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                Update Passwords
-            </button>
-            <p id="auth-feedback" class="text-xs hidden"></p>
-        </section>
 
         <!-- BRAND & CIRCULAR LOGO -->
         <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
@@ -169,32 +215,69 @@
 
     <script src="js/store.js"></script>
     <script>
-        enforceRoleLock('admin', 'Admin Console');
-        let currentData = getOSDData();
+        let currentData = null;
 
-        function renderIndexLockToggle() {
-            const { indexLockEnabled } = getAuthConfig();
-            const btn = document.getElementById('toggle-index-lock-btn');
-            const knob = document.getElementById('toggle-index-lock-knob');
-            const label = document.getElementById('index-lock-label');
-
-            btn.setAttribute('aria-checked', String(indexLockEnabled));
-            btn.className = indexLockEnabled
-                ? 'relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0'
-                : 'relative w-12 h-7 rounded-full bg-white/15 transition-colors p-0.5 shrink-0';
-            knob.className = indexLockEnabled
-                ? 'block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform'
-                : 'block w-6 h-6 rounded-full bg-white/70 shadow transform translate-x-0 transition-transform';
-            label.textContent = indexLockEnabled
-                ? 'ON — Password asked on index'
-                : 'OFF — Open index without password';
-            label.className = indexLockEnabled ? 'text-[10px] text-blue-400' : 'text-[10px] text-white/50';
+        function openSettingsMenu() {
+            document.getElementById('settings-drawer').classList.remove('hidden');
+            attachPasswordEyeToggles(document.getElementById('settings-drawer'));
+            renderLockToggles();
         }
 
-        function handleToggleIndexLock() {
-            const { indexLockEnabled } = getAuthConfig();
-            setIndexLockEnabled(!indexLockEnabled);
-            renderIndexLockToggle();
+        function closeSettingsMenu() {
+            document.getElementById('settings-drawer').classList.add('hidden');
+        }
+
+        function togglePasswordSubmenu() {
+            const sub = document.getElementById('password-submenu');
+            const chev = document.getElementById('password-menu-chevron');
+            const isHidden = sub.classList.toggle('hidden');
+            chev.textContent = isHidden ? '▸' : '▾';
+        }
+
+        function paintSwitch(btnId, knobId, labelId, isOn, onText, offText) {
+            const btn = document.getElementById(btnId);
+            const knob = document.getElementById(knobId);
+            const label = document.getElementById(labelId);
+
+            btn.setAttribute('aria-checked', String(isOn));
+            btn.className = isOn
+                ? 'relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0'
+                : 'relative w-12 h-7 rounded-full bg-white/15 transition-colors p-0.5 shrink-0';
+            knob.className = isOn
+                ? 'block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform'
+                : 'block w-6 h-6 rounded-full bg-white/70 shadow transform translate-x-0 transition-transform';
+            label.textContent = isOn ? onText : offText;
+            label.className = isOn ? 'text-[10px] text-blue-400' : 'text-[10px] text-white/50';
+        }
+
+        function renderLockToggles() {
+            const cfg = getAuthConfig();
+            paintSwitch(
+                'toggle-index-lock-btn',
+                'toggle-index-lock-knob',
+                'index-lock-label',
+                cfg.indexLockEnabled,
+                'ON — Required for index',
+                'OFF — Open index without password'
+            );
+            paintSwitch(
+                'toggle-magazine-lock-btn',
+                'toggle-magazine-lock-knob',
+                'magazine-lock-label',
+                cfg.magazineLockEnabled,
+                'ON — Required for magazine',
+                'OFF — Open magazine without password'
+            );
+        }
+
+        function handleToggleLock(role) {
+            const cfg = getAuthConfig();
+            if (role === 'magazine') {
+                setRoleLockEnabled('magazine', !cfg.magazineLockEnabled);
+            } else {
+                setRoleLockEnabled('index', !cfg.indexLockEnabled);
+            }
+            renderLockToggles();
         }
 
         function applyPasswordChanges() {
@@ -231,7 +314,7 @@
         }
 
         function loadAdminForm() {
-            renderIndexLockToggle();
+            renderLockToggles();
             currentData = getOSDData();
             const b = currentData.brand;
             const s = currentData.sections;
@@ -391,7 +474,10 @@
             setTimeout(() => toast.classList.add('hidden'), 2000);
         }
 
-        window.addEventListener('DOMContentLoaded', loadAdminForm);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAdminForm();
+            enforceRoleLock('admin', 'Admin Console');
+        });
     </script>
 </body>
 </html>
