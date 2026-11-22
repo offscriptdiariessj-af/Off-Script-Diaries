@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>E-Magazine Studio — Off Script Diaries</title>
+    <title>Magazine Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-28">
+<body class="bg-[#121417] text-white font-sans antialiased pb-20">
 
     <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
@@ -14,7 +14,10 @@
                 <h1 class="text-sm font-bold text-white">Magazine Manager</h1>
                 <p class="text-[10px] text-blue-400">New, Edit, Delete • Drive Media</p>
             </div>
-            <button onclick="resetForm()" class="px-3 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs font-semibold text-blue-400">+ New</button>
+            <div class="flex items-center gap-2">
+                <a href="admin.html" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Admin</a>
+                <button onclick="resetForm()" class="px-3 py-1.5 rounded-xl bg-blue-600 text-xs font-semibold">+ New</button>
+            </div>
         </div>
     </header>
 
@@ -46,7 +49,7 @@
 
             <textarea id="post-desc" rows="3" placeholder="Description *" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
 
-            <button onclick="savePost()" id="save-post-btn" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold active:scale-[0.99] transition">
+            <button onclick="savePost()" id="save-post-btn" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
                 Publish Post
             </button>
         </section>
@@ -59,18 +62,9 @@
 
     </main>
 
-    <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
-        <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <a href="index.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
-            <a href="emagazine.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>📖</span><span>Magazine</span></a>
-            <a href="emagazineadmin.html" class="text-blue-400 flex flex-col items-center gap-0.5"><span>＋</span><span>Post</span></a>
-            <a href="admin.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⚙</span><span>Admin</span></a>
-        </div>
-    </nav>
-
     <script src="js/store.js"></script>
     <script>
-        enforcePageLock("Magazine Manager");
+        enforceRoleLock('admin', 'Magazine Manager');
 
         function previewPostMedia() {
             const url = document.getElementById('post-media-url').value.trim();
@@ -159,7 +153,6 @@
             document.getElementById('save-post-btn').textContent = "Update Post";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             previewPostMedia();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deletePost(id) {
