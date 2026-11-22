@@ -229,16 +229,16 @@
     <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR -->
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <button id="tab-home" type="button" onclick="switchIndexMode('home')" class="text-blue-400 flex flex-col items-center gap-0.5">
+            <button id="tab-home" type="button" onclick="handleNavTab('home')" class="text-blue-400 flex flex-col items-center gap-0.5">
                 <span>⌂</span><span>Home</span>
             </button>
             <a href="emagazine.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>📖</span><span>Magazine</span>
             </a>
-            <button id="tab-stats" type="button" onclick="switchIndexMode('stats')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+            <button id="tab-stats" type="button" onclick="handleNavTab('stats')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>◈</span><span>Stats</span>
             </button>
-            <button id="tab-vault" type="button" onclick="switchIndexMode('vault')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+            <button id="tab-vault" type="button" onclick="handleNavTab('vault')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>✦</span><span>Vault</span>
             </button>
         </div>
@@ -246,28 +246,57 @@
 
     <script src="js/store.js"></script>
     <script>
-        enforceRoleLock('index', 'Off Script Diaries');
+        const VALID_MODES = ['home', 'stats', 'vault'];
+        let currentActiveMode = 'home';
 
-        function switchIndexMode(mode) {
+        function getSavedMode() {
+            const hashMode = (window.location.hash || '').replace('#', '').toLowerCase();
+            if (VALID_MODES.includes(hashMode)) return hashMode;
+            const storedMode = sessionStorage.getItem('osd_index_active_mode');
+            return VALID_MODES.includes(storedMode) ? storedMode : 'home';
+        }
+
+        function switchIndexMode(mode, shouldScrollTop = false) {
+            const targetMode = VALID_MODES.includes(mode) ? mode : 'home';
+            currentActiveMode = targetMode;
+            sessionStorage.setItem('osd_index_active_mode', targetMode);
+            if ((window.location.hash || '').replace('#', '') !== targetMode) {
+                history.replaceState(null, '', `#${targetMode}`);
+            }
+
             const views = {
                 home: document.getElementById('view-home'),
                 stats: document.getElementById('view-stats'),
                 vault: document.getElementById('view-vault')
             };
             Object.entries(views).forEach(([k, el]) => {
-                el.classList.toggle('hidden', k !== mode);
+                el.classList.toggle('hidden', k !== targetMode);
             });
 
-            ['home', 'stats', 'vault'].forEach(k => {
+            VALID_MODES.forEach(k => {
                 const btn = document.getElementById(`tab-${k}`);
                 if (!btn) return;
-                btn.className = k === mode
+                btn.className = k === targetMode
                     ? 'text-blue-400 flex flex-col items-center gap-0.5 font-semibold'
                     : 'text-white/65 hover:text-white flex flex-col items-center gap-0.5';
             });
 
             const pill = document.getElementById('mode-pill');
-            pill.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+            pill.textContent = targetMode.charAt(0).toUpperCase() + targetMode.slice(1);
+
+            if (shouldScrollTop) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Tapping the already-active bottom tab refreshes that current section without leaving it
+        function handleNavTab(mode) {
+            if (mode === currentActiveMode) {
+                renderIndexPage();
+                switchIndexMode(mode, true);
+                return;
+            }
+            switchIndexMode(mode, true);
         }
 
         function renderIndexPage() {
@@ -395,7 +424,12 @@
             document.getElementById('capsule-destination').textContent = data.sections.capsule.nextDestination;
         }
 
-        window.addEventListener('DOMContentLoaded', renderIndexPage);
+        window.addEventListener('DOMContentLoaded', () => {
+            renderIndexPage();
+            switchIndexMode(getSavedMode(), false);
+            enforceRoleLock('index', 'Off Script Diaries');
+        });
+        window.addEventListener('hashchange', () => switchIndexMode(getSavedMode(), false));
         window.addEventListener('storage', renderIndexPage);
         window.addEventListener('osd_data_updated', renderIndexPage);
     </script>
