@@ -14,7 +14,7 @@
                 <img id="mag-logo" src="" class="w-9 h-9 rounded-full object-cover aspect-square border border-blue-400/50 shrink-0" />
                 <span id="mag-brand" class="text-sm font-bold truncate">Off Script Diaries</span>
             </a>
-            <a href="emagazineadmin.html" class="px-3 py-1.5 rounded-full bg-blue-600 text-xs font-semibold shrink-0">+ New Post</a>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15">Magazine</span>
         </div>
     </header>
 
@@ -25,16 +25,16 @@
 
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <a href="index.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
-            <a href="emagazine.html" class="text-blue-400 flex flex-col items-center gap-0.5"><span>📖</span><span>Magazine</span></a>
-            <a href="emagazineadmin.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>＋</span><span>Post</span></a>
-            <a href="admin.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⚙</span><span>Admin</span></a>
+            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
+            <a href="emagazine.html" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span>📖</span><span>Magazine</span></a>
+            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>◈</span><span>Stats</span></a>
+            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>✦</span><span>Vault</span></a>
         </div>
     </nav>
 
     <script src="js/store.js"></script>
     <script>
-        enforcePageLock("E-Magazine");
+        enforceRoleLock('index', 'E-Magazine');
 
         function renderMagazine(q = '') {
             const data = getOSDData();
