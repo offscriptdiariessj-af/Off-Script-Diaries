@@ -2,239 +2,166 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Site Admin — Off Script Diaries</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Admin & Settings — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { obsidian: '#0B0C0E', charcoal: '#14161A', champagne: '#E5C39C' } } }
-        }
-    </script>
 </head>
-<body class="bg-obsidian text-white font-sans antialiased pb-24">
+<body class="bg-[#121417] text-white font-sans antialiased pb-28">
 
-    <header class="sticky top-0 z-40 bg-charcoal/95 backdrop-blur border-b border-white/10">
-        <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <span class="font-bold text-champagne tracking-wider uppercase text-sm">OSD Master Control</span>
-                <span class="text-xs text-white/40 hidden sm:inline">| Home Page & Brand CMS</span>
+    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
+        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+            <div>
+                <h1 class="text-sm font-bold text-white">Site Admin</h1>
+                <p class="text-[10px] text-blue-400">Home, Circular Logo & Settings</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="emagazineadmin.html" class="px-3.5 py-1.5 rounded-lg border border-white/20 text-xs hover:border-champagne transition">E-Magazine Admin</a>
-                <a href="index.html" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-white/10 text-xs hover:bg-white/20 transition">View Live Site ↗</a>
-                <button onclick="saveAllChanges()" class="px-5 py-1.5 rounded-lg bg-champagne text-obsidian font-semibold text-xs hover:bg-white transition">Save All</button>
-            </div>
+            <button onclick="saveAllChanges()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold active:scale-95">
+                Save Changes
+            </button>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-5 pt-10 space-y-10">
+    <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
+        Saved to index.html!
+    </div>
 
-        <!-- Toast Notification -->
-        <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-emerald-500 text-obsidian font-semibold px-6 py-3 rounded-xl shadow-2xl text-sm">
-            ✓ All changes saved & synced to index.html!
-        </div>
+    <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+
+        <!-- SETTINGS: CHANGE PASSWORD -->
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-blue-500/30 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-blue-400">Settings • Change Password</h2>
+                <span class="text-[10px] text-white/45">Default: 123</span>
+            </div>
+            <p class="text-[11px] text-white/60">Company master key stays active everywhere and cannot be changed.</p>
+            <input id="sec-current-key" type="password" inputmode="numeric" placeholder="Current password or company key" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <input id="sec-new-pass" type="password" placeholder="New password" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <button type="button" onclick="handleChangePassword()" class="w-full h-10 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition">
+                Update Password
+            </button>
+            <p id="sec-status" class="text-xs hidden"></p>
+        </section>
 
         <!-- BRAND & CIRCULAR GOOGLE DRIVE LOGO -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-champagne/30">
-            <h2 class="text-lg font-semibold text-champagne mb-1">1. Brand Identity & Circular Profile Logo</h2>
-            <p class="text-xs text-white/50 mb-6">Paste any Google Drive image share link ("Anyone with the link") to automatically render it as your circular site emblem.</p>
-
-            <div class="grid md:grid-cols-12 gap-6 items-center">
-                <div class="md:col-span-3 flex flex-col items-center">
-                    <img id="preview-logo" src="" alt="Circular Preview" class="w-28 h-28 rounded-full object-cover border-2 border-champagne shadow-lg bg-obsidian" />
-                    <span class="text-[11px] text-white/50 mt-2">Live Circular Preview</span>
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
+            <div class="flex items-center gap-4">
+                <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
+                <div class="flex-1 space-y-2">
+                    <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </div>
-                <div class="md:col-span-9 grid sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-white/60 mb-1">Website Name</label>
-                        <input id="inp-siteName" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-white/60 mb-1">Couple / Authors Name</label>
-                        <input id="inp-coupleNames" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs text-champagne mb-1">Google Drive Image Link (Circular Profile Picture / Logo)</label>
-                        <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-white/60 mb-1">Location Tagline</label>
-                        <input id="inp-location" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-white/60 mb-1">Established Year</label>
-                        <input id="inp-year" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    </div>
-                </div>
+            </div>
+            <div>
+                <label class="block text-[11px] text-blue-400 mb-1">Google Drive Image Link (Circular Logo)</label>
+                <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <input id="inp-location" type="text" placeholder="Location" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-year" type="text" placeholder="Year" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
             </div>
         </section>
 
         <!-- SECTION 1: HERO -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-white/10 space-y-4">
-            <h2 class="text-lg font-semibold text-white">Section 1 — Cinematic Hero</h2>
-            <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Eyebrow Label</label>
-                    <input id="inp-hero-eyebrow" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Button Text</label>
-                    <input id="inp-hero-cta" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Main Headline</label>
-                    <input id="inp-hero-headline" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Subheadline</label>
-                    <textarea id="inp-hero-sub" rows="2" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm"></textarea>
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Hero Background Image (Google Drive Link or URL)</label>
-                    <input id="inp-hero-bg" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <h2 class="text-sm font-bold text-white">Section 1 • Hero</h2>
+            <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+            <div class="grid grid-cols-2 gap-2.5">
+                <input id="inp-hero-cta" type="text" placeholder="Button Text" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-hero-bg" type="text" placeholder="Hero Image / Drive Link" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
             </div>
         </section>
 
-        <!-- SECTION 2: ORIGIN STORY -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-white/10 space-y-4">
-            <h2 class="text-lg font-semibold text-white">Section 2 — Origin Manifesto</h2>
-            <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Chapter Title</label>
-                    <input id="inp-origin-title" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Date</label>
-                    <input id="inp-origin-date" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Story Paragraph</label>
-                    <textarea id="inp-origin-story" rows="3" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm"></textarea>
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Highlight Quote</label>
-                    <input id="inp-origin-quote" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-xs text-white/60 mb-1">Portrait Photo (Google Drive Link or URL)</label>
-                    <input id="inp-origin-img" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
+        <!-- SECTION 2: ORIGIN -->
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <h2 class="text-sm font-bold text-white">Section 2 • Origin</h2>
+            <div class="grid grid-cols-2 gap-2.5">
+                <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
             </div>
+            <textarea id="inp-origin-story" rows="2" placeholder="Story" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+            <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
         </section>
 
-        <!-- SECTION 3 & 4: TELEMETRY & E-MAGAZINE HEADER -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-white/10 space-y-4">
-            <h2 class="text-lg font-semibold text-white">Sections 3 & 4 — Live Metrics & Magazine Intro</h2>
-            <div class="grid sm:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Start Date (YYYY-MM-DD)</label>
-                    <input id="inp-stat-date" type="date" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Cities Explored</label>
-                    <input id="inp-stat-cities" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Coffees Shared</label>
-                    <input id="inp-stat-coffee" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Midnight Calls</label>
-                    <input id="inp-stat-calls" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
+        <!-- SECTIONS 3 & 4 -->
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <h2 class="text-sm font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
+            <div class="grid grid-cols-2 gap-2.5">
+                <input id="inp-stat-date" type="date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-stat-cities" type="text" placeholder="Cities" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-stat-coffee" type="text" placeholder="Coffees" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
             </div>
-            <div class="grid sm:grid-cols-2 gap-4 pt-2">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Section 4 Heading</label>
-                    <input id="inp-mag-heading" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Section 4 Subtext</label>
-                    <input id="inp-mag-desc" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-            </div>
+            <input id="inp-mag-heading" type="text" placeholder="Magazine Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <input id="inp-mag-desc" type="text" placeholder="Magazine Subtitle" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
         </section>
 
-        <!-- SECTION 5 & 6: BUCKET LIST & DUAL POV -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-white/10 space-y-6">
-            <h2 class="text-lg font-semibold text-white">Sections 5 & 6 — Bucket List & Dual Perspectives</h2>
+        <!-- SECTIONS 5 & 6 -->
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <h2 class="text-sm font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
             <div id="admin-bucket-editor" class="space-y-2"></div>
-            <button type="button" onclick="addBucketItem()" class="text-xs text-champagne hover:underline">+ Add Bucket List Item</button>
-
-            <div class="grid sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Partner 1 Title</label>
-                    <input id="inp-pov1-name" type="text" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm mb-2" />
-                    <textarea id="inp-pov1-note" rows="3" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm"></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Partner 2 Title</label>
-                    <input id="inp-pov2-name" type="text" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm mb-2" />
-                    <textarea id="inp-pov2-note" rows="3" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm"></textarea>
-                </div>
+            <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
+            <div class="space-y-2 pt-2 border-t border-white/10">
+                <input id="inp-pov1-name" type="text" placeholder="Note 1 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <textarea id="inp-pov1-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                <input id="inp-pov2-name" type="text" placeholder="Note 2 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <textarea id="inp-pov2-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
             </div>
         </section>
 
-        <!-- SECTIONS 7, 8, 9, 10: TIMELINE, SOUNDTRACK, LOVE NOTES & CAPSULE -->
-        <section class="p-6 sm:p-8 rounded-2xl bg-charcoal border border-white/10 space-y-6">
-            <h2 class="text-lg font-semibold text-white">Sections 7, 8, 9 & 10 — Timeline, Soundtrack, Notes & Footer Capsule</h2>
-            
-            <div>
-                <h3 class="text-xs uppercase tracking-wider text-champagne mb-2">Section 7: 4 Key Milestones</h3>
-                <div id="admin-milestones-editor" class="grid sm:grid-cols-2 gap-3"></div>
-            </div>
-
-            <div class="pt-4 border-t border-white/10">
-                <h3 class="text-xs uppercase tracking-wider text-champagne mb-2">Section 8: Soundtrack Playlist</h3>
-                <div class="grid sm:grid-cols-2 gap-3 mb-3">
-                    <input id="inp-sound-title" placeholder="Album Title" class="px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                    <input id="inp-sound-note" placeholder="Curator Note" class="px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
+        <!-- SECTIONS 7, 8, 9 & 10 -->
+        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <h2 class="text-sm font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
+            <div id="admin-milestones-editor" class="space-y-2"></div>
+            <div class="pt-2 border-t border-white/10 space-y-2">
+                <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 <div id="admin-tracks-editor" class="space-y-2"></div>
             </div>
-
-            <div class="pt-4 border-t border-white/10">
-                <h3 class="text-xs uppercase tracking-wider text-champagne mb-2">Section 9: 3 Counter Love Notes</h3>
-                <div id="admin-notes-editor" class="grid sm:grid-cols-3 gap-3"></div>
+            <div class="pt-2 border-t border-white/10 space-y-2">
+                <div id="admin-notes-editor" class="space-y-2"></div>
             </div>
-
-            <div class="pt-4 border-t border-white/10 grid sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Section 10 Heading</label>
-                    <input id="inp-cap-head" type="text" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Next Destination</label>
-                    <input id="inp-cap-dest" type="text" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-                <div>
-                    <label class="block text-xs text-white/60 mb-1">Closing Message</label>
-                    <input id="inp-cap-msg" type="text" class="w-full px-3.5 py-2 rounded-xl bg-obsidian border border-white/15 text-sm" />
-                </div>
-            </div>
-        </section>
-
-        <!-- BACKUP & RESET -->
-        <section class="p-6 rounded-2xl bg-charcoal/50 border border-white/10 flex flex-wrap items-center justify-between gap-4">
-            <div class="text-xs text-white/50">
-                Data is saved locally in your browser. Export a backup file anytime to transfer devices.
-            </div>
-            <div class="flex gap-3">
-                <button onclick="exportJSON()" class="px-4 py-2 rounded-lg bg-white/10 text-xs hover:bg-white/20">Export Backup (.json)</button>
-                <button onclick="if(confirm('Reset all site content to factory defaults?')){resetOSDData(); loadAdminForm();}" class="px-4 py-2 rounded-lg border border-red-500/40 text-red-400 text-xs hover:bg-red-500/10">Reset Defaults</button>
+            <div class="pt-2 border-t border-white/10 space-y-2">
+                <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-cap-dest" type="text" placeholder="Destination" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
             </div>
         </section>
 
     </main>
 
+    <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
+        <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
+            <a href="index.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
+            <a href="emagazine.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>📖</span><span>Magazine</span></a>
+            <a href="emagazineadmin.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>＋</span><span>Post</span></a>
+            <a href="admin.html" class="text-blue-400 flex flex-col items-center gap-0.5"><span>⚙</span><span>Admin</span></a>
+        </div>
+    </nav>
+
     <script src="js/store.js"></script>
     <script>
+        enforcePageLock("Site Admin");
         let currentData = getOSDData();
 
+        function handleChangePassword() {
+            const cur = document.getElementById('sec-current-key').value;
+            const nxt = document.getElementById('sec-new-pass').value;
+            const res = updateUserPassword(nxt, cur);
+            const status = document.getElementById('sec-status');
+            status.classList.remove('hidden');
+            status.className = `text-xs font-medium ${res.ok ? 'text-emerald-400' : 'text-rose-400'}`;
+            status.textContent = res.msg;
+            if (res.ok) {
+                document.getElementById('sec-current-key').value = '';
+                document.getElementById('sec-new-pass').value = '';
+            }
+        }
+
         function updateLogoPreview() {
-            const raw = document.getElementById('inp-logoUrl').value;
-            document.getElementById('preview-logo').src = parseDriveMedia(raw, 'image');
+            document.getElementById('preview-logo').src = parseDriveMedia(document.getElementById('inp-logoUrl').value, 'image');
         }
 
         function loadAdminForm() {
@@ -250,9 +177,9 @@
             updateLogoPreview();
 
             document.getElementById('inp-hero-eyebrow').value = s.hero.eyebrow;
-            document.getElementById('inp-hero-cta').value = s.hero.ctaText;
             document.getElementById('inp-hero-headline').value = s.hero.headline;
             document.getElementById('inp-hero-sub').value = s.hero.subheadline;
+            document.getElementById('inp-hero-cta').value = s.hero.ctaText;
             document.getElementById('inp-hero-bg').value = s.hero.bgImage;
 
             document.getElementById('inp-origin-title').value = s.origin.title;
@@ -277,27 +204,27 @@
             document.getElementById('inp-pov2-note').value = s.perspectives.partnerTwoNote;
 
             document.getElementById('admin-milestones-editor').innerHTML = s.milestones.map((m, i) => `
-                <div class="p-3 rounded-xl bg-obsidian border border-white/10 space-y-2">
-                    <input data-ms-date="${i}" value="${m.date}" class="w-full px-2.5 py-1.5 rounded bg-charcoal text-xs text-champagne" />
-                    <input data-ms-title="${i}" value="${m.title}" class="w-full px-2.5 py-1.5 rounded bg-charcoal text-sm" />
-                    <input data-ms-desc="${i}" value="${m.desc}" class="w-full px-2.5 py-1.5 rounded bg-charcoal text-xs text-white/70" />
+                <div class="p-2.5 rounded-xl bg-[#121417] space-y-1.5">
+                    <input data-ms-date="${i}" value="${m.date}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
+                    <input data-ms-title="${i}" value="${m.title}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
+                    <input data-ms-desc="${i}" value="${m.desc}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-white/70" />
                 </div>
             `).join('');
 
             document.getElementById('inp-sound-title').value = s.soundtrack.albumTitle;
             document.getElementById('inp-sound-note').value = s.soundtrack.curatorNote;
             document.getElementById('admin-tracks-editor').innerHTML = s.soundtrack.tracks.map((t, i) => `
-                <div class="grid grid-cols-12 gap-2">
-                    <input data-tr-title="${i}" value="${t.title}" class="col-span-5 px-3 py-2 rounded-lg bg-obsidian border border-white/10 text-xs" />
-                    <input data-tr-artist="${i}" value="${t.artist}" class="col-span-5 px-3 py-2 rounded-lg bg-obsidian border border-white/10 text-xs" />
-                    <input data-tr-dur="${i}" value="${t.duration}" class="col-span-2 px-3 py-2 rounded-lg bg-obsidian border border-white/10 text-xs" />
+                <div class="grid grid-cols-12 gap-1.5">
+                    <input data-tr-title="${i}" value="${t.title}" class="col-span-5 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <input data-tr-artist="${i}" value="${t.artist}" class="col-span-4 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <input data-tr-dur="${i}" value="${t.duration}" class="col-span-3 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
                 </div>
             `).join('');
 
             document.getElementById('admin-notes-editor').innerHTML = s.loveNotes.map((n, i) => `
-                <div class="p-3 rounded-xl bg-obsidian border border-white/10 space-y-2">
-                    <input data-nt-tag="${i}" value="${n.tag}" class="w-full px-2.5 py-1.5 rounded bg-charcoal text-xs text-champagne" />
-                    <textarea data-nt-msg="${i}" rows="3" class="w-full px-2.5 py-1.5 rounded bg-charcoal text-xs">${n.message}</textarea>
+                <div class="p-2.5 rounded-xl bg-[#121417] space-y-1.5">
+                    <input data-nt-tag="${i}" value="${n.tag}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
+                    <input data-nt-msg="${i}" value="${n.message}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
                 </div>
             `).join('');
 
@@ -308,16 +235,16 @@
 
         function renderBucketEditor() {
             document.getElementById('admin-bucket-editor').innerHTML = currentData.sections.bucketList.map((item, idx) => `
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="currentData.sections.bucketList[${idx}].completed = this.checked" class="w-4 h-4 accent-champagne" />
-                    <input type="text" value="${item.task}" oninput="currentData.sections.bucketList[${idx}].task = this.value" class="flex-1 px-3 py-2 rounded-lg bg-obsidian border border-white/10 text-sm" />
-                    <button type="button" onclick="currentData.sections.bucketList.splice(${idx}, 1); renderBucketEditor();" class="text-xs text-red-400 px-2">✕</button>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="currentData.sections.bucketList[${idx}].completed = this.checked" class="w-4 h-4 accent-blue-500" />
+                    <input type="text" value="${item.task}" oninput="currentData.sections.bucketList[${idx}].task = this.value" class="flex-1 h-9 px-3 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <button type="button" onclick="currentData.sections.bucketList.splice(${idx}, 1); renderBucketEditor();" class="text-xs text-rose-400 px-2">✕</button>
                 </div>
             `).join('');
         }
 
         function addBucketItem() {
-            currentData.sections.bucketList.push({ id: Date.now(), task: "New adventure...", completed: false });
+            currentData.sections.bucketList.push({ id: Date.now(), task: "New plan", completed: false });
             renderBucketEditor();
         }
 
@@ -331,9 +258,9 @@
 
             fresh.sections.hero = {
                 eyebrow: document.getElementById('inp-hero-eyebrow').value,
-                ctaText: document.getElementById('inp-hero-cta').value,
                 headline: document.getElementById('inp-hero-headline').value,
                 subheadline: document.getElementById('inp-hero-sub').value,
+                ctaText: document.getElementById('inp-hero-cta').value,
                 bgImage: document.getElementById('inp-hero-bg').value
             };
 
@@ -394,15 +321,7 @@
             saveOSDData(fresh);
             const toast = document.getElementById('toast');
             toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3000);
-        }
-
-        function exportJSON() {
-            const blob = new Blob([JSON.stringify(getOSDData(), null, 2)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `off-script-diaries-backup-${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
+            setTimeout(() => toast.classList.add('hidden'), 2200);
         }
 
         window.addEventListener('DOMContentLoaded', loadAdminForm);
