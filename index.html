@@ -1,24 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        appbg: '#121417',
-                        appcard: '#1E2126',
-                        appcard2: '#252930',
-                        accent: '#3B82F6'
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         body { background-color: #121417; color: #F8FAFC; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -27,7 +13,7 @@
 </head>
 <body class="font-sans antialiased pb-24">
 
-    <!-- MOBILE TOP BAR -->
+    <!-- TOP HEADER -->
     <header class="sticky top-0 z-40 bg-[#121417]/90 backdrop-blur-md border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -38,163 +24,253 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <a href="admin.html" class="px-3 py-1.5 rounded-full bg-[#1E2126] border border-white/10 text-xs font-medium text-white/80 active:scale-95">Admin</a>
-                <button onclick="lockSession()" title="Lock" class="p-2 rounded-full bg-[#1E2126] border border-white/10 text-xs text-white/70 active:scale-95">🔒</button>
+                <span id="mode-pill" class="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-bold uppercase">Home</span>
+                <button onclick="lockRoleSession('index')" title="Lock Viewer" class="p-2 rounded-full bg-[#1E2126] border border-white/10 text-xs text-white/75 active:scale-95">🔒</button>
             </div>
         </div>
     </header>
 
     <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
 
-        <!-- 1. HERO BANNER CARD -->
-        <section class="relative rounded-3xl overflow-hidden bg-[#1E2126] border border-white/10 min-h-[270px] flex items-end">
-            <img id="hero-bg" src="" alt="Cover" class="absolute inset-0 w-full h-full object-cover opacity-40" />
-            <div class="absolute inset-0 bg-gradient-to-t from-[#121417] via-[#121417]/50 to-transparent"></div>
-            <div class="relative z-10 p-5 w-full">
-                <span id="hero-eyebrow" class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-600/30 text-blue-300 border border-blue-400/30 mb-2"></span>
-                <h2 id="hero-headline" class="text-2xl font-extrabold text-white leading-snug"></h2>
-                <p id="hero-subheadline" class="text-xs text-white/75 mt-1.5 line-clamp-2"></p>
-                <div class="mt-4 flex items-center justify-between gap-2">
-                    <a id="hero-cta" href="emagazine.html" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold active:scale-95 transition"></a>
-                    <span id="hero-location" class="text-[11px] text-white/55 truncate"></span>
+        <!-- VIEW MODE 1: HOME (ALL 10 UNIQUE SECTIONS) -->
+        <div id="view-home" class="space-y-6">
+
+            <!-- 1. HERO BANNER -->
+            <section class="relative rounded-3xl overflow-hidden bg-[#1E2126] border border-white/10 min-h-[265px] flex items-end">
+                <img id="hero-bg" src="" alt="Cover" class="absolute inset-0 w-full h-full object-cover opacity-40" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#121417] via-[#121417]/50 to-transparent"></div>
+                <div class="relative z-10 p-5 w-full">
+                    <span id="hero-eyebrow" class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-600/30 text-blue-300 border border-blue-400/30 mb-2"></span>
+                    <h2 id="hero-headline" class="text-2xl font-extrabold text-white leading-snug"></h2>
+                    <p id="hero-subheadline" class="text-xs text-white/75 mt-1.5 line-clamp-2"></p>
+                    <div class="mt-4 flex items-center justify-between gap-2">
+                        <a id="hero-cta" href="emagazine.html" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition"></a>
+                        <span id="hero-location" class="text-[11px] text-white/55 truncate"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. ORIGIN STORY -->
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">02 • Origin</span>
+                    <span id="origin-date" class="text-[11px] text-white/50"></span>
+                </div>
+                <div class="flex gap-3.5 items-center">
+                    <img id="origin-img" src="" alt="Origin" class="w-24 h-28 rounded-2xl object-cover shrink-0 bg-[#121417]" />
+                    <div class="min-w-0">
+                        <h3 id="origin-title" class="text-base font-bold text-white"></h3>
+                        <p id="origin-story" class="text-xs text-white/70 mt-1 line-clamp-3 leading-relaxed"></p>
+                    </div>
+                </div>
+                <p id="origin-quote" class="mt-3 pt-3 border-t border-white/10 text-xs italic text-blue-300"></p>
+            </section>
+
+            <!-- 3. TELEMETRY (2x2 GRID) -->
+            <section class="grid grid-cols-2 gap-3">
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Days Together</span>
+                    <div id="home-stat-days" class="text-2xl font-extrabold text-blue-400 mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Cities</span>
+                    <div id="home-stat-cities" class="text-2xl font-extrabold text-white mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Coffees</span>
+                    <div id="home-stat-coffee" class="text-2xl font-extrabold text-white mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Late Calls</span>
+                    <div id="home-stat-calls" class="text-2xl font-extrabold text-emerald-400 mt-1">0</div>
+                </div>
+            </section>
+
+            <!-- 4. E-MAGAZINE SPOTLIGHT RAIL -->
+            <section>
+                <div class="flex items-end justify-between mb-2">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">04 • E-Magazine</span>
+                        <h3 id="mag-heading" class="text-lg font-bold text-white"></h3>
+                    </div>
+                    <a href="emagazine.html" class="text-xs font-semibold text-blue-400">Read all →</a>
+                </div>
+                <p id="mag-desc" class="text-xs text-white/60 mb-3"></p>
+                <div id="home-magazine-rail" class="flex gap-3.5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1"></div>
+            </section>
+
+            <!-- 5. BUCKET LIST -->
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">05 • Bucket List</span>
+                <h3 class="text-base font-bold text-white mt-0.5 mb-3">Plans Ahead</h3>
+                <div id="home-bucket-container" class="space-y-2"></div>
+            </section>
+
+            <!-- 6. DUAL PERSPECTIVES -->
+            <section class="space-y-2.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">06 • Perspectives</span>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-blue-500 border border-white/10">
+                    <span id="home-pov1-name" class="text-[11px] font-bold uppercase text-blue-400"></span>
+                    <p id="home-pov1-note" class="text-sm text-white/90 mt-1 leading-relaxed"></p>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-emerald-500 border border-white/10">
+                    <span id="home-pov2-name" class="text-[11px] font-bold uppercase text-emerald-400"></span>
+                    <p id="home-pov2-note" class="text-sm text-white/90 mt-1 leading-relaxed"></p>
+                </div>
+            </section>
+
+            <!-- 7. MILESTONES TIMELINE -->
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">07 • Timeline</span>
+                <h3 class="text-base font-bold text-white mt-0.5 mb-4">Key Moments</h3>
+                <div id="home-timeline-container" class="space-y-4 border-l border-blue-500/40 ml-2 pl-4"></div>
+            </section>
+
+            <!-- 8. SOUNDTRACK -->
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">08 • Soundtrack</span>
+                        <h3 id="home-soundtrack-title" class="text-base font-bold text-white"></h3>
+                    </div>
+                    <span class="w-9 h-9 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-sm font-bold">♪</span>
+                </div>
+                <p id="home-soundtrack-note" class="text-xs text-white/55 mb-3"></p>
+                <div id="home-soundtrack-list" class="divide-y divide-white/10"></div>
+            </section>
+
+            <!-- 9. LOVE NOTES RAIL -->
+            <section>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">09 • Notes</span>
+                <div id="home-notes-container" class="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory mt-2 pb-1"></div>
+            </section>
+
+            <!-- 10. NEXT STOP CAPSULE -->
+            <footer class="rounded-3xl bg-gradient-to-br from-[#1E2126] to-[#252930] border border-white/10 p-5 text-center space-y-2">
+                <img id="footer-logo" src="" alt="Emblem" class="w-14 h-14 rounded-full object-cover aspect-square mx-auto border border-blue-400/50 bg-[#121417]" />
+                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400 block">10 • Next Up</span>
+                <h3 id="capsule-heading" class="text-xl font-extrabold text-white"></h3>
+                <p id="capsule-message" class="text-xs text-white/70"></p>
+                <div class="pt-1">
+                    <span class="inline-block px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-semibold">
+                        Destination: <span id="capsule-destination"></span>
+                    </span>
+                </div>
+                <p class="text-[11px] text-white/40 pt-3">© <span id="footer-year"></span> <span id="footer-brand"></span></p>
+            </footer>
+
+        </div>
+
+        <!-- VIEW MODE 2: DEDICATED STATS & TIMELINE DECK -->
+        <div id="view-stats" class="hidden space-y-5">
+            <div class="p-5 rounded-3xl bg-gradient-to-r from-blue-600/20 to-[#1E2126] border border-blue-500/30">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400">Live Counter Deck</span>
+                <h2 class="text-xl font-extrabold text-white mt-1">Our Numbers & Milestones</h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Days Together</span>
+                    <div id="deck-stat-days" class="text-3xl font-extrabold text-blue-400 mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Cities</span>
+                    <div id="deck-stat-cities" class="text-3xl font-extrabold text-white mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Coffees</span>
+                    <div id="deck-stat-coffee" class="text-3xl font-extrabold text-white mt-1">0</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[11px] text-white/50">Late Calls</span>
+                    <div id="deck-stat-calls" class="text-3xl font-extrabold text-emerald-400 mt-1">0</div>
                 </div>
             </div>
-        </section>
 
-        <!-- 2. ORIGIN STORY (HORIZONTAL MEDIA + STORY CARD) -->
-        <section id="sec-origin" class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">02 • Origin</span>
-                <span id="origin-date" class="text-[11px] text-white/50"></span>
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider mb-3">Milestones</h3>
+                <div id="deck-timeline-container" class="space-y-3"></div>
+            </section>
+
+            <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
+                <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider mb-3">Bucket List Status</h3>
+                <div id="deck-bucket-container" class="space-y-2"></div>
+            </section>
+        </div>
+
+        <!-- VIEW MODE 3: DEDICATED VAULT (NOTES, POV & SOUNDTRACK) -->
+        <div id="view-vault" class="hidden space-y-5">
+            <div class="p-5 rounded-3xl bg-gradient-to-r from-indigo-600/20 to-[#1E2126] border border-indigo-400/30">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400">Private Keepsakes</span>
+                <h2 class="text-xl font-extrabold text-white mt-1">Notes, POV & Soundtrack</h2>
             </div>
-            <div class="flex gap-3.5 items-center">
-                <img id="origin-img" src="" alt="Origin" class="w-24 h-28 rounded-2xl object-cover shrink-0 bg-[#121417]" />
-                <div class="min-w-0">
-                    <h3 id="origin-title" class="text-base font-bold text-white"></h3>
-                    <p id="origin-story" class="text-xs text-white/70 mt-1 line-clamp-3 leading-relaxed"></p>
+
+            <div id="deck-notes-stack" class="space-y-3"></div>
+
+            <div class="space-y-2.5">
+                <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-blue-500 border border-white/10">
+                    <span id="deck-pov1-name" class="text-[11px] font-bold uppercase text-blue-400"></span>
+                    <p id="deck-pov1-note" class="text-sm text-white/90 mt-1"></p>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-emerald-500 border border-white/10">
+                    <span id="deck-pov2-name" class="text-[11px] font-bold uppercase text-emerald-400"></span>
+                    <p id="deck-pov2-note" class="text-sm text-white/90 mt-1"></p>
                 </div>
             </div>
-            <p id="origin-quote" class="mt-3 pt-3 border-t border-white/10 text-xs italic text-blue-300"></p>
-        </section>
 
-        <!-- 3. TELEMETRY (2x2 METRIC TILES) -->
-        <section class="grid grid-cols-2 gap-3">
             <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
-                <span class="text-[11px] text-white/50">Days Together</span>
-                <div id="stat-days" class="text-2xl font-extrabold text-blue-400 mt-1">0</div>
+                <h3 id="deck-sound-title" class="text-sm font-bold text-white mb-2"></h3>
+                <div id="deck-sound-list" class="divide-y divide-white/10"></div>
             </div>
-            <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
-                <span class="text-[11px] text-white/50">Cities</span>
-                <div id="stat-cities" class="text-2xl font-extrabold text-white mt-1">0</div>
-            </div>
-            <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
-                <span class="text-[11px] text-white/50">Coffees</span>
-                <div id="stat-coffee" class="text-2xl font-extrabold text-white mt-1">0</div>
-            </div>
-            <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
-                <span class="text-[11px] text-white/50">Late Calls</span>
-                <div id="stat-calls" class="text-2xl font-extrabold text-emerald-400 mt-1">0</div>
-            </div>
-        </section>
-
-        <!-- 4. E-MAGAZINE SPOTLIGHT (SNAP SCROLL RAIL) -->
-        <section id="sec-magazine">
-            <div class="flex items-end justify-between mb-3">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">04 • E-Magazine</span>
-                    <h3 id="mag-heading" class="text-lg font-bold text-white"></h3>
-                </div>
-                <a href="emagazine.html" class="text-xs font-semibold text-blue-400">See all →</a>
-            </div>
-            <p id="mag-desc" class="text-xs text-white/60 mb-3"></p>
-            <div id="home-magazine-rail" class="flex gap-3.5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1"></div>
-        </section>
-
-        <!-- 5. BUCKET LIST (COMPACT CHECKLIST PILLS) -->
-        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">05 • Bucket List</span>
-            <h3 class="text-base font-bold text-white mt-0.5 mb-3">Plans Ahead</h3>
-            <div id="bucket-list-container" class="space-y-2"></div>
-        </section>
-
-        <!-- 6. DUAL PERSPECTIVES (SPLIT TAB / DUAL ROW) -->
-        <section class="space-y-2.5">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">06 • Perspectives</span>
-            <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-blue-500 border border-white/10">
-                <span id="pov-one-name" class="text-[11px] font-bold uppercase text-blue-400"></span>
-                <p id="pov-one-note" class="text-sm text-white/90 mt-1 leading-relaxed"></p>
-            </div>
-            <div class="p-4 rounded-2xl bg-[#1E2126] border-l-4 border-l-emerald-500 border border-white/10">
-                <span id="pov-two-name" class="text-[11px] font-bold uppercase text-emerald-400"></span>
-                <p id="pov-two-note" class="text-sm text-white/90 mt-1 leading-relaxed"></p>
-            </div>
-        </section>
-
-        <!-- 7. MILESTONES (VERTICAL STEPPER) -->
-        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">07 • Timeline</span>
-            <h3 class="text-base font-bold text-white mt-0.5 mb-4">Key Moments</h3>
-            <div id="timeline-container" class="space-y-4 border-l border-blue-500/40 ml-2 pl-4"></div>
-        </section>
-
-        <!-- 8. SOUNDTRACK (COMPACT PLAYER LIST) -->
-        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">08 • Soundtrack</span>
-                    <h3 id="soundtrack-title" class="text-base font-bold text-white"></h3>
-                </div>
-                <span class="w-9 h-9 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-sm font-bold">♪</span>
-            </div>
-            <p id="soundtrack-note" class="text-xs text-white/55 mb-3"></p>
-            <div id="soundtrack-list" class="divide-y divide-white/10"></div>
-        </section>
-
-        <!-- 9. LOVE NOTES (CAROUSEL CARDS) -->
-        <section>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">09 • Notes</span>
-            <div id="lovenotes-container" class="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory mt-2 pb-1"></div>
-        </section>
-
-        <!-- 10. NEXT STOP FOOTER CAPSULE -->
-        <footer class="rounded-3xl bg-gradient-to-br from-[#1E2126] to-[#252930] border border-white/10 p-5 text-center space-y-2">
-            <img id="footer-logo" src="" alt="Emblem" class="w-14 h-14 rounded-full object-cover aspect-square mx-auto border border-blue-400/50 bg-[#121417]" />
-            <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400 block">10 • Next Up</span>
-            <h3 id="capsule-heading" class="text-xl font-extrabold text-white"></h3>
-            <p id="capsule-message" class="text-xs text-white/70"></p>
-            <div class="pt-1">
-                <span class="inline-block px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-semibold">
-                    Destination: <span id="capsule-destination"></span>
-                </span>
-            </div>
-            <p class="text-[11px] text-white/40 pt-3">© <span id="footer-year"></span> <span id="footer-brand"></span></p>
-        </footer>
+        </div>
 
     </main>
 
-    <!-- FIXED MOBILE BOTTOM NAVIGATION -->
+    <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR (NO POST, NO ADMIN, NO SCROLLING) -->
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <a href="index.html" class="text-blue-400 flex flex-col items-center gap-0.5">
+            <button id="tab-home" onclick="switchIndexMode('home')" class="text-blue-400 flex flex-col items-center gap-0.5">
                 <span>⌂</span><span>Home</span>
-            </a>
+            </button>
             <a href="emagazine.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>📖</span><span>Magazine</span>
             </a>
-            <a href="emagazineadmin.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
-                <span>＋</span><span>Post</span>
-            </a>
-            <a href="admin.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
-                <span>⚙</span><span>Admin</span>
-            </a>
+            <button id="tab-stats" onclick="switchIndexMode('stats')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+                <span>◈</span><span>Stats</span>
+            </button>
+            <button id="tab-vault" onclick="switchIndexMode('vault')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+                <span>✦</span><span>Vault</span>
+            </button>
         </div>
     </nav>
 
     <script src="js/store.js"></script>
     <script>
-        enforcePageLock("Off Script Diaries");
+        enforceRoleLock('index', 'Off Script Diaries');
 
-        function renderHomePage() {
+        function switchIndexMode(mode) {
+            const views = {
+                home: document.getElementById('view-home'),
+                stats: document.getElementById('view-stats'),
+                vault: document.getElementById('view-vault')
+            };
+            Object.entries(views).forEach(([k, el]) => {
+                el.classList.toggle('hidden', k !== mode);
+            });
+
+            ['home', 'stats', 'vault'].forEach(k => {
+                const btn = document.getElementById(`tab-${k}`);
+                if (!btn) return;
+                btn.className = k === mode
+                    ? 'text-blue-400 flex flex-col items-center gap-0.5 font-semibold'
+                    : 'text-white/65 hover:text-white flex flex-col items-center gap-0.5';
+            });
+
+            const pill = document.getElementById('mode-pill');
+            pill.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+        }
+
+        function renderIndexPage() {
             const data = getOSDData();
             const logoSrc = parseDriveMedia(data.brand.logoUrl, 'image');
 
@@ -206,7 +282,7 @@
             document.getElementById('footer-brand').textContent = data.brand.siteName;
             document.getElementById('footer-year').textContent = data.brand.establishedYear;
 
-            // 1. Hero
+            // Hero
             document.getElementById('hero-bg').src = parseDriveMedia(data.sections.hero.bgImage, 'image');
             document.getElementById('hero-eyebrow').textContent = data.sections.hero.eyebrow;
             document.getElementById('hero-headline').textContent = data.sections.hero.headline;
@@ -214,22 +290,25 @@
             document.getElementById('hero-cta').textContent = data.sections.hero.ctaText;
             document.getElementById('hero-location').textContent = data.brand.location;
 
-            // 2. Origin
+            // Origin
             document.getElementById('origin-img').src = parseDriveMedia(data.sections.origin.image, 'image');
             document.getElementById('origin-date').textContent = data.sections.origin.date;
             document.getElementById('origin-title').textContent = data.sections.origin.title;
             document.getElementById('origin-story').textContent = data.sections.origin.story;
             document.getElementById('origin-quote').textContent = data.sections.origin.quote;
 
-            // 3. Telemetry
+            // Stats
             const start = new Date(data.sections.telemetry.startDate);
             const days = Math.max(1, Math.floor((new Date() - start) / 86400000));
-            document.getElementById('stat-days').textContent = isNaN(days) ? '365+' : days.toLocaleString();
-            document.getElementById('stat-cities').textContent = data.sections.telemetry.citiesExplored;
-            document.getElementById('stat-coffee').textContent = data.sections.telemetry.coffeeCups;
-            document.getElementById('stat-calls').textContent = data.sections.telemetry.midnightCalls;
+            const dayText = isNaN(days) ? '365+' : days.toLocaleString();
+            ['home', 'deck'].forEach(prefix => {
+                document.getElementById(`${prefix}-stat-days`).textContent = dayText;
+                document.getElementById(`${prefix}-stat-cities`).textContent = data.sections.telemetry.citiesExplored;
+                document.getElementById(`${prefix}-stat-coffee`).textContent = data.sections.telemetry.coffeeCups;
+                document.getElementById(`${prefix}-stat-calls`).textContent = data.sections.telemetry.midnightCalls;
+            });
 
-            // 4. Magazine Rail
+            // Magazine Spotlight Rail
             document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
             document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
             document.getElementById('home-magazine-rail').innerHTML = data.posts.map(post => {
@@ -239,7 +318,7 @@
                     : `<img src="${media}" alt="${post.title}" class="w-full h-full object-cover" />`;
                 return `
                 <a href="emagazine.html" class="snap-start shrink-0 w-64 rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden block">
-                    <div class="h-36 bg-black relative">${visual}</div>
+                    <div class="h-36 bg-black">${visual}</div>
                     <div class="p-3.5">
                         <div class="flex justify-between text-[10px] font-bold uppercase text-blue-400">
                             <span>${post.category || 'DIARY'}</span>
@@ -251,33 +330,48 @@
                 </a>`;
             }).join('');
 
-            // 5. Bucket List
-            document.getElementById('bucket-list-container').innerHTML = data.sections.bucketList.map(item => `
+            // Bucket List
+            const bucketHtml = data.sections.bucketList.map(item => `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#121417]/70 border border-white/5 text-xs">
                     <span class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${item.completed ? 'bg-blue-600 text-white font-bold' : 'border border-white/25 text-transparent'}">✓</span>
                     <span class="${item.completed ? 'line-through text-white/45' : 'text-white/90'}">${item.task}</span>
                 </div>
             `).join('');
+            document.getElementById('home-bucket-container').innerHTML = bucketHtml;
+            document.getElementById('deck-bucket-container').innerHTML = bucketHtml;
 
-            // 6. Perspectives
-            document.getElementById('pov-one-name').textContent = data.sections.perspectives.partnerOneName;
-            document.getElementById('pov-one-note').textContent = data.sections.perspectives.partnerOneNote;
-            document.getElementById('pov-two-name').textContent = data.sections.perspectives.partnerTwoName;
-            document.getElementById('pov-two-note').textContent = data.sections.perspectives.partnerTwoNote;
+            // Perspectives
+            document.getElementById('home-pov1-name').textContent = data.sections.perspectives.partnerOneName;
+            document.getElementById('home-pov1-note').textContent = data.sections.perspectives.partnerOneNote;
+            document.getElementById('home-pov2-name').textContent = data.sections.perspectives.partnerTwoName;
+            document.getElementById('home-pov2-note').textContent = data.sections.perspectives.partnerTwoNote;
+            document.getElementById('deck-pov1-name').textContent = data.sections.perspectives.partnerOneName;
+            document.getElementById('deck-pov1-note').textContent = data.sections.perspectives.partnerOneNote;
+            document.getElementById('deck-pov2-name').textContent = data.sections.perspectives.partnerTwoName;
+            document.getElementById('deck-pov2-note').textContent = data.sections.perspectives.partnerTwoNote;
 
-            // 7. Timeline
-            document.getElementById('timeline-container').innerHTML = data.sections.milestones.map(m => `
-                <div class="relative">
+            // Timeline
+            document.getElementById('home-timeline-container').innerHTML = data.sections.milestones.map(m => `
+                <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${m.date}</span>
                     <h4 class="text-sm font-bold text-white">${m.title}</h4>
                     <p class="text-xs text-white/65 mt-0.5">${m.desc}</p>
                 </div>
             `).join('');
 
-            // 8. Soundtrack
-            document.getElementById('soundtrack-title').textContent = data.sections.soundtrack.albumTitle;
-            document.getElementById('soundtrack-note').textContent = data.sections.soundtrack.curatorNote;
-            document.getElementById('soundtrack-list').innerHTML = data.sections.soundtrack.tracks.map((t, i) => `
+            document.getElementById('deck-timeline-container').innerHTML = data.sections.milestones.map(m => `
+                <div class="p-3 rounded-xl bg-[#121417]/75 border border-white/5">
+                    <span class="text-[10px] font-bold uppercase text-blue-400">${m.date}</span>
+                    <div class="text-sm font-bold text-white">${m.title}</div>
+                    <div class="text-xs text-white/65">${m.desc}</div>
+                </div>
+            `).join('');
+
+            // Soundtrack
+            document.getElementById('home-soundtrack-title').textContent = data.sections.soundtrack.albumTitle;
+            document.getElementById('home-soundtrack-note').textContent = data.sections.soundtrack.curatorNote;
+            document.getElementById('deck-sound-title').textContent = data.sections.soundtrack.albumTitle;
+            const trackHtml = data.sections.soundtrack.tracks.map((t, i) => `
                 <div class="py-2.5 flex items-center justify-between text-xs">
                     <div class="truncate pr-2">
                         <span class="text-white/40 mr-2">0${i + 1}</span>
@@ -287,24 +381,33 @@
                     <span class="text-blue-400 font-mono shrink-0">${t.duration}</span>
                 </div>
             `).join('');
+            document.getElementById('home-soundtrack-list').innerHTML = trackHtml;
+            document.getElementById('deck-sound-list').innerHTML = trackHtml;
 
-            // 9. Love Notes
-            document.getElementById('lovenotes-container').innerHTML = data.sections.loveNotes.map(n => `
+            // Love Notes
+            document.getElementById('home-notes-container').innerHTML = data.sections.loveNotes.map(n => `
                 <div class="snap-start shrink-0 w-60 p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${n.tag}</span>
                     <p class="text-xs text-white/90 mt-2 leading-relaxed">"${n.message}"</p>
                 </div>
             `).join('');
 
-            // 10. Capsule
+            document.getElementById('deck-notes-stack').innerHTML = data.sections.loveNotes.map(n => `
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${n.tag}</span>
+                    <p class="text-sm text-white/90 mt-1.5 leading-relaxed">"${n.message}"</p>
+                </div>
+            `).join('');
+
+            // Capsule
             document.getElementById('capsule-heading').textContent = data.sections.capsule.heading;
             document.getElementById('capsule-message').textContent = data.sections.capsule.message;
             document.getElementById('capsule-destination').textContent = data.sections.capsule.nextDestination;
         }
 
-        window.addEventListener('DOMContentLoaded', renderHomePage);
-        window.addEventListener('storage', renderHomePage);
-        window.addEventListener('osd_data_updated', renderHomePage);
+        window.addEventListener('DOMContentLoaded', renderIndexPage);
+        window.addEventListener('storage', renderIndexPage);
+        window.addEventListener('osd_data_updated', renderIndexPage);
     </script>
 </body>
 </html>
