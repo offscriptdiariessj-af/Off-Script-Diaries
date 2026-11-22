@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-Magazine Studio — Off Script Diaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { obsidian: '#0B0C0E', charcoal: '#14161A', champagne: '#E5C39C' } } }
+        }
+    </script>
+</head>
+<body class="bg-obsidian text-white font-sans antialiased pb-24">
+
+    <header class="sticky top-0 z-40 bg-charcoal/95 backdrop-blur border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="font-bold text-champagne tracking-wider uppercase text-sm">E-Magazine Studio</span>
+                <span class="text-xs text-white/40 hidden sm:inline">| Publish Photos & Google Drive Videos</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="admin.html" class="px-3.5 py-1.5 rounded-lg border border-white/20 text-xs hover:border-champagne transition">Home Admin</a>
+                <a href="emagazine.html" target="_blank" class="px-4 py-1.5 rounded-lg bg-champagne text-obsidian font-semibold text-xs hover:bg-white transition">View E-Magazine ↗</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-5 pt-10 grid lg:grid-cols-12 gap-8">
+
+        <!-- LEFT COLUMN: CREATE / EDIT POST EDITOR -->
+        <div class="lg:col-span-5">
+            <div class="p-6 rounded-2xl bg-charcoal border border-champagne/30 sticky top-24 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 id="editor-mode-title" class="text-lg font-semibold text-champagne">New Magazine Post</h2>
+                    <button id="cancel-edit-btn" onclick="resetForm()" class="hidden text-xs text-white/50 hover:text-white">Cancel Edit</button>
+                </div>
+
+                <input type="hidden" id="post-id" />
+
+                <div>
+                    <label class="block text-xs text-white/60 mb-1">Post Title *</label>
+                    <input id="post-title" type="text" placeholder="e.g., Sunset Coffee at Marina" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-white/60 mb-1">Date *</label>
+                        <input id="post-date" type="date" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-white/60 mb-1">Category Tag</label>
+                        <input id="post-category" type="text" placeholder="TRAVEL / DATE NIGHT" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-white/60 mb-1">Media Format (Google Drive)</label>
+                    <select id="post-media-type" onchange="previewPostMedia()" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm">
+                        <option value="image">Photo (Google Drive Image Link)</option>
+                        <option value="video">Video (Google Drive Video Link)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-champagne mb-1">Paste Google Drive Link *</label>
+                    <input id="post-media-url" type="text" oninput="previewPostMedia()" placeholder="https://drive.google.com/file/d/..." class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm" />
+                    <p class="text-[11px] text-white/40 mt-1">Ensure Drive sharing is set to "Anyone with the link".</p>
+                </div>
+
+                <!-- LIVE MEDIA PREVIEW BOX -->
+                <div id="media-preview-box" class="hidden rounded-xl overflow-hidden bg-black border border-white/10 aspect-video"></div>
+
+                <div>
+                    <label class="block text-xs text-white/60 mb-1">Story / Description *</label>
+                    <textarea id="post-desc" rows="4" placeholder="Write the memory behind this moment..." class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm"></textarea>
+                </div>
+
+                <button onclick="savePost()" id="save-post-btn" class="w-full py-3 rounded-xl bg-champagne text-obsidian font-semibold text-sm hover:bg-white transition">
+                    Publish To E-Magazine
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: EXISTING POSTS LIST (EDIT & DELETE) -->
+        <div class="lg:col-span-7 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-white">Published Entries (<span id="post-count">0</span>)</h2>
+                <button onclick="resetForm()" class="px-3.5 py-1.5 rounded-lg bg-white/10 text-xs hover:bg-white/20">+ New Post</button>
+            </div>
+
+            <div id="admin-posts-list" class="space-y-4"></div>
+        </div>
+
+    </main>
+
+    <script src="js/store.js"></script>
+    <script>
+        function previewPostMedia() {
+            const url = document.getElementById('post-media-url').value.trim();
+            const type = document.getElementById('post-media-type').value;
+            const box = document.getElementById('media-preview-box');
+
+            if (!url) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+
+            const parsed = parseDriveMedia(url, type);
+            box.classList.remove('hidden');
+            if (type === 'video') {
+                box.innerHTML = `<iframe src="${parsed}" class="w-full h-full border-0" allow="autoplay; fullscreen"></iframe>`;
+            } else {
+                box.innerHTML = `<img src="${parsed}" class="w-full h-full object-cover" />`;
+            }
+        }
+
+        function renderPostsList() {
+            const data = getOSDData();
+            document.getElementById('post-count').textContent = data.posts.length;
+            const list = document.getElementById('admin-posts-list');
+
+            if (!data.posts.length) {
+                list.innerHTML = `<div class="p-10 rounded-2xl bg-charcoal border border-white/10 text-center text-white/50 text-sm">No posts yet. Create your first E-Magazine memory on the left!</div>`;
+                return;
+            }
+
+            list.innerHTML = data.posts.map(post => {
+                const parsed = parseDriveMedia(post.mediaUrl, post.mediaType);
+                const thumb = post.mediaType === 'video'
+                    ? `<div class="w-28 h-20 rounded-xl bg-black border border-white/10 flex items-center justify-center text-xs text-champagne shrink-0">▶ VIDEO</div>`
+                    : `<img src="${parsed}" class="w-28 h-20 rounded-xl object-cover bg-black shrink-0" />`;
+
+                return `
+                <div class="p-4 rounded-2xl bg-charcoal border border-white/10 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div class="flex gap-4 items-center">
+                        ${thumb}
+                        <div>
+                            <div class="flex items-center gap-2 text-[11px] text-champagne uppercase tracking-wider">
+                                <span>${post.category || 'JOURNAL'}</span>
+                                <span>•</span>
+                                <span>${post.date}</span>
+                            </div>
+                            <h3 class="font-semibold text-white text-base mt-0.5">${post.title}</h3>
+                            <p class="text-xs text-white/60 line-clamp-2 mt-1">${post.description}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 shrink-0 self-end sm:self-center">
+                        <button onclick="editPost('${post.id}')" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-champagne hover:text-obsidian text-xs font-medium transition">Edit</button>
+                        <button onclick="deletePost('${post.id}')" class="px-3.5 py-1.5 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500 hover:text-white text-xs font-medium transition">Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function savePost() {
+            const id = document.getElementById('post-id').value;
+            const title = document.getElementById('post-title').value.trim();
+            const date = document.getElementById('post-date').value;
+            const category = document.getElementById('post-category').value.trim() || 'DIARY';
+            const mediaType = document.getElementById('post-media-type').value;
+            const mediaUrl = document.getElementById('post-media-url').value.trim();
+            const description = document.getElementById('post-desc').value.trim();
+
+            if (!title || !date || !mediaUrl || !description) {
+                alert("Please fill in Title, Date, Google Drive Link, and Description.");
+                return;
+            }
+
+            const data = getOSDData();
+
+            if (id) {
+                // Edit Existing Post
+                const idx = data.posts.findIndex(p => p.id === id);
+                if (idx !== -1) {
+                    data.posts[idx] = { id, title, date, category, mediaType, mediaUrl, description };
+                }
+            } else {
+                // Create New Post at top of magazine
+                data.posts.unshift({
+                    id: 'post_' + Date.now(),
+                    title,
+                    date,
+                    category,
+                    mediaType,
+                    mediaUrl,
+                    description
+                });
+            }
+
+            saveOSDData(data);
+            resetForm();
+            renderPostsList();
+        }
+
+        function editPost(id) {
+            const data = getOSDData();
+            const post = data.posts.find(p => p.id === id);
+            if (!post) return;
+
+            document.getElementById('post-id').value = post.id;
+            document.getElementById('post-title').value = post.title;
+            document.getElementById('post-date').value = post.date;
+            document.getElementById('post-category').value = post.category || '';
+            document.getElementById('post-media-type').value = post.mediaType || 'image';
+            document.getElementById('post-media-url').value = post.mediaUrl;
+            document.getElementById('post-desc').value = post.description;
+
+            document.getElementById('editor-mode-title').textContent = "Edit Magazine Post";
+            document.getElementById('save-post-btn').textContent = "Update Post";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            previewPostMedia();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deletePost(id) {
+            if (!confirm("Are you sure you want to permanently delete this E-Magazine post?")) return;
+            const data = getOSDData();
+            data.posts = data.posts.filter(p => p.id !== id);
+            saveOSDData(data);
+            if (document.getElementById('post-id').value === id) resetForm();
+            renderPostsList();
+        }
+
+        function resetForm() {
+            document.getElementById('post-id').value = '';
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('post-category').value = '';
+            document.getElementById('post-media-type').value = 'image';
+            document.getElementById('post-media-url').value = '';
+            document.getElementById('post-desc').value = '';
+
+            document.getElementById('editor-mode-title').textContent = "New Magazine Post";
+            document.getElementById('save-post-btn').textContent = "Publish To E-Magazine";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            previewPostMedia();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            resetForm();
+            renderPostsList();
+        });
+    </script>
+</body>
+</html>
