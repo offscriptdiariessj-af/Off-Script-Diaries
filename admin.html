@@ -3,45 +3,80 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Admin & Settings — Off Script Diaries</title>
+    <title>Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-28">
+<body class="bg-[#121417] text-white font-sans antialiased pb-24">
 
     <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
             <div>
-                <h1 class="text-sm font-bold text-white">Site Admin</h1>
-                <p class="text-[10px] text-blue-400">Home, Circular Logo & Settings</p>
+                <h1 class="text-sm font-bold text-white">Admin Console</h1>
+                <p class="text-[10px] text-blue-400">Home, Logo & Passwords</p>
             </div>
-            <button onclick="saveAllChanges()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold active:scale-95">
-                Save Changes
-            </button>
+            <div class="flex items-center gap-2">
+                <a href="emagazineadmin.html" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
+                <button onclick="saveAllChanges()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
+            </div>
         </div>
     </header>
 
     <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
-        Saved to index.html!
+        Saved!
     </div>
 
     <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
-        <!-- SETTINGS: CHANGE PASSWORD -->
+        <!-- PASSWORD SETTINGS + INDEX LOCK ON/OFF TOGGLE -->
         <section class="p-4 rounded-2xl bg-[#1E2126] border border-blue-500/30 space-y-3">
             <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold text-blue-400">Settings • Change Password</h2>
-                <span class="text-[10px] text-white/45">Default: 123</span>
+                <h2 class="text-sm font-bold text-blue-400">Password Settings</h2>
+                <button type="button" onclick="lockRoleSession('admin')" class="text-[11px] text-white/60 hover:text-white">Lock Admin</button>
             </div>
-            <p class="text-[11px] text-white/60">Company master key stays active everywhere and cannot be changed.</p>
-            <input id="sec-current-key" type="password" inputmode="numeric" placeholder="Current password or company key" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <input id="sec-new-pass" type="password" placeholder="New password" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <button type="button" onclick="handleChangePassword()" class="w-full h-10 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition">
-                Update Password
+
+            <!-- Index Password Toggle -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-[#121417] border border-white/10">
+                <div>
+                    <div class="text-xs font-semibold text-white">Index Password Required</div>
+                    <div id="index-lock-label" class="text-[10px] text-blue-400">ON — Password asked on index</div>
+                </div>
+                <button
+                    id="toggle-index-lock-btn"
+                    type="button"
+                    role="switch"
+                    aria-checked="true"
+                    onclick="handleToggleIndexLock()"
+                    class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
+                >
+                    <span id="toggle-index-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                </button>
+            </div>
+
+            <p class="text-[11px] text-white/60">Index and Admin use separate passwords (default: 123). Company code is permanent.</p>
+
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
+                <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="block text-[11px] text-blue-300 mb-1">New Index Password</label>
+                    <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+                <div>
+                    <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
+                    <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+            </div>
+
+            <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                Update Passwords
             </button>
-            <p id="sec-status" class="text-xs hidden"></p>
+            <p id="auth-feedback" class="text-xs hidden"></p>
         </section>
 
-        <!-- BRAND & CIRCULAR GOOGLE DRIVE LOGO -->
+        <!-- BRAND & CIRCULAR LOGO -->
         <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
             <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
             <div class="flex items-center gap-4">
@@ -132,31 +167,62 @@
 
     </main>
 
-    <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
-        <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <a href="index.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
-            <a href="emagazine.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>📖</span><span>Magazine</span></a>
-            <a href="emagazineadmin.html" class="text-white/65 flex flex-col items-center gap-0.5"><span>＋</span><span>Post</span></a>
-            <a href="admin.html" class="text-blue-400 flex flex-col items-center gap-0.5"><span>⚙</span><span>Admin</span></a>
-        </div>
-    </nav>
-
     <script src="js/store.js"></script>
     <script>
-        enforcePageLock("Site Admin");
+        enforceRoleLock('admin', 'Admin Console');
         let currentData = getOSDData();
 
-        function handleChangePassword() {
-            const cur = document.getElementById('sec-current-key').value;
-            const nxt = document.getElementById('sec-new-pass').value;
-            const res = updateUserPassword(nxt, cur);
-            const status = document.getElementById('sec-status');
-            status.classList.remove('hidden');
-            status.className = `text-xs font-medium ${res.ok ? 'text-emerald-400' : 'text-rose-400'}`;
-            status.textContent = res.msg;
-            if (res.ok) {
-                document.getElementById('sec-current-key').value = '';
-                document.getElementById('sec-new-pass').value = '';
+        function renderIndexLockToggle() {
+            const { indexLockEnabled } = getAuthConfig();
+            const btn = document.getElementById('toggle-index-lock-btn');
+            const knob = document.getElementById('toggle-index-lock-knob');
+            const label = document.getElementById('index-lock-label');
+
+            btn.setAttribute('aria-checked', String(indexLockEnabled));
+            btn.className = indexLockEnabled
+                ? 'relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0'
+                : 'relative w-12 h-7 rounded-full bg-white/15 transition-colors p-0.5 shrink-0';
+            knob.className = indexLockEnabled
+                ? 'block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform'
+                : 'block w-6 h-6 rounded-full bg-white/70 shadow transform translate-x-0 transition-transform';
+            label.textContent = indexLockEnabled
+                ? 'ON — Password asked on index'
+                : 'OFF — Open index without password';
+            label.className = indexLockEnabled ? 'text-[10px] text-blue-400' : 'text-[10px] text-white/50';
+        }
+
+        function handleToggleIndexLock() {
+            const { indexLockEnabled } = getAuthConfig();
+            setIndexLockEnabled(!indexLockEnabled);
+            renderIndexLockToggle();
+        }
+
+        function applyPasswordChanges() {
+            const verifier = document.getElementById('auth-current-key').value;
+            const newIdx = document.getElementById('auth-new-index').value.trim();
+            const newAdm = document.getElementById('auth-new-admin').value.trim();
+            const fb = document.getElementById('auth-feedback');
+            fb.classList.remove('hidden');
+
+            if (!newIdx && !newAdm) {
+                fb.className = 'text-xs text-rose-400';
+                fb.textContent = 'Enter a new Index password, a new Admin password, or both.';
+                return;
+            }
+
+            let lastResult = null;
+            if (newIdx) lastResult = updateRolePassword('index', newIdx, verifier);
+            if (newAdm && (!lastResult || lastResult.ok)) {
+                lastResult = updateRolePassword('admin', newAdm, verifier);
+            }
+
+            fb.className = `text-xs font-medium ${lastResult.ok ? 'text-emerald-400' : 'text-rose-400'}`;
+            fb.textContent = lastResult.msg;
+
+            if (lastResult.ok) {
+                document.getElementById('auth-current-key').value = '';
+                document.getElementById('auth-new-index').value = '';
+                document.getElementById('auth-new-admin').value = '';
             }
         }
 
@@ -165,6 +231,7 @@
         }
 
         function loadAdminForm() {
+            renderIndexLockToggle();
             currentData = getOSDData();
             const b = currentData.brand;
             const s = currentData.sections;
@@ -321,7 +388,7 @@
             saveOSDData(fresh);
             const toast = document.getElementById('toast');
             toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2200);
+            setTimeout(() => toast.classList.add('hidden'), 2000);
         }
 
         window.addEventListener('DOMContentLoaded', loadAdminForm);
