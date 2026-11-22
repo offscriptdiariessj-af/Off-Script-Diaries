@@ -5,9 +5,10 @@
 const OSD_STORAGE_KEY = 'osd_mobile_db_v3';
 const OSD_AUTH_KEY = 'osd_dual_auth_v3';
 const OSD_SESSION_INDEX_KEY = 'osd_session_index_v3';
+const OSD_SESSION_MAG_KEY = 'osd_session_mag_v3';
 const OSD_SESSION_ADMIN_KEY = 'osd_session_admin_v3';
 
-const COMPANY_MASTER_KEY = '122655'; // Permanent master key — unlocks Index & Admin
+const COMPANY_MASTER_KEY = '122655'; // Permanent master key — unlocks Index, Magazine & Admin
 const DEFAULT_PASSWORD = '123';
 
 const DEFAULT_DATA = {
@@ -104,6 +105,40 @@ const DEFAULT_DATA = {
     ]
 };
 
+function applyAntiCopyProtection() {
+    if (document.getElementById('osd-anticopy-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'osd-anticopy-style';
+    style.textContent = `
+        * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+        input, textarea, [contenteditable="true"] {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    ['copy', 'cut', 'selectstart', 'dragstart'].forEach(evtName => {
+        document.addEventListener(evtName, (e) => {
+            const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+            if (evtName !== 'dragstart' && (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable)) {
+                return;
+            }
+            e.preventDefault();
+        }, { capture: true });
+    });
+}
+
 function getAuthConfig() {
     try {
         const raw = localStorage.getItem(OSD_AUTH_KEY);
@@ -111,7 +146,8 @@ function getAuthConfig() {
             const init = {
                 indexPassword: DEFAULT_PASSWORD,
                 adminPassword: DEFAULT_PASSWORD,
-                indexLockEnabled: true
+                indexLockEnabled: true,
+                magazineLockEnabled: true
             };
             localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(init));
             return init;
@@ -120,22 +156,28 @@ function getAuthConfig() {
         return {
             indexPassword: parsed.indexPassword || DEFAULT_PASSWORD,
             adminPassword: parsed.adminPassword || DEFAULT_PASSWORD,
-            indexLockEnabled: typeof parsed.indexLockEnabled === 'boolean' ? parsed.indexLockEnabled : true
+            indexLockEnabled: typeof parsed.indexLockEnabled === 'boolean' ? parsed.indexLockEnabled : true,
+            magazineLockEnabled: typeof parsed.magazineLockEnabled === 'boolean' ? parsed.magazineLockEnabled : true
         };
     } catch {
         return {
             indexPassword: DEFAULT_PASSWORD,
             adminPassword: DEFAULT_PASSWORD,
-            indexLockEnabled: true
+            indexLockEnabled: true,
+            magazineLockEnabled: true
         };
     }
 }
 
-function setIndexLockEnabled(enabled) {
+function setRoleLockEnabled(role, enabled) {
     const cfg = getAuthConfig();
-    cfg.indexLockEnabled = Boolean(enabled);
+    if (role === 'magazine') {
+        cfg.magazineLockEnabled = Boolean(enabled);
+    } else {
+        cfg.indexLockEnabled = Boolean(enabled);
+    }
     localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(cfg));
-    return cfg.indexLockEnabled;
+    return cfg;
 }
 
 function verifyKeyForRole(inputKey, role = 'index') {
@@ -146,6 +188,9 @@ function verifyKeyForRole(inputKey, role = 'index') {
     const cfg = getAuthConfig();
     if (role === 'admin') {
         return clean === cfg.adminPassword;
+    }
+    if (role === 'magazine') {
+        return clean === cfg.indexPassword || clean === cfg.adminPassword;
     }
     return clean === cfg.indexPassword;
 }
@@ -173,14 +218,14 @@ function updateRolePassword(role, newPass, verifierKey) {
     localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(cfg));
     return {
         ok: true,
-        msg: role === 'admin'
-            ? "Admin password updated. Company code remains permanent."
-            : "Index password updated. Company code remains permanent."
+        msg: "Password updated. Company code remains permanent."
     };
 }
 
 function getSessionKeyName(role) {
-    return role === 'admin' ? OSD_SESSION_ADMIN_KEY : OSD_SESSION_INDEX_KEY;
+    if (role === 'admin') return OSD_SESSION_ADMIN_KEY;
+    if (role === 'magazine') return OSD_SESSION_MAG_KEY;
+    return OSD_SESSION_INDEX_KEY;
 }
 
 function isRoleUnlocked(role) {
@@ -198,6 +243,10 @@ function unlockRoleSession(key, role) {
 function lockRoleSession(role) {
     sessionStorage.removeItem(getSessionKeyName(role));
     location.reload();
+}
+
+function openAdminOnly() {
+    window.location.href = 'admin.html';
 }
 
 const EYE_OPEN_SVG = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
@@ -233,24 +282,32 @@ function attachPasswordEyeToggles(root = document) {
 }
 
 function enforceRoleLock(role = 'index', titleText = "Protected Access") {
+    applyAntiCopyProtection();
     const cfg = getAuthConfig();
-    // If index password lock is OFF in admin, no password is asked for index/magazine viewer
+
     if (role === 'index' && !cfg.indexLockEnabled) return;
+    if (role === 'magazine' && !cfg.magazineLockEnabled) return;
     if (isRoleUnlocked(role)) return;
 
     document.documentElement.style.overflow = 'hidden';
+    const existing = document.getElementById('osd-role-gate');
+    if (existing) existing.remove();
+
     const gate = document.createElement('div');
     gate.id = 'osd-role-gate';
     gate.className = 'fixed inset-0 z-[9999] bg-[#121417] text-white flex items-center justify-center p-5';
+
+    const badgeLabel =
+        role === 'admin' ? 'Admin Lock' :
+        role === 'magazine' ? 'Magazine Lock' : 'Index Lock';
+
     gate.innerHTML = `
         <div class="w-full max-w-sm rounded-3xl bg-[#1E2126] border border-white/10 p-6 shadow-2xl">
             <span class="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 mb-3">
-                ${role === 'admin' ? 'Admin Lock' : 'Viewer Lock'}
+                ${badgeLabel}
             </span>
             <h1 class="text-xl font-bold text-white">${titleText}</h1>
-            <p class="text-xs text-white/60 mt-1 mb-5">
-                ${role === 'admin' ? 'Enter Admin password to manage content.' : 'Enter Index password to view.'}
-            </p>
+            <p class="text-xs text-white/60 mt-1 mb-5">Enter password to continue.</p>
             <form id="osd-role-form" class="space-y-3">
                 <input
                     id="osd-role-input"
@@ -263,7 +320,7 @@ function enforceRoleLock(role = 'index', titleText = "Protected Access") {
                 />
                 <p id="osd-role-err" class="hidden text-xs text-rose-400">Incorrect password. Please try again.</p>
                 <button type="submit" class="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition">
-                    Continue
+                    Unlock
                 </button>
             </form>
         </div>
@@ -319,4 +376,7 @@ function saveOSDData(newData) {
     window.dispatchEvent(new Event('osd_data_updated'));
 }
 
-window.addEventListener('DOMContentLoaded', () => attachPasswordEyeToggles(document));
+window.addEventListener('DOMContentLoaded', () => {
+    applyAntiCopyProtection();
+    attachPasswordEyeToggles(document);
+});
