@@ -1,13 +1,14 @@
 /**
- * Off Script Diaries — Mobile App State & Auth Engine
+ * Off Script Diaries — Core State, Media Parser & Dual-Role Auth Engine
  */
 
-const OSD_STORAGE_KEY = 'osd_mobile_db_v2';
-const OSD_AUTH_KEY = 'osd_auth_config_v2';
-const OSD_SESSION_KEY = 'osd_session_unlocked_v2';
+const OSD_STORAGE_KEY = 'osd_mobile_db_v3';
+const OSD_AUTH_KEY = 'osd_dual_auth_v3';
+const OSD_SESSION_INDEX_KEY = 'osd_session_index_v3';
+const OSD_SESSION_ADMIN_KEY = 'osd_session_admin_v3';
 
-const COMPANY_MASTER_KEY = '122655'; // Immutable master key — unlocks everything
-const DEFAULT_USER_PASSWORD = '123';
+const COMPANY_MASTER_KEY = '122655'; // Permanent master key — unlocks Index & Admin
+const DEFAULT_PASSWORD = '123';
 
 const DEFAULT_DATA = {
     brand: {
@@ -19,7 +20,6 @@ const DEFAULT_DATA = {
         location: "Chennai • Bengaluru"
     },
     sections: {
-        // 1. Mobile App Hero Card
         hero: {
             eyebrow: "ISSUE 01 • UNSCRIPTED",
             headline: "No script. Just us.",
@@ -27,7 +27,6 @@ const DEFAULT_DATA = {
             ctaText: "Open E-Magazine",
             bgImage: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&q=80"
         },
-        // 2. Origin Story Spotlight
         origin: {
             title: "How It Started",
             date: "Oct 14, 2023",
@@ -35,40 +34,34 @@ const DEFAULT_DATA = {
             quote: "“Best chapters are always unscripted.”",
             image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80"
         },
-        // 3. Quick Stats Strip (2x2 Thumb Grid)
         telemetry: {
             startDate: "2023-10-14",
             citiesExplored: "14",
             coffeeCups: "642",
             midnightCalls: "318"
         },
-        // 4. E-Magazine Highlight Rail
         magazineSpotlight: {
             heading: "Our E-Magazine",
             description: "Photos & Google Drive videos with stories and dates."
         },
-        // 5. Bucket List Chips / Cards
         bucketList: [
             { id: 1, task: "Northern lights in Tromsø", completed: false },
             { id: 2, task: "Monsoon drive in Western Ghats", completed: true },
             { id: 3, task: "3-course Italian dinner at home", completed: true },
             { id: 4, task: "10th anniversary letters", completed: false }
         ],
-        // 6. His & Her Notes (Stacked Mobile Cards)
         perspectives: {
             partnerOneName: "His Note",
             partnerOneNote: "Steals half my fries every single time and still makes normal days feel special.",
             partnerTwoName: "Her Note",
             partnerTwoNote: "Has a song for every mood and never rushes me when I'm late."
         },
-        // 7. Milestones Horizontal Snap Strip
         milestones: [
             { date: "OCT 2023", title: "First Coffee", desc: "10 mins became 3 hours." },
             { date: "FEB 2024", title: "Coast Sunrise", desc: "Missed bus, caught dawn." },
             { date: "DEC 2024", title: "New Keys", desc: "First shared space." },
             { date: "NOW", title: "Volume II", desc: "Still improvising daily." }
         ],
-        // 8. Soundtrack Mini-Player Card
         soundtrack: {
             albumTitle: "Late Night Loop",
             curatorNote: "On repeat during night drives.",
@@ -78,13 +71,11 @@ const DEFAULT_DATA = {
                 { title: "Kadavule Vidai", artist: "Anirudh", duration: "04:08" }
             ]
         },
-        // 9. Love Vault Pills
         loveNotes: [
             { tag: "RAINY DAY", message: "You never have to carry heavy days alone." },
             { tag: "PING", message: "Still my favorite notification." },
             { tag: "3 AM", message: "I'd take that delayed train again every time." }
         ],
-        // 10. Next Stop & Footer
         capsule: {
             heading: "Next Stop",
             message: "Every ticket, photo, and laugh goes right here.",
@@ -117,105 +108,128 @@ function getAuthConfig() {
     try {
         const raw = localStorage.getItem(OSD_AUTH_KEY);
         if (!raw) {
-            const init = { password: DEFAULT_USER_PASSWORD };
+            const init = { indexPassword: DEFAULT_PASSWORD, adminPassword: DEFAULT_PASSWORD };
             localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(init));
             return init;
         }
         const parsed = JSON.parse(raw);
-        if (!parsed.password) parsed.password = DEFAULT_USER_PASSWORD;
-        return parsed;
+        return {
+            indexPassword: parsed.indexPassword || DEFAULT_PASSWORD,
+            adminPassword: parsed.adminPassword || DEFAULT_PASSWORD
+        };
     } catch {
-        return { password: DEFAULT_USER_PASSWORD };
+        return { indexPassword: DEFAULT_PASSWORD, adminPassword: DEFAULT_PASSWORD };
     }
 }
 
-function verifyAccessKey(inputKey) {
+function verifyKeyForRole(inputKey, role = 'index') {
     const clean = (inputKey || '').trim();
     if (!clean) return false;
-    // Company key 122655 ALWAYS works everywhere, regardless of changed password
+    // Permanent company master key works for BOTH index and admin everywhere
     if (clean === COMPANY_MASTER_KEY) return true;
+
     const cfg = getAuthConfig();
-    return clean === cfg.password;
+    if (role === 'admin') {
+        return clean === cfg.adminPassword;
+    }
+    return clean === cfg.indexPassword;
 }
 
-function updateUserPassword(newPassword, currentOrMasterKey) {
-    const cleanNew = (newPassword || '').trim();
+function updateRolePassword(role, newPass, verifierKey) {
+    const cleanNew = (newPass || '').trim();
     if (!cleanNew) {
-        return { ok: false, msg: "New password cannot be empty." };
+        return { ok: false, msg: "New password cannot be blank." };
     }
-    if (!verifyAccessKey(currentOrMasterKey)) {
-        return { ok: false, msg: "Current password or company key (122655) is incorrect." };
+    // Allow if verifier matches the target role password, current admin password, or permanent key 122655
+    const valid =
+        verifyKeyForRole(verifierKey, role) ||
+        verifyKeyForRole(verifierKey, 'admin') ||
+        (verifierKey || '').trim() === COMPANY_MASTER_KEY;
+
+    if (!valid) {
+        return { ok: false, msg: "Current password or permanent company code is incorrect." };
     }
-    // Company master key 122655 is never overwritten; only user password updates
-    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({ password: cleanNew }));
-    return { ok: true, msg: "Password updated! Company key 122655 remains active everywhere." };
+
+    const cfg = getAuthConfig();
+    if (role === 'admin') {
+        cfg.adminPassword = cleanNew;
+    } else {
+        cfg.indexPassword = cleanNew;
+    }
+    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(cfg));
+    return {
+        ok: true,
+        msg: role === 'admin'
+            ? "Admin password updated. Company code remains permanent."
+            : "Index password updated. Company code remains permanent."
+    };
 }
 
-function isSessionUnlocked() {
-    return sessionStorage.getItem(OSD_SESSION_KEY) === 'true';
+function getSessionKeyName(role) {
+    return role === 'admin' ? OSD_SESSION_ADMIN_KEY : OSD_SESSION_INDEX_KEY;
 }
 
-function unlockSession(key) {
-    if (verifyAccessKey(key)) {
-        sessionStorage.setItem(OSD_SESSION_KEY, 'true');
+function isRoleUnlocked(role) {
+    return sessionStorage.getItem(getSessionKeyName(role)) === 'true';
+}
+
+function unlockRoleSession(key, role) {
+    if (verifyKeyForRole(key, role)) {
+        sessionStorage.setItem(getSessionKeyName(role), 'true');
         return true;
     }
     return false;
 }
 
-function lockSession() {
-    sessionStorage.removeItem(OSD_SESSION_KEY);
+function lockRoleSession(role) {
+    sessionStorage.removeItem(getSessionKeyName(role));
     location.reload();
 }
 
-/**
- * Renders a native-feeling mobile lock gate over any page until unlocked
- * with either the current password (default: 123) or company key (122655).
- */
-function enforcePageLock(pageLabel = "Off Script Diaries") {
-    if (isSessionUnlocked()) return;
+function enforceRoleLock(role = 'index', titleText = "Protected Access") {
+    if (isRoleUnlocked(role)) return;
 
     document.documentElement.style.overflow = 'hidden';
     const gate = document.createElement('div');
-    gate.id = 'osd-lock-gate';
+    gate.id = 'osd-role-gate';
     gate.className = 'fixed inset-0 z-[9999] bg-[#121417] text-white flex items-center justify-center p-5';
     gate.innerHTML = `
         <div class="w-full max-w-sm rounded-3xl bg-[#1E2126] border border-white/10 p-6 shadow-2xl">
-            <div class="flex items-center justify-between mb-4">
-                <span class="text-[11px] uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 font-semibold">Protected Access</span>
-                <span class="text-[11px] text-white/40">v2.0</span>
-            </div>
-            <h1 class="text-xl font-bold text-white">${pageLabel}</h1>
-            <p class="text-xs text-white/60 mt-1 mb-5">Enter site password to continue.</p>
-            <form id="osd-gate-form" class="space-y-3">
+            <span class="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 mb-3">
+                ${role === 'admin' ? 'Admin Lock' : 'Viewer Lock'}
+            </span>
+            <h1 class="text-xl font-bold text-white">${titleText}</h1>
+            <p class="text-xs text-white/60 mt-1 mb-5">
+                ${role === 'admin' ? 'Enter Admin password to manage content.' : 'Enter Index password to view.'}
+            </p>
+            <form id="osd-role-form" class="space-y-3">
                 <input
-                    id="osd-gate-input"
+                    id="osd-role-input"
                     type="password"
-                    inputmode="numeric"
                     autocomplete="off"
                     placeholder="Enter password"
                     class="w-full h-12 px-4 rounded-xl bg-[#121417] border border-white/15 text-white text-sm focus:outline-none focus:border-blue-500"
                     required
                 />
-                <p id="osd-gate-error" class="hidden text-xs text-rose-400">Invalid password. Try again.</p>
-                <button type="submit" class="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold text-sm transition">
-                    Unlock
+                <p id="osd-role-err" class="hidden text-xs text-rose-400">Incorrect password. Please try again.</p>
+                <button type="submit" class="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition">
+                    Continue
                 </button>
             </form>
         </div>
     `;
     document.body.appendChild(gate);
 
-    setTimeout(() => document.getElementById('osd-gate-input')?.focus(), 50);
+    setTimeout(() => document.getElementById('osd-role-input')?.focus(), 50);
 
-    document.getElementById('osd-gate-form').addEventListener('submit', (e) => {
+    document.getElementById('osd-role-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        const val = document.getElementById('osd-gate-input').value;
-        if (unlockSession(val)) {
+        const secret = document.getElementById('osd-role-input').value;
+        if (unlockRoleSession(secret, role)) {
             document.documentElement.style.overflow = '';
             gate.remove();
         } else {
-            document.getElementById('osd-gate-error').classList.remove('hidden');
+            document.getElementById('osd-role-err').classList.remove('hidden');
         }
     });
 }
@@ -251,10 +265,5 @@ function getOSDData() {
 
 function saveOSDData(newData) {
     localStorage.setItem(OSD_STORAGE_KEY, JSON.stringify(newData));
-    window.dispatchEvent(new Event('osd_data_updated'));
-}
-
-function resetOSDData() {
-    localStorage.setItem(OSD_STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
     window.dispatchEvent(new Event('osd_data_updated'));
 }
