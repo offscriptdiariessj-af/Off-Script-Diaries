@@ -108,24 +108,39 @@ function getAuthConfig() {
     try {
         const raw = localStorage.getItem(OSD_AUTH_KEY);
         if (!raw) {
-            const init = { indexPassword: DEFAULT_PASSWORD, adminPassword: DEFAULT_PASSWORD };
+            const init = {
+                indexPassword: DEFAULT_PASSWORD,
+                adminPassword: DEFAULT_PASSWORD,
+                indexLockEnabled: true
+            };
             localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(init));
             return init;
         }
         const parsed = JSON.parse(raw);
         return {
             indexPassword: parsed.indexPassword || DEFAULT_PASSWORD,
-            adminPassword: parsed.adminPassword || DEFAULT_PASSWORD
+            adminPassword: parsed.adminPassword || DEFAULT_PASSWORD,
+            indexLockEnabled: typeof parsed.indexLockEnabled === 'boolean' ? parsed.indexLockEnabled : true
         };
     } catch {
-        return { indexPassword: DEFAULT_PASSWORD, adminPassword: DEFAULT_PASSWORD };
+        return {
+            indexPassword: DEFAULT_PASSWORD,
+            adminPassword: DEFAULT_PASSWORD,
+            indexLockEnabled: true
+        };
     }
+}
+
+function setIndexLockEnabled(enabled) {
+    const cfg = getAuthConfig();
+    cfg.indexLockEnabled = Boolean(enabled);
+    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(cfg));
+    return cfg.indexLockEnabled;
 }
 
 function verifyKeyForRole(inputKey, role = 'index') {
     const clean = (inputKey || '').trim();
     if (!clean) return false;
-    // Permanent company master key works for BOTH index and admin everywhere
     if (clean === COMPANY_MASTER_KEY) return true;
 
     const cfg = getAuthConfig();
@@ -140,7 +155,6 @@ function updateRolePassword(role, newPass, verifierKey) {
     if (!cleanNew) {
         return { ok: false, msg: "New password cannot be blank." };
     }
-    // Allow if verifier matches the target role password, current admin password, or permanent key 122655
     const valid =
         verifyKeyForRole(verifierKey, role) ||
         verifyKeyForRole(verifierKey, 'admin') ||
@@ -186,7 +200,42 @@ function lockRoleSession(role) {
     location.reload();
 }
 
+const EYE_OPEN_SVG = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_CLOSED_SVG = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a18.5 18.5 0 0 1-2.2 3.3"/><path d="M6.6 6.6A18.3 18.3 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="m3 3 18 18"/></svg>`;
+
+function attachPasswordEyeToggles(root = document) {
+    root.querySelectorAll('input[type="password"][data-eye-toggle]').forEach(input => {
+        if (input.dataset.eyeMounted === 'true') return;
+        input.dataset.eyeMounted = 'true';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative flex items-center w-full';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        input.classList.add('pr-10');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Show or hide password');
+        btn.className = 'absolute right-2.5 text-white/50 hover:text-blue-400 transition p-1 flex items-center justify-center';
+        btn.innerHTML = EYE_CLOSED_SVG;
+
+        btn.addEventListener('click', () => {
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden ? EYE_OPEN_SVG : EYE_CLOSED_SVG;
+            btn.classList.toggle('text-blue-400', isHidden);
+        });
+
+        wrapper.appendChild(btn);
+    });
+}
+
 function enforceRoleLock(role = 'index', titleText = "Protected Access") {
+    const cfg = getAuthConfig();
+    // If index password lock is OFF in admin, no password is asked for index/magazine viewer
+    if (role === 'index' && !cfg.indexLockEnabled) return;
     if (isRoleUnlocked(role)) return;
 
     document.documentElement.style.overflow = 'hidden';
@@ -206,6 +255,7 @@ function enforceRoleLock(role = 'index', titleText = "Protected Access") {
                 <input
                     id="osd-role-input"
                     type="password"
+                    data-eye-toggle="true"
                     autocomplete="off"
                     placeholder="Enter password"
                     class="w-full h-12 px-4 rounded-xl bg-[#121417] border border-white/15 text-white text-sm focus:outline-none focus:border-blue-500"
@@ -219,6 +269,7 @@ function enforceRoleLock(role = 'index', titleText = "Protected Access") {
         </div>
     `;
     document.body.appendChild(gate);
+    attachPasswordEyeToggles(gate);
 
     setTimeout(() => document.getElementById('osd-role-input')?.focus(), 50);
 
@@ -267,3 +318,5 @@ function saveOSDData(newData) {
     localStorage.setItem(OSD_STORAGE_KEY, JSON.stringify(newData));
     window.dispatchEvent(new Event('osd_data_updated'));
 }
+
+window.addEventListener('DOMContentLoaded', () => attachPasswordEyeToggles(document));
