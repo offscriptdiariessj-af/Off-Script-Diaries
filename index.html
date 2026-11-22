@@ -25,7 +25,7 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <span id="mode-pill" class="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-bold uppercase">Home</span>
-                <button onclick="lockRoleSession('index')" title="Lock Viewer" class="p-2 rounded-full bg-[#1E2126] border border-white/10 text-xs text-white/75 active:scale-95">🔒</button>
+                <button type="button" onclick="openAdminOnly()" title="Open Admin" class="p-2 rounded-full bg-[#1E2126] border border-white/10 text-xs text-white/75 active:scale-95">🔒</button>
             </div>
         </div>
     </header>
@@ -226,19 +226,19 @@
 
     </main>
 
-    <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR (NO POST, NO ADMIN, NO SCROLLING) -->
+    <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR -->
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <button id="tab-home" onclick="switchIndexMode('home')" class="text-blue-400 flex flex-col items-center gap-0.5">
+            <button id="tab-home" type="button" onclick="switchIndexMode('home')" class="text-blue-400 flex flex-col items-center gap-0.5">
                 <span>⌂</span><span>Home</span>
             </button>
             <a href="emagazine.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>📖</span><span>Magazine</span>
             </a>
-            <button id="tab-stats" onclick="switchIndexMode('stats')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+            <button id="tab-stats" type="button" onclick="switchIndexMode('stats')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>◈</span><span>Stats</span>
             </button>
-            <button id="tab-vault" onclick="switchIndexMode('vault')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
+            <button id="tab-vault" type="button" onclick="switchIndexMode('vault')" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5">
                 <span>✦</span><span>Vault</span>
             </button>
         </div>
@@ -282,7 +282,6 @@
             document.getElementById('footer-brand').textContent = data.brand.siteName;
             document.getElementById('footer-year').textContent = data.brand.establishedYear;
 
-            // Hero
             document.getElementById('hero-bg').src = parseDriveMedia(data.sections.hero.bgImage, 'image');
             document.getElementById('hero-eyebrow').textContent = data.sections.hero.eyebrow;
             document.getElementById('hero-headline').textContent = data.sections.hero.headline;
@@ -290,14 +289,12 @@
             document.getElementById('hero-cta').textContent = data.sections.hero.ctaText;
             document.getElementById('hero-location').textContent = data.brand.location;
 
-            // Origin
             document.getElementById('origin-img').src = parseDriveMedia(data.sections.origin.image, 'image');
             document.getElementById('origin-date').textContent = data.sections.origin.date;
             document.getElementById('origin-title').textContent = data.sections.origin.title;
             document.getElementById('origin-story').textContent = data.sections.origin.story;
             document.getElementById('origin-quote').textContent = data.sections.origin.quote;
 
-            // Stats
             const start = new Date(data.sections.telemetry.startDate);
             const days = Math.max(1, Math.floor((new Date() - start) / 86400000));
             const dayText = isNaN(days) ? '365+' : days.toLocaleString();
@@ -308,7 +305,6 @@
                 document.getElementById(`${prefix}-stat-calls`).textContent = data.sections.telemetry.midnightCalls;
             });
 
-            // Magazine Spotlight Rail
             document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
             document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
             document.getElementById('home-magazine-rail').innerHTML = data.posts.map(post => {
@@ -330,7 +326,6 @@
                 </a>`;
             }).join('');
 
-            // Bucket List
             const bucketHtml = data.sections.bucketList.map(item => `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#121417]/70 border border-white/5 text-xs">
                     <span class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${item.completed ? 'bg-blue-600 text-white font-bold' : 'border border-white/25 text-transparent'}">✓</span>
@@ -340,7 +335,6 @@
             document.getElementById('home-bucket-container').innerHTML = bucketHtml;
             document.getElementById('deck-bucket-container').innerHTML = bucketHtml;
 
-            // Perspectives
             document.getElementById('home-pov1-name').textContent = data.sections.perspectives.partnerOneName;
             document.getElementById('home-pov1-note').textContent = data.sections.perspectives.partnerOneNote;
             document.getElementById('home-pov2-name').textContent = data.sections.perspectives.partnerTwoName;
@@ -350,7 +344,6 @@
             document.getElementById('deck-pov2-name').textContent = data.sections.perspectives.partnerTwoName;
             document.getElementById('deck-pov2-note').textContent = data.sections.perspectives.partnerTwoNote;
 
-            // Timeline
             document.getElementById('home-timeline-container').innerHTML = data.sections.milestones.map(m => `
                 <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${m.date}</span>
@@ -367,7 +360,6 @@
                 </div>
             `).join('');
 
-            // Soundtrack
             document.getElementById('home-soundtrack-title').textContent = data.sections.soundtrack.albumTitle;
             document.getElementById('home-soundtrack-note').textContent = data.sections.soundtrack.curatorNote;
             document.getElementById('deck-sound-title').textContent = data.sections.soundtrack.albumTitle;
@@ -384,7 +376,6 @@
             document.getElementById('home-soundtrack-list').innerHTML = trackHtml;
             document.getElementById('deck-sound-list').innerHTML = trackHtml;
 
-            // Love Notes
             document.getElementById('home-notes-container').innerHTML = data.sections.loveNotes.map(n => `
                 <div class="snap-start shrink-0 w-60 p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${n.tag}</span>
@@ -399,7 +390,6 @@
                 </div>
             `).join('');
 
-            // Capsule
             document.getElementById('capsule-heading').textContent = data.sections.capsule.heading;
             document.getElementById('capsule-message').textContent = data.sections.capsule.message;
             document.getElementById('capsule-destination').textContent = data.sections.capsule.nextDestination;
