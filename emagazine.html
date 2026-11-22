@@ -5,43 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>E-Magazine — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .post-card {
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), padding 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+        }
+    </style>
 </head>
 <body class="bg-[#121417] text-white font-sans antialiased pb-24">
 
     <header class="sticky top-0 z-40 bg-[#121417]/90 backdrop-blur-md border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.html" class="flex items-center gap-2.5 min-w-0">
+            <a href="index.html#home" class="flex items-center gap-2.5 min-w-0">
                 <img id="mag-logo" src="" class="w-9 h-9 rounded-full object-cover aspect-square border border-blue-400/50 shrink-0" />
                 <span id="mag-brand" class="text-sm font-bold truncate">Off Script Diaries</span>
             </a>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15">Magazine</span>
+            <button type="button" onclick="lockRoleSession('magazine')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30">
+                Lock
+            </button>
         </div>
     </header>
 
     <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
         <input id="search-posts" type="search" placeholder="Search title, date, category..." class="w-full h-11 px-4 rounded-xl bg-[#1E2126] border border-white/10 text-sm text-white focus:outline-none focus:border-blue-500" />
-        <div id="magazine-feed" class="space-y-5"></div>
+        <div id="magazine-feed" class="space-y-4"></div>
     </main>
 
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
-            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
-            <a href="emagazine.html" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span>📖</span><span>Magazine</span></a>
-            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>◈</span><span>Stats</span></a>
-            <a href="index.html" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>✦</span><span>Vault</span></a>
+            <a href="index.html#home" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>⌂</span><span>Home</span></a>
+            <button type="button" onclick="renderMagazine(document.getElementById('search-posts').value); window.scrollTo({ top: 0, behavior: 'smooth' });" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span>📖</span><span>Magazine</span></button>
+            <a href="index.html#stats" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>◈</span><span>Stats</span></a>
+            <a href="index.html#vault" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span>✦</span><span>Vault</span></a>
         </div>
     </nav>
 
     <script src="js/store.js"></script>
     <script>
-        enforceRoleLock('index', 'E-Magazine');
+        let activePostId = null;
+
+        function toggleExpandPost(postId) {
+            activePostId = activePostId === postId ? null : postId;
+            renderMagazine(document.getElementById('search-posts').value);
+        }
 
         function renderMagazine(q = '') {
             const data = getOSDData();
             document.getElementById('mag-logo').src = parseDriveMedia(data.brand.logoUrl, 'image');
             document.getElementById('mag-brand').textContent = data.brand.siteName;
 
-            const term = q.toLowerCase();
+            const term = (q || '').toLowerCase();
             const posts = data.posts.filter(p =>
                 p.title.toLowerCase().includes(term) ||
                 p.description.toLowerCase().includes(term) ||
@@ -55,29 +67,71 @@
                 return;
             }
 
-            feed.innerHTML = posts.map(post => {
+            const hasExpanded = activePostId !== null && posts.some(p => p.id === activePostId);
+
+            const orderedPosts = hasExpanded
+                ? [...posts.filter(p => p.id === activePostId), ...posts.filter(p => p.id !== activePostId)]
+                : posts;
+
+            feed.innerHTML = orderedPosts.map(post => {
+                const isExpanded = hasExpanded && post.id === activePostId;
+                const isShrunk = hasExpanded && post.id !== activePostId;
                 const media = parseDriveMedia(post.mediaUrl, post.mediaType);
+
+                if (isShrunk) {
+                    return `
+                    <article
+                        onclick="toggleExpandPost('${post.id}')"
+                        class="post-card cursor-pointer rounded-xl bg-[#1E2126]/80 border border-white/10 p-2.5 flex items-center gap-3 scale-[0.97] opacity-85"
+                    >
+                        <div class="w-14 h-14 rounded-lg overflow-hidden bg-black shrink-0 flex items-center justify-center">
+                            ${post.mediaType === 'video'
+                                ? `<span class="text-[10px] font-bold text-blue-400">▶ VID</span>`
+                                : `<img src="${media}" alt="${post.title}" class="w-full h-full object-cover" />`}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between text-[10px] text-white/45">
+                                <span class="text-blue-400 font-bold uppercase">${post.category || 'DIARY'}</span>
+                                <span>${post.date}</span>
+                            </div>
+                            <h3 class="text-xs font-bold text-white/90 truncate mt-0.5">${post.title}</h3>
+                            <p class="text-[11px] text-white/50 truncate">${post.description}</p>
+                        </div>
+                    </article>`;
+                }
+
                 const mediaBlock = post.mediaType === 'video'
-                    ? `<div class="aspect-video w-full bg-black"><iframe src="${media}" class="w-full h-full border-0" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`
-                    : `<div class="aspect-[4/3] w-full bg-black"><img src="${media}" alt="${post.title}" class="w-full h-full object-cover" /></div>`;
+                    ? `<div class="${isExpanded ? 'aspect-video' : 'aspect-[4/3]'} w-full bg-black"><iframe src="${media}" class="w-full h-full border-0" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`
+                    : `<div class="${isExpanded ? 'aspect-square' : 'aspect-[4/3]'} w-full bg-black"><img src="${media}" alt="${post.title}" class="w-full h-full object-cover" /></div>`;
 
                 return `
-                <article class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
-                    ${mediaBlock}
-                    <div class="p-4">
-                        <div class="flex items-center justify-between text-[11px] font-bold uppercase text-blue-400">
-                            <span>${post.category || 'JOURNAL'}</span>
-                            <span class="text-white/50 font-normal">${post.date}</span>
+                <article
+                    onclick="toggleExpandPost('${post.id}')"
+                    class="post-card cursor-pointer rounded-3xl bg-[#1E2126] ${isExpanded ? 'border-2 border-blue-500 shadow-2xl shadow-blue-950/50 p-1.5' : 'border border-white/10'}"
+                >
+                    <div class="rounded-2xl overflow-hidden">
+                        ${mediaBlock}
+                        <div class="${isExpanded ? 'p-5' : 'p-4'}">
+                            <div class="flex items-center justify-between text-[11px] font-bold uppercase text-blue-400">
+                                <span>${post.category || 'JOURNAL'}</span>
+                                <span class="text-white/50 font-normal">${post.date}</span>
+                            </div>
+                            <h2 class="${isExpanded ? 'text-2xl mt-1.5' : 'text-lg mt-1'} font-extrabold text-white leading-snug">${post.title}</h2>
+                            <p class="${isExpanded ? 'text-sm mt-2.5' : 'text-xs mt-2 line-clamp-3'} text-white/80 leading-relaxed whitespace-pre-line">${post.description}</p>
+                            <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                                ${isExpanded ? 'Tap to minimize' : 'Tap to expand'}
+                            </div>
                         </div>
-                        <h2 class="text-lg font-bold text-white mt-1">${post.title}</h2>
-                        <p class="text-xs text-white/75 mt-2 leading-relaxed whitespace-pre-line">${post.description}</p>
                     </div>
                 </article>`;
             }).join('');
         }
 
         document.getElementById('search-posts').addEventListener('input', e => renderMagazine(e.target.value));
-        window.addEventListener('DOMContentLoaded', () => renderMagazine());
+        window.addEventListener('DOMContentLoaded', () => {
+            renderMagazine();
+            enforceRoleLock('magazine', 'E-Magazine');
+        });
         window.addEventListener('storage', () => renderMagazine());
     </script>
 </body>
