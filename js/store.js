@@ -307,7 +307,7 @@ function enforceRoleLock(role = 'index', titleText = "Protected Access") {
                 ${badgeLabel}
             </span>
             <h1 class="text-xl font-bold text-white">${titleText}</h1>
-            <p class="text-xs text-white/60 mt-1 mb-5">Enter password to continue.</p>
+            <p class="text-xs text-white/60 mt-1 mb-5">Enter password for ${role} access.</p>
             <form id="osd-role-form" class="space-y-3">
                 <input
                     id="osd-role-input"
