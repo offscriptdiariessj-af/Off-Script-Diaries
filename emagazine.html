@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-Magazine — Off Script Diaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { serif: ['"Cormorant Garamond"', 'serif'], sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { obsidian: '#0B0C0E', charcoal: '#14161A', champagne: '#E5C39C' }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-obsidian text-white font-sans antialiased">
+
+    <header class="sticky top-0 z-40 bg-obsidian/90 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-5 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <img id="mag-logo" src="" class="w-10 h-10 rounded-full object-cover border border-champagne/50" />
+                <span id="mag-brand" class="font-serif text-2xl font-semibold">Off Script Diaries</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-xs uppercase tracking-widest text-white/70 hover:text-white px-3 py-2">Home</a>
+                <a href="emagazineadmin.html" class="px-4 py-2 rounded-full bg-champagne text-obsidian text-xs font-semibold uppercase tracking-wider hover:bg-white transition">
+                    Edit Magazine
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-5 py-16">
+        <div class="border-b border-white/10 pb-10 mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <span class="text-xs uppercase tracking-[0.3em] text-champagne">COMPLETE ANTHOLOGY</span>
+                <h1 class="font-serif text-5xl sm:text-7xl mt-2">The E-Magazine</h1>
+            </div>
+            <input type="text" id="search-posts" placeholder="Search memories, dates, titles..." class="w-full md:w-80 px-4 py-3 rounded-xl bg-charcoal border border-white/15 text-sm text-white focus:outline-none focus:border-champagne" />
+        </div>
+
+        <div id="magazine-feed" class="space-y-16"></div>
+    </main>
+
+    <script src="js/store.js"></script>
+    <script>
+        function renderMagazine(filter = '') {
+            const data = getOSDData();
+            document.getElementById('mag-logo').src = parseDriveMedia(data.brand.logoUrl, 'image');
+            document.getElementById('mag-brand').textContent = data.brand.siteName;
+
+            const query = filter.toLowerCase();
+            const posts = data.posts.filter(p =>
+                p.title.toLowerCase().includes(query) ||
+                p.description.toLowerCase().includes(query) ||
+                (p.category && p.category.toLowerCase().includes(query)) ||
+                p.date.includes(query)
+            );
+
+            const container = document.getElementById('magazine-feed');
+            if (!posts.length) {
+                container.innerHTML = `<div class="text-center py-20 text-white/50">No entries match your search.</div>`;
+                return;
+            }
+
+            container.innerHTML = posts.map((post, index) => {
+                const mediaSrc = parseDriveMedia(post.mediaUrl, post.mediaType);
+                const isEven = index % 2 === 1;
+                const mediaElement = post.mediaType === 'video'
+                    ? `<div class="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10">
+                           <iframe src="${mediaSrc}" class="w-full h-full border-0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                       </div>`
+                    : `<div class="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-charcoal border border-white/10">
+                           <img src="${mediaSrc}" alt="${post.title}" class="w-full h-full object-cover" />
+                       </div>`;
+
+                return `
+                <article class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center pb-16 border-b border-white/10">
+                    <div class="lg:col-span-7 ${isEven ? 'lg:order-2' : ''}">
+                        ${mediaElement}
+                    </div>
+                    <div class="lg:col-span-5 ${isEven ? 'lg:order-1' : ''}">
+                        <div class="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-champagne mb-3">
+                            <span>ISSUE #${String(posts.length - index).padStart(2, '0')}</span>
+                            <span>•</span>
+                            <span>${post.category || 'JOURNAL'}</span>
+                        </div>
+                        <h2 class="font-serif text-3xl sm:text-5xl text-white leading-tight mb-4">${post.title}</h2>
+                        <p class="text-xs uppercase tracking-widest text-white/45 mb-6">${post.date}</p>
+                        <p class="text-white/75 text-base sm:text-lg leading-relaxed whitespace-pre-line">${post.description}</p>
+                    </div>
+                </article>`;
+            }).join('');
+        }
+
+        document.getElementById('search-posts').addEventListener('input', (e) => renderMagazine(e.target.value));
+        window.addEventListener('DOMContentLoaded', () => renderMagazine());
+        window.addEventListener('storage', () => renderMagazine());
+    </script>
+</body>
+</html>
