@@ -87,7 +87,7 @@
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
-    <!-- MODAL (FOLDER CREATE/EDIT & ITEM ADD/EDIT) -->
+    <!-- IN-APP MODAL (FOLDER CREATE/EDIT, ITEM ADD/EDIT, DELETE CONFIRMATION) -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <!-- FOLDER CREATE / EDIT FORM -->
         <div id="edit-folder-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-blue-400/40 p-4 space-y-3 shadow-2xl">
@@ -155,6 +155,20 @@
             <p id="item-form-error" class="hidden text-[11px] text-rose-400 font-medium"></p>
             <button id="save-item-edit-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Save Item</button>
         </div>
+
+        <!-- IN-APP DELETE FOLDER CONFIRMATION POPUP -->
+        <div id="delete-confirm-form" class="hidden w-full max-w-sm rounded-2xl bg-[#1E2126] border border-rose-500/50 p-4 space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold text-rose-400 uppercase tracking-wider">Delete Folder?</h3>
+                <button id="close-delete-confirm-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
+            </div>
+            <p id="delete-confirm-msg" class="text-xs text-white/80 leading-relaxed"></p>
+            <p id="delete-form-error" class="hidden text-[11px] text-rose-400 font-medium"></p>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button id="cancel-delete-folder-btn" type="button" class="h-10 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition">Cancel</button>
+                <button id="confirm-delete-folder-btn" type="button" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition">Delete</button>
+            </div>
+        </div>
     </div>
 
     <!-- FULL-SCREEN SWIPEABLE VIEWER (STRICTLY INSIDE SELECTED DATE FOLDER) -->
@@ -200,10 +214,10 @@
             ref,
             set,
             update,
+            remove,
             onValue
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-        // Paste your exact Realtime Database URL from Firebase Console > Realtime Database > Data tab
         const firebaseConfig = {
             apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
             authDomain: "offscript-3cf92.firebaseapp.com",
@@ -235,6 +249,8 @@
         const editModal = document.getElementById("edit-modal");
         const editFolderForm = document.getElementById("edit-folder-form");
         const editItemForm = document.getElementById("edit-item-form");
+        const deleteConfirmForm = document.getElementById("delete-confirm-form");
+
         const folderModalTitle = document.getElementById("folder-modal-title");
         const folderFormError = document.getElementById("folder-form-error");
         const editFolderDate = document.getElementById("edit-folder-date");
@@ -251,6 +267,10 @@
         const editItemCategory = document.getElementById("edit-item-category");
         const editItemMedia = document.getElementById("edit-item-media");
         const editItemDesc = document.getElementById("edit-item-desc");
+
+        const deleteConfirmMsg = document.getElementById("delete-confirm-msg");
+        const deleteFormError = document.getElementById("delete-form-error");
+        const confirmDeleteFolderBtn = document.getElementById("confirm-delete-folder-btn");
 
         const fsViewer = document.getElementById("fullscreen-viewer");
         const fsStage = document.getElementById("fullscreen-stage");
@@ -273,6 +293,7 @@
         let isCreatingFolder = false;
         let editingItemId = null;
         let addingToFolderDate = null;
+        let pendingDeleteFolderKey = null;
         let scrollSaveTimer = null;
 
         function formatFirebaseError(err, fallback) {
@@ -372,10 +393,13 @@
             isCreatingFolder = false;
             editingItemId = null;
             addingToFolderDate = null;
+            pendingDeleteFolderKey = null;
             folderFormError.classList.add("hidden");
             itemFormError.classList.add("hidden");
+            deleteFormError.classList.add("hidden");
             editFolderForm.classList.add("hidden");
             editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.add("hidden");
             editModal.classList.add("hidden");
         }
 
@@ -384,16 +408,19 @@
             isCreatingFolder = true;
             editingItemId = null;
             addingToFolderDate = null;
+            pendingDeleteFolderKey = null;
             folderFormError.classList.add("hidden");
 
             folderModalTitle.textContent = "Create Date Folder";
             editFolderDate.readOnly = false;
+            editFolderDate.disabled = false;
             editFolderDate.value = new Date().toISOString().slice(0, 10);
             editFolderTitle.value = "";
             editFolderCover.value = "";
             editFolderDesc.value = "";
 
             editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.add("hidden");
             editFolderForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
         }
@@ -405,22 +432,26 @@
             isCreatingFolder = false;
             editingItemId = null;
             addingToFolderDate = null;
+            pendingDeleteFolderKey = null;
             folderFormError.classList.add("hidden");
 
             folderModalTitle.textContent = "Edit Date Folder";
-            editFolderDate.readOnly = true;
-            editFolderDate.value = folderKey;
+            editFolderDate.readOnly = false;
+            editFolderDate.disabled = false;
+            editFolderDate.value = /^\d{4}-\d{2}-\d{2}$/.test(folderKey) ? folderKey : "";
             editFolderTitle.value = meta.title || "";
             editFolderCover.value = meta.coverUrl || "";
             editFolderDesc.value = meta.description || "";
 
             editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.add("hidden");
             editFolderForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
         }
 
         async function saveFolderEdit() {
-            const targetDate = (isCreatingFolder ? editFolderDate.value : editingFolderKey || editFolderDate.value || "").trim();
+            const oldKey = editingFolderKey;
+            const targetDate = (editFolderDate.value || oldKey || "").trim();
             if (!targetDate) {
                 folderFormError.textContent = "Please select a date for the folder.";
                 folderFormError.classList.remove("hidden");
@@ -437,7 +468,25 @@
             };
 
             try {
-                await update(ref(rtdb, `magazineFolders/${targetDate}`), payload);
+                await set(ref(rtdb, `magazineFolders/${targetDate}`), payload);
+
+                if (!isCreatingFolder && oldKey && oldKey !== targetDate) {
+                    const matchingItems = rtdbItems.filter(it => (it.date || "").trim() === oldKey);
+                    for (const it of matchingItems) {
+                        await update(ref(rtdb, `magazineItems/${it.id}`), {
+                            date: targetDate,
+                            updatedAtMs: Date.now()
+                        });
+                    }
+                    if (rtdbFolders[oldKey]) {
+                        await remove(ref(rtdb, `magazineFolders/${oldKey}`));
+                    }
+                    if (activeFolderKey === oldKey) {
+                        activeFolderKey = targetDate;
+                        syncFolderStorage();
+                    }
+                }
+
                 closeEditModal();
                 setDbStatus(`Saved folder ${targetDate} to Realtime DB`, "ok");
             } catch (err) {
@@ -448,12 +497,73 @@
             }
         }
 
+        function openDeleteFolderModal(event, folderKey) {
+            event.stopPropagation();
+            const meta = rtdbFolders[folderKey] || {};
+            const itemCount = rtdbItems.filter(it => (it.date || "").trim() === folderKey).length;
+            const folderLabel = meta.title ? `${meta.title} (${folderKey})` : folderKey;
+
+            pendingDeleteFolderKey = folderKey;
+            editingFolderKey = null;
+            isCreatingFolder = false;
+            editingItemId = null;
+            addingToFolderDate = null;
+            deleteFormError.classList.add("hidden");
+
+            deleteConfirmMsg.textContent = itemCount > 0
+                ? `Delete folder "${folderLabel}" and its ${itemCount} item(s)? This cannot be undone.`
+                : `Delete folder "${folderLabel}"? This cannot be undone.`;
+
+            editFolderForm.classList.add("hidden");
+            editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.remove("hidden");
+            editModal.classList.remove("hidden");
+        }
+
+        async function executeDeleteFolder() {
+            const keyToDelete = pendingDeleteFolderKey;
+            if (!keyToDelete) return;
+
+            confirmDeleteFolderBtn.disabled = true;
+            deleteFormError.classList.add("hidden");
+
+            try {
+                const folderItems = rtdbItems.filter(it => (it.date || "").trim() === keyToDelete);
+                for (const item of folderItems) {
+                    await remove(ref(rtdb, `magazineItems/${item.id}`));
+                }
+                if (rtdbFolders[keyToDelete]) {
+                    await remove(ref(rtdb, `magazineFolders/${keyToDelete}`));
+                }
+
+                if (activeFolderKey === keyToDelete) {
+                    activeFolderKey = null;
+                    scaledItemId = null;
+                    fullscreenFolderKey = null;
+                    fullscreenItemId = null;
+                    syncFolderStorage();
+                    syncFullscreenUI();
+                }
+
+                confirmDeleteFolderBtn.disabled = false;
+                closeEditModal();
+                setDbStatus(`Deleted folder ${keyToDelete}`, "ok");
+            } catch (err) {
+                confirmDeleteFolderBtn.disabled = false;
+                const msg = formatFirebaseError(err, "Failed to delete folder.");
+                deleteFormError.textContent = msg;
+                deleteFormError.classList.remove("hidden");
+                setDbStatus(msg, "error");
+            }
+        }
+
         function openAddItemModal(event, folderKey) {
             event.stopPropagation();
             editingItemId = null;
             editingFolderKey = null;
             isCreatingFolder = false;
             addingToFolderDate = folderKey;
+            pendingDeleteFolderKey = null;
 
             itemModalTitle.textContent = "Add Item to Folder";
             saveItemEditBtn.textContent = "Add Item";
@@ -467,6 +577,7 @@
             editItemDesc.value = "";
 
             editFolderForm.classList.add("hidden");
+            deleteConfirmForm.classList.add("hidden");
             editItemForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
             editItemTitle.focus();
@@ -481,6 +592,7 @@
             editingFolderKey = null;
             isCreatingFolder = false;
             addingToFolderDate = null;
+            pendingDeleteFolderKey = null;
 
             itemModalTitle.textContent = "Edit Item";
             saveItemEditBtn.textContent = "Save Item";
@@ -494,6 +606,7 @@
             editItemDesc.value = item.description || "";
 
             editFolderForm.classList.add("hidden");
+            deleteConfirmForm.classList.add("hidden");
             editItemForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
         }
@@ -800,10 +913,20 @@
         document.getElementById("new-folder-btn").addEventListener("click", openNewFolderModal);
         document.getElementById("close-folder-edit-btn").addEventListener("click", closeEditModal);
         document.getElementById("close-item-edit-btn").addEventListener("click", closeEditModal);
+        document.getElementById("close-delete-confirm-btn").addEventListener("click", closeEditModal);
+        document.getElementById("cancel-delete-folder-btn").addEventListener("click", closeEditModal);
         document.getElementById("save-folder-edit-btn").addEventListener("click", saveFolderEdit);
+        confirmDeleteFolderBtn.addEventListener("click", executeDeleteFolder);
         saveItemEditBtn.addEventListener("click", saveItemEdit);
 
+        editFolderDate.addEventListener("click", () => {
+            if (!editFolderDate.disabled && !editFolderDate.readOnly && typeof editFolderDate.showPicker === "function") {
+                try { editFolderDate.showPicker(); } catch {}
+            }
+        });
+
         window.openEditFolderModal = openEditFolderModal;
+        window.openDeleteFolderModal = openDeleteFolderModal;
         window.openAddItemModal = openAddItemModal;
         window.openEditItemModal = openEditItemModal;
         window.selectFolder = selectFolder;
@@ -900,10 +1023,11 @@
             const countsText = escapeHtml(getFolderCountsText(folder.items));
 
             const folderActions = `
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 flex-wrap justify-end">
                     <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
                     <button type="button" onclick="openAddItemModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">+ Add</button>
                     <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                    <button type="button" onclick="openDeleteFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-600/25 text-rose-300 border border-rose-400/30">Delete</button>
                 </div>`;
 
             if (!folder.items.length) {
@@ -952,10 +1076,11 @@
                     <div class="p-3">
                         <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-blue-400">
                             <span>${safeDate}</span>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5 flex-wrap justify-end">
                                 <span class="text-white/50 font-mono font-normal">${countsText}</span>
                                 <button type="button" onclick="openAddItemModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">+ Add</button>
                                 <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                                <button type="button" onclick="openDeleteFolderModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-rose-600/25 text-rose-300 border border-rose-400/30">Delete</button>
                             </div>
                         </div>
                         <h3 class="text-sm font-bold text-white leading-snug mt-0.5">${safeTitle}</h3>
