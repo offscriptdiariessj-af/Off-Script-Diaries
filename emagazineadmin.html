@@ -6,179 +6,266 @@
     <title>Magazine Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-20">
+<body class="bg-[#121417] text-white font-sans antialiased pb-24">
 
-    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
+    <header class="sticky top-0 z-40 bg-[#121417]/92 backdrop-blur-md border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-            <div>
-                <h1 class="text-sm font-bold text-white">Magazine Manager</h1>
-                <p class="text-[10px] text-blue-400">New, Edit, Delete • Drive Media</p>
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="w-8 h-8 rounded-full bg-blue-600/25 border border-blue-400/40 text-blue-300 flex items-center justify-center text-xs font-bold shrink-0">✎</span>
+                <div class="truncate">
+                    <h1 class="text-sm font-bold text-white truncate">Magazine Folder Studio</h1>
+                    <p class="text-[10px] text-blue-400 truncate">Date Folders • Covers &amp; Media</p>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="admin.html" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Admin</a>
-                <button onclick="resetForm()" class="px-3 py-1.5 rounded-xl bg-blue-600 text-xs font-semibold">+ New</button>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="emagazine.html" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-white/10 text-white/85">View</a>
+                <button type="button" onclick="lockRoleSession('magazine_admin')" class="text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-400/30">Lock</button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
+    <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
-        <!-- EDITOR FORM -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+        <!-- DATE FOLDER META (COVER PICTURE, FOLDER TITLE, FOLDER DESCRIPTION) -->
+        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
             <div class="flex items-center justify-between">
-                <h2 id="editor-mode-title" class="text-sm font-bold text-blue-400">New Post</h2>
-                <button id="cancel-edit-btn" onclick="resetForm()" class="hidden text-xs text-white/50">Cancel</button>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Date Folder Details</span>
+                <span class="text-[10px] text-white/45">Separate from items inside</span>
             </div>
 
-            <input type="hidden" id="post-id" />
-            <input id="post-title" type="text" placeholder="Title *" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Folder Date</label>
+                <input id="folder-date-input" type="date" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Folder Title</label>
+                <input id="folder-title-input" type="text" placeholder="e.g., Sunset Drive &amp; Coffee" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Folder Cover Picture (Google Drive / Image URL)</label>
+                <input id="folder-cover-input" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Folder Description</label>
+                <textarea id="folder-desc-input" rows="2" placeholder="Overall story or summary for this date folder..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+
+            <button id="save-folder-meta-btn" type="button" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                Save Date Folder Cover &amp; Info
+            </button>
+            <p id="folder-save-status" class="text-[11px] text-emerald-400 hidden"></p>
+        </section>
+
+        <!-- ADD PHOTO OR VIDEO TO A DATE FOLDER -->
+        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Add Photo / Video to Date</span>
 
             <div class="grid grid-cols-2 gap-2.5">
-                <input id="post-date" type="date" class="h-11 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="post-category" type="text" placeholder="Category (e.g. TRIP)" class="h-11 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Item Date</label>
+                    <input id="item-date-input" type="date" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Media Type</label>
+                    <select id="item-type-input" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                    </select>
+                </div>
             </div>
 
-            <select id="post-media-type" onchange="previewPostMedia()" class="w-full h-11 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs">
-                <option value="image">Google Drive Photo</option>
-                <option value="video">Google Drive Video</option>
-            </select>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Item Title</label>
+                    <input id="item-title-input" type="text" placeholder="Photo / Clip title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Category</label>
+                    <input id="item-category-input" type="text" placeholder="Memory" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+            </div>
 
-            <input id="post-media-url" type="text" oninput="previewPostMedia()" placeholder="Paste Google Drive link *" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Google Drive / Media URL</label>
+                <input id="item-media-input" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
 
-            <div id="media-preview-box" class="hidden rounded-xl overflow-hidden bg-black border border-white/10 aspect-video"></div>
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Item Caption / Note</label>
+                <textarea id="item-desc-input" rows="2" placeholder="Note for this specific photo or video..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+            </div>
 
-            <textarea id="post-desc" rows="3" placeholder="Description *" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-
-            <button onclick="savePost()" id="save-post-btn" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
-                Publish Post
+            <button id="add-item-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">
+                Add to Date Folder
             </button>
         </section>
 
-        <!-- EXISTING POSTS -->
+        <!-- EXISTING DATE FOLDERS & ITEMS -->
         <section class="space-y-3">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-white/60 px-1">All Posts (<span id="post-count">0</span>)</h2>
-            <div id="admin-posts-list" class="space-y-3"></div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">Manage Date Folders</span>
+            <div id="admin-folders-list" class="space-y-3"></div>
         </section>
 
     </main>
 
     <script src="js/store.js"></script>
     <script>
-        enforceRoleLock('admin', 'Magazine Manager');
+        const folderDateEl = document.getElementById('folder-date-input');
+        const folderTitleEl = document.getElementById('folder-title-input');
+        const folderCoverEl = document.getElementById('folder-cover-input');
+        const folderDescEl = document.getElementById('folder-desc-input');
+        const folderStatusEl = document.getElementById('folder-save-status');
 
-        function previewPostMedia() {
-            const url = document.getElementById('post-media-url').value.trim();
-            const type = document.getElementById('post-media-type').value;
-            const box = document.getElementById('media-preview-box');
-            if (!url) { box.classList.add('hidden'); box.innerHTML = ''; return; }
-            const parsed = parseDriveMedia(url, type);
-            box.classList.remove('hidden');
-            box.innerHTML = type === 'video'
-                ? `<iframe src="${parsed}" class="w-full h-full border-0" allow="autoplay; fullscreen"></iframe>`
-                : `<img src="${parsed}" class="w-full h-full object-cover" />`;
+        const itemDateEl = document.getElementById('item-date-input');
+        const itemTypeEl = document.getElementById('item-type-input');
+        const itemTitleEl = document.getElementById('item-title-input');
+        const itemCategoryEl = document.getElementById('item-category-input');
+        const itemMediaEl = document.getElementById('item-media-input');
+        const itemDescEl = document.getElementById('item-desc-input');
+
+        function ensureFolderStructure(data) {
+            if (!Array.isArray(data.posts)) data.posts = [];
+            if (!data.dateFolders || typeof data.dateFolders !== 'object') {
+                data.dateFolders = {};
+            }
+            return data;
         }
 
-        function renderPostsList() {
-            const data = getOSDData();
-            document.getElementById('post-count').textContent = data.posts.length;
-            const list = document.getElementById('admin-posts-list');
+        function loadFolderMetaIntoForm(dateStr) {
+            const data = ensureFolderStructure(getOSDData());
+            const meta = data.dateFolders[dateStr] || {};
+            folderDateEl.value = dateStr;
+            folderTitleEl.value = meta.title || '';
+            folderCoverEl.value = meta.coverUrl || '';
+            folderDescEl.value = meta.description || '';
+            itemDateEl.value = dateStr;
+        }
 
-            if (!data.posts.length) {
-                list.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No posts yet.</div>`;
+        function saveFolderMeta() {
+            const dateStr = (folderDateEl.value || '').trim();
+            if (!dateStr) return;
+
+            const data = ensureFolderStructure(getOSDData());
+            data.dateFolders[dateStr] = {
+                title: folderTitleEl.value.trim(),
+                coverUrl: folderCoverEl.value.trim(),
+                description: folderDescEl.value.trim()
+            };
+
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+            renderAdminFolders();
+
+            folderStatusEl.textContent = `Saved folder details for ${dateStr}`;
+            folderStatusEl.classList.remove('hidden');
+            setTimeout(() => folderStatusEl.classList.add('hidden'), 2000);
+        }
+
+        function addMediaItem() {
+            const mediaUrl = itemMediaEl.value.trim();
+            const title = itemTitleEl.value.trim();
+            if (!mediaUrl || !title) return;
+
+            const dateStr = (itemDateEl.value || folderDateEl.value || new Date().toISOString().slice(0, 10)).trim();
+            const data = ensureFolderStructure(getOSDData());
+
+            if (!data.dateFolders[dateStr]) {
+                data.dateFolders[dateStr] = {
+                    title: folderTitleEl.value.trim() || dateStr,
+                    coverUrl: folderCoverEl.value.trim() || '',
+                    description: folderDescEl.value.trim() || ''
+                };
+            }
+
+            data.posts.unshift({
+                id: 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                date: dateStr,
+                title,
+                category: (itemCategoryEl.value || 'Memory').trim(),
+                mediaType: itemTypeEl.value === 'video' ? 'video' : 'image',
+                mediaUrl,
+                description: itemDescEl.value.trim()
+            });
+
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+
+            itemTitleEl.value = '';
+            itemMediaEl.value = '';
+            itemDescEl.value = '';
+            loadFolderMetaIntoForm(dateStr);
+            renderAdminFolders();
+        }
+
+        function deleteMediaItem(postId) {
+            const data = ensureFolderStructure(getOSDData());
+            data.posts = data.posts.filter(p => p.id !== postId);
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+            renderAdminFolders();
+        }
+
+        function renderAdminFolders() {
+            const data = ensureFolderStructure(getOSDData());
+            const container = document.getElementById('admin-folders-list');
+
+            const dates = Array.from(new Set([
+                ...Object.keys(data.dateFolders),
+                ...data.posts.map(p => (p.date || '').trim()).filter(Boolean)
+            ]));
+
+            if (!dates.length) {
+                container.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No date folders yet.</div>`;
                 return;
             }
 
-            list.innerHTML = data.posts.map(post => {
-                const parsed = parseDriveMedia(post.mediaUrl, post.mediaType);
-                const thumb = post.mediaType === 'video'
-                    ? `<div class="w-20 h-16 rounded-xl bg-black flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">VIDEO</div>`
-                    : `<img src="${parsed}" class="w-20 h-16 rounded-xl object-cover bg-black shrink-0" />`;
+            container.innerHTML = dates.map(dateKey => {
+                const meta = data.dateFolders[dateKey] || {};
+                const items = data.posts.filter(p => (p.date || '').trim() === dateKey);
+                const coverPreview = parseDriveMedia(meta.coverUrl || (items[0] && items[0].mediaUrl) || '', 'image');
+
+                const itemRows = items.map(item => `
+                    <div class="flex items-center justify-between gap-2 py-2 border-t border-white/10 text-xs">
+                        <div class="min-w-0">
+                            <span class="text-[9px] font-bold uppercase text-blue-400 mr-1.5">[${item.mediaType || 'image'}]</span>
+                            <span class="font-semibold text-white truncate">${item.title}</span>
+                        </div>
+                        <button type="button" onclick="deleteMediaItem('${item.id}')" class="text-[10px] text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-500/10 shrink-0">Delete</button>
+                    </div>
+                `).join('');
 
                 return `
-                <div class="p-3.5 rounded-2xl bg-[#1E2126] border border-white/10 flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 min-w-0">
-                        ${thumb}
-                        <div class="min-w-0">
-                            <span class="text-[10px] text-blue-400 font-bold uppercase">${post.date}</span>
-                            <h3 class="text-sm font-bold text-white truncate">${post.title}</h3>
-                            <p class="text-xs text-white/60 truncate">${post.description}</p>
+                    <div class="rounded-2xl bg-[#1E2126] border border-white/10 p-3.5 space-y-2.5">
+                        <div class="flex items-center gap-3">
+                            <img src="${coverPreview}" alt="${dateKey}" class="w-14 h-14 rounded-xl object-cover bg-black shrink-0 border border-white/10" />
+                            <div class="min-w-0 flex-1">
+                                <div class="text-[10px] font-bold uppercase text-blue-400">${dateKey} • ${items.length} item${items.length === 1 ? '' : 's'}</div>
+                                <div class="text-sm font-bold text-white truncate">${meta.title || dateKey}</div>
+                                <div class="text-[11px] text-white/60 line-clamp-1">${meta.description || 'No folder description set'}</div>
+                            </div>
+                            <button type="button" onclick="loadFolderMetaIntoForm('${dateKey}')" class="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-600/25 text-blue-300 border border-blue-400/30 shrink-0">Edit Folder</button>
                         </div>
+                        ${itemRows ? `<div class="pt-1">${itemRows}</div>` : ''}
                     </div>
-                    <div class="flex flex-col gap-1.5 shrink-0">
-                        <button onclick="editPost('${post.id}')" class="px-3 py-1 rounded-lg bg-white/10 text-xs font-medium">Edit</button>
-                        <button onclick="deletePost('${post.id}')" class="px-3 py-1 rounded-lg bg-rose-500/15 text-rose-400 text-xs font-medium">Delete</button>
-                    </div>
-                </div>`;
+                `;
             }).join('');
         }
 
-        function savePost() {
-            const id = document.getElementById('post-id').value;
-            const title = document.getElementById('post-title').value.trim();
-            const date = document.getElementById('post-date').value;
-            const category = document.getElementById('post-category').value.trim() || 'DIARY';
-            const mediaType = document.getElementById('post-media-type').value;
-            const mediaUrl = document.getElementById('post-media-url').value.trim();
-            const description = document.getElementById('post-desc').value.trim();
+        document.getElementById('save-folder-meta-btn').addEventListener('click', saveFolderMeta);
+        document.getElementById('add-item-btn').addEventListener('click', addMediaItem);
+        folderDateEl.addEventListener('change', e => {
+            if (e.target.value) loadFolderMetaIntoForm(e.target.value);
+        });
 
-            if (!title || !date || !mediaUrl || !description) {
-                alert("Fill Title, Date, Google Drive link, and Description.");
-                return;
-            }
-
-            const data = getOSDData();
-            if (id) {
-                const idx = data.posts.findIndex(p => p.id === id);
-                if (idx !== -1) data.posts[idx] = { id, title, date, category, mediaType, mediaUrl, description };
-            } else {
-                data.posts.unshift({ id: 'post_' + Date.now(), title, date, category, mediaType, mediaUrl, description });
-            }
-
-            saveOSDData(data);
-            resetForm();
-            renderPostsList();
-        }
-
-        function editPost(id) {
-            const post = getOSDData().posts.find(p => p.id === id);
-            if (!post) return;
-            document.getElementById('post-id').value = post.id;
-            document.getElementById('post-title').value = post.title;
-            document.getElementById('post-date').value = post.date;
-            document.getElementById('post-category').value = post.category || '';
-            document.getElementById('post-media-type').value = post.mediaType || 'image';
-            document.getElementById('post-media-url').value = post.mediaUrl;
-            document.getElementById('post-desc').value = post.description;
-            document.getElementById('editor-mode-title').textContent = "Edit Post";
-            document.getElementById('save-post-btn').textContent = "Update Post";
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-            previewPostMedia();
-        }
-
-        function deletePost(id) {
-            if (!confirm("Delete this post?")) return;
-            const data = getOSDData();
-            data.posts = data.posts.filter(p => p.id !== id);
-            saveOSDData(data);
-            if (document.getElementById('post-id').value === id) resetForm();
-            renderPostsList();
-        }
-
-        function resetForm() {
-            document.getElementById('post-id').value = '';
-            document.getElementById('post-title').value = '';
-            document.getElementById('post-date').value = new Date().toISOString().slice(0, 10);
-            document.getElementById('post-category').value = '';
-            document.getElementById('post-media-type').value = 'image';
-            document.getElementById('post-media-url').value = '';
-            document.getElementById('post-desc').value = '';
-            document.getElementById('editor-mode-title').textContent = "New Post";
-            document.getElementById('save-post-btn').textContent = "Publish Post";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            previewPostMedia();
-        }
-
-        window.addEventListener('DOMContentLoaded', () => { resetForm(); renderPostsList(); });
+        window.addEventListener('DOMContentLoaded', () => {
+            const initialDate = new Date().toISOString().slice(0, 10);
+            loadFolderMetaIntoForm(initialDate);
+            renderAdminFolders();
+            enforceRoleLock('magazine_admin', 'Magazine Admin');
+        });
     </script>
 </body>
 </html>
