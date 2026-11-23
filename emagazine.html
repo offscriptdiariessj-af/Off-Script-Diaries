@@ -8,7 +8,7 @@
     <style>
         @keyframes spotlightRise {
             0% {
-                opacity: 0.7;
+                opacity: 0.72;
                 transform: translateY(10px) scale(0.97);
             }
             65% {
@@ -42,7 +42,7 @@
 
         .mini-grid-card {
             animation: miniSlotIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-            transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
         .mini-grid-card:active {
@@ -55,6 +55,10 @@
 
         .compact-card:active {
             transform: scale(0.98);
+        }
+
+        #fullscreen-stage {
+            touch-action: pan-y pinch-zoom;
         }
     </style>
 </head>
@@ -77,6 +81,32 @@
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
+    <!-- FULL-SCREEN SWIPEABLE PICTURE VIEWER -->
+    <div id="fullscreen-viewer" class="hidden fixed inset-0 z-50 bg-black/98 backdrop-blur-md flex flex-col justify-between select-none">
+        <div class="px-4 pt-4 pb-2 flex items-center justify-between text-xs text-white/75">
+            <span id="fs-counter" class="font-mono font-semibold text-blue-400">1 / 1</span>
+            <span class="text-[11px] text-white/50">Swipe left / right</span>
+            <button id="fs-close-btn" type="button" class="px-2.5 py-1 rounded-lg bg-white/10 text-white text-xs font-semibold">✕</button>
+        </div>
+
+        <div id="fullscreen-stage" class="relative flex-1 flex items-center justify-center px-3 overflow-hidden">
+            <img id="fs-image" src="" alt="" class="max-h-[76vh] w-full object-contain rounded-2xl transition-transform duration-200 ease-out" />
+            <iframe id="fs-video" src="" class="hidden w-full aspect-video rounded-2xl border-0 bg-black" allow="autoplay; fullscreen" allowfullscreen></iframe>
+
+            <button id="fs-prev-btn" type="button" aria-label="Previous picture" class="hidden sm:flex absolute left-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">‹</button>
+            <button id="fs-next-btn" type="button" aria-label="Next picture" class="hidden sm:flex absolute right-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">›</button>
+        </div>
+
+        <div class="px-4 pb-5 pt-2 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
+                <span id="fs-category"></span>
+                <span id="fs-date" class="text-white/55 font-normal"></span>
+            </div>
+            <h3 id="fs-title" class="text-base font-extrabold text-white mt-0.5 truncate"></h3>
+            <p id="fs-caption" class="text-xs text-white/75 mt-1 line-clamp-2 leading-relaxed"></p>
+        </div>
+    </div>
+
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-14 grid grid-cols-4 items-center text-center text-[10px] font-medium">
             <a href="index.html#home" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">⌂</span><span>Home</span></a>
@@ -96,8 +126,19 @@
         const logoEl = document.getElementById('mag-logo');
         const brandEl = document.getElementById('mag-brand');
 
+        const fsViewer = document.getElementById('fullscreen-viewer');
+        const fsStage = document.getElementById('fullscreen-stage');
+        const fsImg = document.getElementById('fs-image');
+        const fsVideo = document.getElementById('fs-video');
+        const fsCounter = document.getElementById('fs-counter');
+        const fsCategory = document.getElementById('fs-category');
+        const fsDate = document.getElementById('fs-date');
+        const fsTitle = document.getElementById('fs-title');
+        const fsCaption = document.getElementById('fs-caption');
+
         let activePostId = sessionStorage.getItem(MAG_ACTIVE_POST_KEY) || null;
-        let stageStack = activePostId ? [activePostId] : [null];
+        let fullscreenPostId = null;
+        let stageStack = [{ postId: activePostId, fullscreen: false }];
         let isPopstateStep = false;
         let scrollSaveTimer = null;
 
@@ -119,19 +160,104 @@
             }
         }
 
-        function selectPost(postId) {
-            const nextId = activePostId === postId ? null : postId;
+        function getFilteredPosts(q = '') {
+            const data = getOSDData();
+            const term = (q || '').trim().toLowerCase();
+            if (!term) return data.posts;
+            return data.posts.filter(p =>
+                (p.title || '').toLowerCase().includes(term) ||
+                (p.description || '').toLowerCase().includes(term) ||
+                (p.category || '').toLowerCase().includes(term) ||
+                (p.date || '').toLowerCase().includes(term)
+            );
+        }
+
+        function pushStage(nextPostId, nextFullscreen) {
             if (!isPopstateStep) {
-                stageStack.push(nextId);
+                stageStack.push({ postId: nextPostId, fullscreen: nextFullscreen });
                 try {
-                    history.pushState({ osdMagStage: nextId, step: stageStack.length }, '', window.location.href);
+                    history.pushState({ osdPostId: nextPostId, osdFs: nextFullscreen }, '', window.location.href);
                 } catch {}
             }
-            activePostId = nextId;
+            activePostId = nextPostId;
+            fullscreenPostId = nextFullscreen ? nextPostId : null;
             syncStageStorage();
+            syncFullscreenUI();
             renderMagazine(searchInput.value);
-            if (activePostId) {
+        }
+
+        function selectPost(postId) {
+            const nextId = activePostId === postId ? null : postId;
+            pushStage(nextId, false);
+            if (nextId) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function openPictureFullscreen(event, postId) {
+            event.stopPropagation();
+            pushStage(postId, true);
+        }
+
+        function closePictureFullscreen() {
+            // Advance to details view of currently displayed picture without history.back
+            pushStage(fullscreenPostId || activePostId, false);
+        }
+
+        function stepFullscreenPicture(delta) {
+            const posts = getFilteredPosts(searchInput.value);
+            if (!posts.length) return;
+            const currentId = fullscreenPostId || activePostId;
+            const currentIdx = Math.max(0, posts.findIndex(p => p.id === currentId));
+            const nextIdx = (currentIdx + delta + posts.length) % posts.length;
+            const nextPost = posts[nextIdx];
+            if (!nextPost) return;
+
+            activePostId = nextPost.id;
+            fullscreenPostId = nextPost.id;
+            syncStageStorage();
+            if (!isPopstateStep) {
+                stageStack.push({ postId: nextPost.id, fullscreen: true });
+                try {
+                    history.pushState({ osdPostId: nextPost.id, osdFs: true }, '', window.location.href);
+                } catch {}
+            }
+            syncFullscreenUI();
+        }
+
+        function syncFullscreenUI() {
+            const posts = getFilteredPosts(searchInput.value);
+            if (!fullscreenPostId || !posts.length) {
+                fsViewer.classList.add('hidden');
+                fsVideo.src = '';
+                document.documentElement.style.overflow = '';
+                return;
+            }
+
+            const idx = posts.findIndex(p => p.id === fullscreenPostId);
+            const post = idx >= 0 ? posts[idx] : posts[0];
+            const safeIdx = idx >= 0 ? idx : 0;
+            const media = parseDriveMedia(post.mediaUrl, post.mediaType);
+
+            fsViewer.classList.remove('hidden');
+            document.documentElement.style.overflow = 'hidden';
+
+            fsCounter.textContent = `${safeIdx + 1} / ${posts.length}`;
+            fsCategory.textContent = post.category || 'JOURNAL';
+            fsDate.textContent = post.date || '';
+            fsTitle.textContent = post.title || '';
+            fsCaption.textContent = post.description || '';
+
+            if (post.mediaType === 'video') {
+                fsImg.classList.add('hidden');
+                fsVideo.classList.remove('hidden');
+                fsVideo.src = media;
+            } else {
+                fsVideo.classList.add('hidden');
+                fsVideo.src = '';
+                fsImg.classList.remove('hidden');
+                fsImg.src = media;
+                fsImg.alt = post.title || '';
             }
         }
 
@@ -139,24 +265,66 @@
             isPopstateStep = true;
             if (stageStack.length > 1) {
                 stageStack.pop();
-                activePostId = stageStack[stageStack.length - 1] ?? null;
+                const prev = stageStack[stageStack.length - 1];
+                activePostId = prev.postId ?? null;
+                fullscreenPostId = prev.fullscreen ? activePostId : null;
+            } else if (e.state) {
+                activePostId = e.state.osdPostId ?? null;
+                fullscreenPostId = e.state.osdFs ? activePostId : null;
             } else {
-                activePostId = e.state && Object.prototype.hasOwnProperty.call(e.state, 'osdMagStage')
-                    ? e.state.osdMagStage
-                    : null;
+                fullscreenPostId = null;
             }
             syncStageStorage();
+            syncFullscreenUI();
             renderMagazine(searchInput.value);
             isPopstateStep = false;
         });
 
+        let touchStartX = 0;
+        let touchDeltaX = 0;
+
+        fsStage.addEventListener('touchstart', (e) => {
+            if (!e.touches || !e.touches.length) return;
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+            fsImg.style.transition = 'none';
+        }, { passive: true });
+
+        fsStage.addEventListener('touchmove', (e) => {
+            if (!e.touches || !e.touches.length) return;
+            touchDeltaX = e.touches[0].clientX - touchStartX;
+            if (Math.abs(touchDeltaX) > 6 && !fsImg.classList.contains('hidden')) {
+                fsImg.style.transform = `translateX(${touchDeltaX * 0.45}px) rotate(${touchDeltaX * 0.015}deg)`;
+            }
+        }, { passive: true });
+
+        fsStage.addEventListener('touchend', () => {
+            fsImg.style.transition = 'transform 0.22s ease-out';
+            fsImg.style.transform = 'translateX(0px) rotate(0deg)';
+            if (Math.abs(touchDeltaX) > 55) {
+                stepFullscreenPicture(touchDeltaX < 0 ? 1 : -1);
+            }
+            touchStartX = 0;
+            touchDeltaX = 0;
+        });
+
+        document.getElementById('fs-close-btn').addEventListener('click', closePictureFullscreen);
+        document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenPicture(-1));
+        document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenPicture(1));
+
         function renderMediaBox(post, media, heightClass) {
             const safeTitle = escapeHtml(post.title);
             const safeMedia = escapeHtml(media);
-            if (post.mediaType === 'video') {
-                return `<div class="${heightClass} w-full bg-black overflow-hidden"><iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
-            }
-            return `<div class="${heightClass} w-full bg-black overflow-hidden"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+            const safeId = escapeHtml(post.id);
+
+            const content = post.mediaType === 'video'
+                ? `<iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe>`
+                : `<img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />`;
+
+            return `
+                <div onclick="openPictureFullscreen(event, '${safeId}')" class="${heightClass} w-full bg-black overflow-hidden relative cursor-zoom-in">
+                    ${content}
+                </div>`;
         }
 
         function buildFeaturedCard(post, media) {
@@ -179,9 +347,8 @@
                         </div>
                         <h2 class="text-lg font-extrabold text-white leading-snug mt-0.5">${title}</h2>
                         <p class="text-xs mt-1.5 text-white/90 leading-relaxed whitespace-pre-line">${desc}</p>
-                        <div class="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-white/55">
-                            <span>${category} • ${mediaType.toUpperCase()}</span>
-                            <span>${date}</span>
+                        <div class="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-white/50 uppercase">
+                            ${mediaType}
                         </div>
                     </div>
                 </article>`;
@@ -192,13 +359,15 @@
             const category = escapeHtml(post.category || 'DIARY');
             const date = escapeHtml(post.date || '');
             const desc = escapeHtml(post.description || '');
+            const safeId = escapeHtml(post.id);
+
             const thumb = post.mediaType === 'video'
-                ? `<div class="h-16 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
-                : `<div class="h-16 w-full bg-black overflow-hidden"><img src="${escapeHtml(media)}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                ? `<div onclick="openPictureFullscreen(event, '${safeId}')" class="h-16 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400 cursor-zoom-in">▶ VIDEO</div>`
+                : `<div onclick="openPictureFullscreen(event, '${safeId}')" class="h-16 w-full bg-black overflow-hidden cursor-zoom-in"><img src="${escapeHtml(media)}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
                 <article
-                    onclick="selectPost('${escapeHtml(post.id)}')"
+                    onclick="selectPost('${safeId}')"
                     class="mini-grid-card cursor-pointer rounded-xl bg-[#1E2126]/90 border border-white/10 hover:border-blue-400/40 overflow-hidden flex flex-col"
                 >
                     ${thumb}
@@ -241,15 +410,7 @@
             logoEl.src = parseDriveMedia(data.brand.logoUrl, 'image');
             brandEl.textContent = data.brand.siteName;
 
-            const term = (q || '').trim().toLowerCase();
-            const posts = term
-                ? data.posts.filter(p =>
-                    (p.title || '').toLowerCase().includes(term) ||
-                    (p.description || '').toLowerCase().includes(term) ||
-                    (p.category || '').toLowerCase().includes(term) ||
-                    (p.date || '').toLowerCase().includes(term)
-                )
-                : data.posts;
+            const posts = getFilteredPosts(q);
 
             if (!posts.length) {
                 feedEl.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No matching posts found.</div>`;
@@ -297,7 +458,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             try {
-                history.replaceState({ osdMagStage: activePostId, step: stageStack.length }, '', window.location.href);
+                history.replaceState({ osdPostId: activePostId, osdFs: false }, '', window.location.href);
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
