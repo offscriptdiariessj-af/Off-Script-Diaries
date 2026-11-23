@@ -61,14 +61,17 @@
 <body class="bg-[#121417] text-white font-sans antialiased pb-24">
 
     <header class="sticky top-0 z-40 bg-[#121417]/92 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-md mx-auto px-3.5 h-14 flex items-center justify-between">
+        <div class="max-w-md mx-auto px-3.5 h-14 flex items-center justify-between gap-2">
             <a href="index.html#home" class="flex items-center gap-2 min-w-0">
                 <img id="mag-logo" src="" alt="Brand Logo" class="w-8 h-8 rounded-full object-cover aspect-square border border-blue-400/50 shrink-0" />
                 <span id="mag-brand" class="text-sm font-bold truncate">Off Script Diaries</span>
             </a>
             <div class="flex items-center gap-1.5 shrink-0">
-                <a href="emagazine.html" class="text-[10px] font-bold uppercase tracking-wider text-white/80 px-2.5 py-1 rounded-full bg-white/10">Viewer</a>
-                <button type="button" onclick="lockRoleSession('magazine_admin')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
+                <button id="open-gh-btn" type="button" class="text-[10px] font-bold uppercase tracking-wider text-emerald-300 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30">
+                    GitHub
+                </button>
+                <a href="emagazine.html" class="text-[10px] font-bold uppercase tracking-wider text-white/80 px-2 py-1 rounded-full bg-white/10">Viewer</a>
+                <button type="button" onclick="lockRoleSession('magazine_admin')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
                     Lock
                 </button>
             </div>
@@ -76,12 +79,54 @@
     </header>
 
     <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
+        <div id="gh-banner" class="hidden px-3 py-2 rounded-xl bg-[#1E2126] border border-white/10 text-[11px] text-white/75 flex items-center justify-between gap-2">
+            <span id="gh-status-text" class="truncate">GitHub sync ready</span>
+            <span id="gh-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">Local</span>
+        </div>
         <input id="search-posts" type="search" placeholder="Search folder, date, title, category..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
-    <!-- EDIT / ADD MODAL (FOLDER OR ITEM) -->
+    <!-- EDIT / ADD / GITHUB MODAL -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <!-- GITHUB SYNC CONFIG FORM -->
+        <div id="gh-config-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-emerald-400/40 p-4 space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">GitHub Storage Config</h3>
+                <button id="close-gh-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">GitHub Owner</label>
+                    <input id="gh-owner" type="text" placeholder="username or org" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Repository</label>
+                    <input id="gh-repo" type="text" placeholder="repo-name" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">Branch</label>
+                    <input id="gh-branch" type="text" placeholder="main" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] text-white/60">JSON File Path</label>
+                    <input id="gh-path" type="text" placeholder="data/magazine.json" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="text-[11px] text-white/60">Fine-Grained PAT (Contents: Read &amp; Write)</label>
+                <input id="gh-token" type="password" placeholder="github_pat_..." class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500" />
+            </div>
+            <div class="flex gap-2">
+                <button id="save-gh-btn" type="button" class="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Save &amp; Pull from GitHub</button>
+                <button id="push-gh-now-btn" type="button" class="px-3 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">Push Now</button>
+            </div>
+            <p id="gh-form-msg" class="text-[11px] text-white/70 hidden"></p>
+        </div>
+
+        <!-- EDIT FOLDER FORM -->
         <div id="edit-folder-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-blue-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
                 <h3 class="text-sm font-extrabold text-blue-400 uppercase tracking-wider">Edit Date Folder</h3>
@@ -106,6 +151,7 @@
             <button id="save-folder-edit-btn" type="button" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">Save Folder</button>
         </div>
 
+        <!-- ADD / EDIT ITEM FORM -->
         <div id="edit-item-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-emerald-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
                 <h3 id="item-modal-title" class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Edit Item</h3>
@@ -126,22 +172,23 @@
             </div>
             <div class="grid grid-cols-2 gap-2.5">
                 <div class="space-y-1">
-                    <label class="text-[11px] text-white/60">Title</label>
-                    <input id="edit-item-title" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="text-[11px] text-white/60">Title *</label>
+                    <input id="edit-item-title" type="text" placeholder="Photo or video title" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="space-y-1">
                     <label class="text-[11px] text-white/60">Category</label>
-                    <input id="edit-item-category" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <input id="edit-item-category" type="text" placeholder="Memory" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
             </div>
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Media URL</label>
-                <input id="edit-item-media" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                <label class="text-[11px] text-white/60">Media URL *</label>
+                <input id="edit-item-media" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
             </div>
             <div class="space-y-1">
                 <label class="text-[11px] text-white/60">Description</label>
-                <textarea id="edit-item-desc" rows="2" class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                <textarea id="edit-item-desc" rows="2" placeholder="Optional note..." class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
+            <p id="item-form-error" class="hidden text-[11px] text-rose-400 font-medium"></p>
             <button id="save-item-edit-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Save Item</button>
         </div>
     </div>
@@ -185,11 +232,23 @@
     <script>
         const MAG_ACTIVE_FOLDER_KEY = 'osd_mag_admin_active_folder_v1';
         const MAG_SCROLL_KEY = 'osd_mag_admin_scroll_v1';
+        const GH_CONFIG_KEY = 'osd_gh_mag_config_v1';
 
         const searchInput = document.getElementById('search-posts');
         const feedEl = document.getElementById('magazine-feed');
         const logoEl = document.getElementById('mag-logo');
         const brandEl = document.getElementById('mag-brand');
+
+        const ghBanner = document.getElementById('gh-banner');
+        const ghStatusText = document.getElementById('gh-status-text');
+        const ghBadge = document.getElementById('gh-badge');
+        const ghConfigForm = document.getElementById('gh-config-form');
+        const ghOwnerInput = document.getElementById('gh-owner');
+        const ghRepoInput = document.getElementById('gh-repo');
+        const ghBranchInput = document.getElementById('gh-branch');
+        const ghPathInput = document.getElementById('gh-path');
+        const ghTokenInput = document.getElementById('gh-token');
+        const ghFormMsg = document.getElementById('gh-form-msg');
 
         const editModal = document.getElementById('edit-modal');
         const editFolderForm = document.getElementById('edit-folder-form');
@@ -200,6 +259,7 @@
         const editFolderDesc = document.getElementById('edit-folder-desc');
 
         const itemModalTitle = document.getElementById('item-modal-title');
+        const itemFormError = document.getElementById('item-form-error');
         const saveItemEditBtn = document.getElementById('save-item-edit-btn');
         const editItemDate = document.getElementById('edit-item-date');
         const editItemType = document.getElementById('edit-item-type');
@@ -236,6 +296,173 @@
                 '"': '&quot;',
                 "'": '&#39;'
             }[ch]));
+        }
+
+        function getGhConfig() {
+            try {
+                return JSON.parse(localStorage.getItem(GH_CONFIG_KEY) || '{}') || {};
+            } catch {
+                return {};
+            }
+        }
+
+        function setGhConfig(cfg) {
+            localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
+        }
+
+        function hasValidGhConfig(cfg = getGhConfig()) {
+            return Boolean(cfg.owner && cfg.repo && cfg.path && cfg.token);
+        }
+
+        function updateGhBanner(message, statusType = 'local') {
+            ghBanner.classList.remove('hidden');
+            ghStatusText.textContent = message;
+            if (statusType === 'synced') {
+                ghBadge.textContent = 'GitHub Synced';
+                ghBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 shrink-0';
+            } else if (statusType === 'error') {
+                ghBadge.textContent = 'GitHub Error';
+                ghBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 shrink-0';
+            } else {
+                ghBadge.textContent = 'Local Only';
+                ghBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0';
+            }
+        }
+
+        function utf8ToBase64(str) {
+            const bytes = new TextEncoder().encode(str);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function base64ToUtf8(base64) {
+            const binary = atob(base64.replace(/\n/g, ''));
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new TextDecoder().decode(bytes);
+        }
+
+        async function fetchGhFileMeta(cfg) {
+            const branch = cfg.branch || 'main';
+            const cleanPath = cfg.path.replace(/^\/+/, '');
+            const url = `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(branch)}`;
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${cfg.token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            if (res.status === 404) {
+                return { exists: false, sha: null, data: null };
+            }
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`GitHub read failed (${res.status}): ${errText}`);
+            }
+            const json = await res.json();
+            const contentStr = json.content ? base64ToUtf8(json.content) : '{}';
+            return {
+                exists: true,
+                sha: json.sha,
+                data: JSON.parse(contentStr)
+            };
+        }
+
+        async function pushDataToGitHub(fullData, commitMessage = 'Update Off Script Diaries E-Magazine data') {
+            const cfg = getGhConfig();
+            if (!hasValidGhConfig(cfg)) {
+                updateGhBanner('Saved locally. Configure GitHub in the GitHub button to store in your repo.', 'local');
+                return false;
+            }
+
+            try {
+                const branch = cfg.branch || 'main';
+                const cleanPath = cfg.path.replace(/^\/+/, '');
+                const meta = await fetchGhFileMeta(cfg);
+
+                const payloadObj = {
+                    posts: Array.isArray(fullData.posts) ? fullData.posts : [],
+                    dateFolders: (fullData.dateFolders && typeof fullData.dateFolders === 'object') ? fullData.dateFolders : {},
+                    updatedAt: new Date().toISOString()
+                };
+
+                const body = {
+                    message: commitMessage,
+                    content: utf8ToBase64(JSON.stringify(payloadObj, null, 2)),
+                    branch
+                };
+                if (meta.sha) {
+                    body.sha = meta.sha;
+                }
+
+                const url = `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cleanPath}`;
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${cfg.token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`GitHub write failed (${res.status}): ${errText}`);
+                }
+
+                updateGhBanner(`Saved to GitHub (${cfg.owner}/${cfg.repo}:${cleanPath})`, 'synced');
+                return true;
+            } catch (err) {
+                updateGhBanner(err.message || 'GitHub sync failed', 'error');
+                return false;
+            }
+        }
+
+        async function pullDataFromGitHub() {
+            const cfg = getGhConfig();
+            if (!hasValidGhConfig(cfg)) return false;
+
+            try {
+                const meta = await fetchGhFileMeta(cfg);
+                if (meta.exists && meta.data) {
+                    const current = ensureFolderStore(getOSDData());
+                    if (Array.isArray(meta.data.posts)) current.posts = meta.data.posts;
+                    if (meta.data.dateFolders && typeof meta.data.dateFolders === 'object') {
+                        current.dateFolders = meta.data.dateFolders;
+                    }
+                    saveOSDData(current);
+                    window.dispatchEvent(new Event('osd_data_updated'));
+                    renderMagazine(searchInput.value);
+                    updateGhBanner(`Loaded latest from GitHub (${cfg.path})`, 'synced');
+                    return true;
+                }
+                updateGhBanner(`Connected to ${cfg.owner}/${cfg.repo}. Will create ${cfg.path} on first save.`, 'synced');
+                return false;
+            } catch (err) {
+                updateGhBanner(err.message || 'Could not pull from GitHub', 'error');
+                return false;
+            }
+        }
+
+        function openGhModal() {
+            const cfg = getGhConfig();
+            ghOwnerInput.value = cfg.owner || '';
+            ghRepoInput.value = cfg.repo || '';
+            ghBranchInput.value = cfg.branch || 'main';
+            ghPathInput.value = cfg.path || 'data/magazine.json';
+            ghTokenInput.value = cfg.token || '';
+            ghFormMsg.classList.add('hidden');
+
+            editFolderForm.classList.add('hidden');
+            editItemForm.classList.add('hidden');
+            ghConfigForm.classList.remove('hidden');
+            editModal.classList.remove('hidden');
         }
 
         function extractDriveFileId(rawUrl = '') {
@@ -315,8 +542,10 @@
             editingFolderKey = null;
             editingItemId = null;
             addingToFolderDate = null;
+            itemFormError.classList.add('hidden');
             editFolderForm.classList.add('hidden');
             editItemForm.classList.add('hidden');
+            ghConfigForm.classList.add('hidden');
             editModal.classList.add('hidden');
         }
 
@@ -333,12 +562,13 @@
             editFolderCover.value = meta.coverUrl || '';
             editFolderDesc.value = meta.description || '';
 
+            ghConfigForm.classList.add('hidden');
             editItemForm.classList.add('hidden');
             editFolderForm.classList.remove('hidden');
             editModal.classList.remove('hidden');
         }
 
-        function saveFolderEdit() {
+        async function saveFolderEdit() {
             if (!editingFolderKey) return;
             const data = ensureFolderStore(getOSDData());
             data.dateFolders[editingFolderKey] = {
@@ -350,6 +580,7 @@
             window.dispatchEvent(new Event('osd_data_updated'));
             closeEditModal();
             renderMagazine(searchInput.value);
+            await pushDataToGitHub(data, `Update folder ${editingFolderKey}`);
         }
 
         function openAddItemModal(event, folderKey) {
@@ -360,6 +591,7 @@
 
             itemModalTitle.textContent = 'Add Item to Folder';
             saveItemEditBtn.textContent = 'Add Item';
+            itemFormError.classList.add('hidden');
 
             editItemDate.value = /^\d{4}-\d{2}-\d{2}$/.test(folderKey) ? folderKey : new Date().toISOString().slice(0, 10);
             editItemType.value = 'image';
@@ -368,9 +600,11 @@
             editItemMedia.value = '';
             editItemDesc.value = '';
 
+            ghConfigForm.classList.add('hidden');
             editFolderForm.classList.add('hidden');
             editItemForm.classList.remove('hidden');
             editModal.classList.remove('hidden');
+            editItemTitle.focus();
         }
 
         function openEditItemModal(event, itemId) {
@@ -385,6 +619,7 @@
 
             itemModalTitle.textContent = 'Edit Item';
             saveItemEditBtn.textContent = 'Save Item';
+            itemFormError.classList.add('hidden');
 
             editItemDate.value = item.date || '';
             editItemType.value = item.mediaType === 'video' ? 'video' : 'image';
@@ -393,16 +628,25 @@
             editItemMedia.value = item.mediaUrl || '';
             editItemDesc.value = item.description || '';
 
+            ghConfigForm.classList.add('hidden');
             editFolderForm.classList.add('hidden');
             editItemForm.classList.remove('hidden');
             editModal.classList.remove('hidden');
         }
 
-        function saveItemEdit() {
+        async function saveItemEdit() {
             const mediaUrl = editItemMedia.value.trim();
             const title = editItemTitle.value.trim();
-            if (!mediaUrl || !title) return;
 
+            if (!title || !mediaUrl) {
+                itemFormError.textContent = !title && !mediaUrl
+                    ? 'Please enter both a Title and a Media URL.'
+                    : (!title ? 'Please enter a Title.' : 'Please enter a Media URL.');
+                itemFormError.classList.remove('hidden');
+                return;
+            }
+
+            itemFormError.classList.add('hidden');
             const data = ensureFolderStore(getOSDData());
             const targetDate = (editItemDate.value || addingToFolderDate || new Date().toISOString().slice(0, 10)).trim();
             const mediaType = editItemType.value === 'video' ? 'video' : 'image';
@@ -413,7 +657,8 @@
                 data.dateFolders[targetDate] = { title: targetDate, coverUrl: '', description: '' };
             }
 
-            if (editingItemId) {
+            const isNewItem = !editingItemId;
+            if (!isNewItem) {
                 const idx = data.posts.findIndex(p => p.id === editingItemId);
                 if (idx < 0) return;
 
@@ -442,6 +687,11 @@
             window.dispatchEvent(new Event('osd_data_updated'));
             closeEditModal();
             renderMagazine(searchInput.value);
+
+            await pushDataToGitHub(
+                data,
+                isNewItem ? `Add item "${title}" to ${targetDate}` : `Edit item "${title}" (${targetDate})`
+            );
         }
 
         function buildDateFolders(q = '') {
@@ -681,10 +931,43 @@
         document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenItem(-1));
         document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenItem(1));
 
+        document.getElementById('open-gh-btn').addEventListener('click', openGhModal);
+        document.getElementById('close-gh-btn').addEventListener('click', closeEditModal);
+        document.getElementById('save-gh-btn').addEventListener('click', async () => {
+            const cfg = {
+                owner: ghOwnerInput.value.trim(),
+                repo: ghRepoInput.value.trim(),
+                branch: ghBranchInput.value.trim() || 'main',
+                path: ghPathInput.value.trim() || 'data/magazine.json',
+                token: ghTokenInput.value.trim()
+            };
+            setGhConfig(cfg);
+            ghFormMsg.textContent = 'Saving config & checking GitHub...';
+            ghFormMsg.classList.remove('hidden');
+            await pullDataFromGitHub();
+            ghFormMsg.textContent = ghStatusText.textContent;
+        });
+
+        document.getElementById('push-gh-now-btn').addEventListener('click', async () => {
+            const cfg = {
+                owner: ghOwnerInput.value.trim(),
+                repo: ghRepoInput.value.trim(),
+                branch: ghBranchInput.value.trim() || 'main',
+                path: ghPathInput.value.trim() || 'data/magazine.json',
+                token: ghTokenInput.value.trim()
+            };
+            setGhConfig(cfg);
+            const data = ensureFolderStore(getOSDData());
+            ghFormMsg.textContent = 'Pushing to GitHub...';
+            ghFormMsg.classList.remove('hidden');
+            await pushDataToGitHub(data, 'Sync Off Script Diaries E-Magazine data');
+            ghFormMsg.textContent = ghStatusText.textContent;
+        });
+
         document.getElementById('close-folder-edit-btn').addEventListener('click', closeEditModal);
         document.getElementById('close-item-edit-btn').addEventListener('click', closeEditModal);
         document.getElementById('save-folder-edit-btn').addEventListener('click', saveFolderEdit);
-        document.getElementById('save-item-edit-btn').addEventListener('click', saveItemEdit);
+        saveItemEditBtn.addEventListener('click', saveItemEdit);
 
         function renderCoverBox(folder, heightClass) {
             const safeTitle = escapeHtml(folder.resolvedTitle);
@@ -875,7 +1158,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             try {
                 history.replaceState({ osdMagAdminBase: true }, '', window.location.href);
                 history.pushState({ osdMagAdminGuard: true }, '', window.location.href);
@@ -886,6 +1169,13 @@
                 requestAnimationFrame(() => window.scrollTo(0, savedScroll));
             }
             enforceRoleLock('magazine_admin', 'Magazine Admin');
+
+            if (hasValidGhConfig()) {
+                updateGhBanner('Syncing with GitHub...', 'synced');
+                await pullDataFromGitHub();
+            } else {
+                updateGhBanner('Local storage active. Tap GitHub to connect repo storage.', 'local');
+            }
         });
 
         window.addEventListener('storage', () => renderMagazine(searchInput.value));
