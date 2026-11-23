@@ -124,6 +124,7 @@
             onValue
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+        // Match this databaseURL with emagazineadmin.html
         const firebaseConfig = {
             apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
             authDomain: "offscript-3cf92.firebaseapp.com",
@@ -136,7 +137,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const rtdb = getDatabase(app);
+        const rtdb = getDatabase(app, firebaseConfig.databaseURL);
 
         const foldersRef = ref(rtdb, "magazineFolders");
         const itemsRef = ref(rtdb, "magazineItems");
