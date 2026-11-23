@@ -6,14 +6,69 @@
     <title>E-Magazine — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .post-card {
+        @keyframes spotlightSpring {
+            0% {
+                opacity: 0.72;
+                transform: translateY(14px) scale(0.95);
+            }
+            65% {
+                opacity: 1;
+                transform: translateY(-2px) scale(1.018);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes dockSettle {
+            0% {
+                opacity: 0.6;
+                transform: scale(0.98);
+            }
+            100% {
+                opacity: 0.92;
+                transform: scale(0.955);
+            }
+        }
+
+        .spotlight-pin {
+            position: sticky;
+            top: 4.5rem;
+            z-index: 25;
             transform-origin: center top;
-            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), padding 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-            will-change: transform;
+            animation: spotlightSpring 0.42s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+            will-change: transform, opacity;
+        }
+
+        .docked-card {
+            transform-origin: center top;
+            animation: dockSettle 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+            transition: transform 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
+        }
+
+        .docked-card:active {
+            transform: scale(0.92);
+        }
+
+        .standard-card {
+            transform-origin: center top;
+            transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+        }
+
+        .standard-card:active {
+            transform: scale(0.975);
+        }
+
+        .spotlight-glow {
+            box-shadow:
+                0 24px 55px -12px rgba(0, 0, 0, 0.85),
+                0 0 0 1px rgba(96, 165, 250, 0.35),
+                0 0 36px -8px rgba(59, 130, 246, 0.38);
         }
     </style>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-24">
+<body class="bg-[#121417] text-white font-sans antialiased pb-28">
 
     <header class="sticky top-0 z-40 bg-[#121417]/90 backdrop-blur-md border-b border-white/10">
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
@@ -74,21 +129,21 @@
             }
         }
 
-        function setStage(nextId, recordStep = true) {
-            const resolvedNext = activePostId === nextId ? null : nextId;
-            if (recordStep && !isPopstateStep) {
-                stageStack.push(resolvedNext);
+        // Tapping a card always advances the stage forward (tapping pinned card also pushes a new stage step, never history.back)
+        function pinPostStage(postId) {
+            const nextId = activePostId === postId ? null : postId;
+            if (!isPopstateStep) {
+                stageStack.push(nextId);
                 try {
-                    history.pushState({ osdMagStage: resolvedNext }, '', window.location.href);
+                    history.pushState({ osdMagStage: nextId, step: stageStack.length }, '', window.location.href);
                 } catch {}
             }
-            activePostId = resolvedNext;
+            activePostId = nextId;
             syncStageStorage();
             renderMagazine(searchInput.value);
-        }
-
-        function toggleExpandPost(postId) {
-            setStage(postId, true);
+            if (activePostId) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         window.addEventListener('popstate', (e) => {
@@ -106,7 +161,7 @@
             isPopstateStep = false;
         });
 
-        function buildShrunkCard(post, media) {
+        function buildDockedCard(post, media) {
             const title = escapeHtml(post.title);
             const category = escapeHtml(post.category || 'DIARY');
             const date = escapeHtml(post.date || '');
@@ -119,24 +174,25 @@
 
             return `
                 <article
-                    onclick="toggleExpandPost('${escapeHtml(post.id)}')"
-                    class="post-card cursor-pointer rounded-xl bg-[#1E2126]/85 border border-white/10 p-2.5 flex items-center gap-3 scale-[0.95] opacity-85"
+                    onclick="pinPostStage('${escapeHtml(post.id)}')"
+                    class="docked-card cursor-pointer rounded-2xl bg-[#1E2126]/90 border border-white/10 p-2.5 flex items-center gap-3 scale-[0.955]"
                 >
-                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-black shrink-0 flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-black shrink-0 flex items-center justify-center border border-white/10">
                         ${thumb}
                     </div>
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between text-[10px] text-white/45">
-                            <span class="text-blue-400 font-bold uppercase">${category}</span>
+                            <span class="text-blue-400 font-bold uppercase tracking-wide">${category}</span>
                             <span>${date}</span>
                         </div>
-                        <h3 class="text-xs font-bold text-white/90 truncate mt-0.5">${title}</h3>
+                        <h3 class="text-xs font-bold text-white/95 truncate mt-0.5">${title}</h3>
                         <p class="text-[11px] text-white/55 line-clamp-1">${desc}</p>
                     </div>
+                    <span class="text-[10px] font-bold text-blue-400/80 px-2 py-1 rounded-lg bg-blue-500/10 shrink-0">Pin</span>
                 </article>`;
         }
 
-        function buildCard(post, isExpanded, media) {
+        function buildCard(post, isPinned, media) {
             const title = escapeHtml(post.title);
             const category = escapeHtml(post.category || 'JOURNAL');
             const date = escapeHtml(post.date || '');
@@ -145,39 +201,43 @@
             const safeMedia = escapeHtml(media);
 
             const mediaBlock = post.mediaType === 'video'
-                ? `<div class="${isExpanded ? 'aspect-video' : 'aspect-[4/3]'} w-full bg-black"><iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`
-                : `<div class="${isExpanded ? 'aspect-square' : 'aspect-[4/3]'} w-full bg-black"><img src="${safeMedia}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                ? `<div class="${isPinned ? 'aspect-video' : 'aspect-[4/3]'} w-full bg-black"><iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`
+                : `<div class="${isPinned ? 'aspect-square' : 'aspect-[4/3]'} w-full bg-black"><img src="${safeMedia}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
-            const bodyBlock = isExpanded
+            const bodyBlock = isPinned
                 ? `
-                    <div class="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/60">
-                        <span>Category: <strong class="text-blue-300">${category}</strong></span>
-                        <span>Date: <strong class="text-white/85">${date}</strong></span>
-                        <span>Media: <strong class="text-white/85 uppercase">${mediaType}</strong></span>
+                    <div class="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/65">
+                        <span class="px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 font-semibold">${category}</span>
+                        <span>${date}</span>
+                        <span class="uppercase text-white/50">${mediaType}</span>
                     </div>
-                    <p class="text-sm mt-3 text-white/90 leading-relaxed whitespace-pre-line">${desc}</p>
-                    <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
-                        Expanded • Tap or press Back to return
+                    <p class="text-sm mt-3 text-white/95 leading-relaxed whitespace-pre-line">${desc}</p>
+                    <div class="mt-3.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                            Pinned Spotlight
+                        </span>
+                        <span>Tap to unpin</span>
                     </div>`
                 : `
                     <p class="text-xs mt-2 line-clamp-2 text-white/75 leading-relaxed">${desc}</p>
                     <div class="mt-3 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
-                        Tap for full details
+                        Tap to pin &amp; expand
                     </div>`;
 
             return `
                 <article
-                    onclick="toggleExpandPost('${escapeHtml(post.id)}')"
-                    class="post-card cursor-pointer rounded-3xl bg-[#1E2126] ${isExpanded ? 'border-2 border-blue-500 shadow-2xl shadow-blue-950/60 scale-[1.02] p-1.5' : 'border border-white/10'}"
+                    onclick="pinPostStage('${escapeHtml(post.id)}')"
+                    class="${isPinned ? 'spotlight-pin spotlight-glow rounded-3xl bg-[#1E2126]/95 backdrop-blur-xl border-2 border-blue-400/70 p-1.5' : 'standard-card cursor-pointer rounded-3xl bg-[#1E2126] border border-white/10'}"
                 >
-                    <div class="rounded-2xl overflow-hidden">
+                    <div class="rounded-2xl overflow-hidden bg-[#1E2126]">
                         ${mediaBlock}
-                        <div class="${isExpanded ? 'p-5' : 'p-4'}">
+                        <div class="${isPinned ? 'p-5' : 'p-4'}">
                             <div class="flex items-center justify-between text-[11px] font-bold uppercase text-blue-400">
                                 <span>${category}</span>
                                 <span class="text-white/50 font-normal">${date}</span>
                             </div>
-                            <h2 class="${isExpanded ? 'text-2xl mt-1.5' : 'text-lg mt-1'} font-extrabold text-white leading-snug">${title}</h2>
+                            <h2 class="${isPinned ? 'text-2xl mt-1.5' : 'text-lg mt-1'} font-extrabold text-white leading-snug">${title}</h2>
                             ${bodyBlock}
                         </div>
                     </div>
@@ -204,18 +264,18 @@
                 return;
             }
 
-            const hasExpanded = activePostId !== null && posts.some(p => p.id === activePostId);
-            const ordered = hasExpanded
+            const hasPinned = activePostId !== null && posts.some(p => p.id === activePostId);
+            const ordered = hasPinned
                 ? [...posts.filter(p => p.id === activePostId), ...posts.filter(p => p.id !== activePostId)]
                 : posts;
 
             feedEl.innerHTML = ordered.map(post => {
                 const media = parseDriveMedia(post.mediaUrl, post.mediaType);
-                if (hasExpanded && post.id === activePostId) {
+                if (hasPinned && post.id === activePostId) {
                     return buildCard(post, true, media);
                 }
-                if (hasExpanded) {
-                    return buildShrunkCard(post, media);
+                if (hasPinned) {
+                    return buildDockedCard(post, media);
                 }
                 return buildCard(post, false, media);
             }).join('');
@@ -236,7 +296,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             try {
-                history.replaceState({ osdMagStage: activePostId }, '', window.location.href);
+                history.replaceState({ osdMagStage: activePostId, step: stageStack.length }, '', window.location.href);
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
