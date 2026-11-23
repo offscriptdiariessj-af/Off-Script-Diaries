@@ -3,155 +3,227 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Magazine Admin — Off Script Diaries</title>
+    <title>E-Magazine Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes folderRise {
+            0% {
+                opacity: 0.72;
+                transform: translateY(10px) scale(0.97);
+            }
+            65% {
+                opacity: 1;
+                transform: translateY(-2px) scale(1.015);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1.01);
+            }
+        }
+
+        @keyframes scaledSpotlightIn {
+            0% {
+                opacity: 0.6;
+                transform: translateY(6px) scale(0.97);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1.01);
+            }
+        }
+
+        .lead-stage {
+            transform: scale(1.01);
+            transform-origin: center top;
+            animation: folderRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+            will-change: transform, opacity;
+        }
+
+        .scaled-feature-card {
+            transform: scale(1.01);
+            animation: scaledSpotlightIn 0.26s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+            will-change: transform, opacity;
+        }
+
+        .compact-card {
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .compact-card:active {
+            transform: scale(0.98);
+        }
+
+        #fullscreen-stage {
+            touch-action: pan-y pinch-zoom;
+        }
+    </style>
 </head>
 <body class="bg-[#121417] text-white font-sans antialiased pb-24">
 
     <header class="sticky top-0 z-40 bg-[#121417]/92 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <span class="w-8 h-8 rounded-full bg-blue-600/25 border border-blue-400/40 text-blue-300 flex items-center justify-center text-xs font-bold shrink-0">✎</span>
-                <div class="truncate">
-                    <h1 class="text-sm font-bold text-white truncate">Magazine Folder Studio</h1>
-                    <p class="text-[10px] text-blue-400 truncate">Folders &amp; Items • Edit, Delete, Upload</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="emagazine.html" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-white/10 text-white/85">View</a>
-                <button type="button" onclick="lockRoleSession('magazine_admin')" class="text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-400/30">Lock</button>
+        <div class="max-w-md mx-auto px-3.5 h-14 flex items-center justify-between">
+            <a href="index.html#home" class="flex items-center gap-2 min-w-0">
+                <img id="mag-logo" src="" alt="Brand Logo" class="w-8 h-8 rounded-full object-cover aspect-square border border-blue-400/50 shrink-0" />
+                <span id="mag-brand" class="text-sm font-bold truncate">Off Script Diaries</span>
+            </a>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <a href="emagazine.html" class="text-[10px] font-bold uppercase tracking-wider text-white/80 px-2.5 py-1 rounded-full bg-white/10">Viewer</a>
+                <button type="button" onclick="lockRoleSession('magazine_admin')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
+                    Lock
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+    <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
+        <input id="search-posts" type="search" placeholder="Search folder, date, title, category..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+        <div id="magazine-feed" class="space-y-3"></div>
+    </main>
 
-        <!-- 1. DATE FOLDER MANAGER (EDIT / CREATE / DELETE FOLDER) -->
-        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
+    <!-- EDIT MODAL (FOLDER OR ITEM) -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="edit-folder-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-blue-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">1 • Date Folder</span>
-                <span class="text-[10px] text-white/45">Cover, title &amp; info</span>
+                <h3 class="text-sm font-extrabold text-blue-400 uppercase tracking-wider">Edit Date Folder</h3>
+                <button id="close-folder-edit-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
             </div>
-
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Folder Date</label>
-                <input id="folder-date-input" type="date" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                <label class="text-[11px] text-white/60">Date</label>
+                <input id="edit-folder-date" type="text" readonly class="w-full h-9 px-3 rounded-xl bg-[#121417]/70 border border-white/10 text-xs text-white/75" />
             </div>
-
             <div class="space-y-1">
                 <label class="text-[11px] text-white/60">Folder Title</label>
-                <input id="folder-title-input" type="text" placeholder="e.g., Sunset Drive &amp; Coffee" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                <input id="edit-folder-title" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
             </div>
-
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Folder Cover Picture (Google Drive / Image URL)</label>
-                <input id="folder-cover-input" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                <label class="text-[11px] text-white/60">Folder Cover Picture URL</label>
+                <input id="edit-folder-cover" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
             </div>
-
             <div class="space-y-1">
                 <label class="text-[11px] text-white/60">Folder Description</label>
-                <textarea id="folder-desc-input" rows="2" placeholder="Overall summary for this date folder..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                <textarea id="edit-folder-desc" rows="2" class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
+            <button id="save-folder-edit-btn" type="button" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">Save Folder</button>
+        </div>
 
-            <div class="flex gap-2">
-                <button id="save-folder-meta-btn" type="button" class="flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Save Folder
-                </button>
-                <button id="delete-folder-btn" type="button" class="px-3.5 h-10 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 border border-rose-400/30 text-xs font-bold text-rose-300 transition">
-                    Delete Folder
-                </button>
-            </div>
-            <p id="folder-save-status" class="text-[11px] text-emerald-400 hidden"></p>
-        </section>
-
-        <!-- 2. ITEM INSIDE FOLDER (UPLOAD NEW OR EDIT EXISTING ITEM) -->
-        <section id="item-editor-section" class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
+        <div id="edit-item-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-emerald-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
-                <span id="item-editor-heading" class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">2 • Upload Item to Folder</span>
-                <button id="cancel-edit-item-btn" type="button" class="hidden text-[10px] font-bold px-2 py-1 rounded bg-white/10 text-white/75">Cancel Edit</button>
+                <h3 class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Edit Item</h3>
+                <button id="close-item-edit-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
             </div>
-
             <div class="grid grid-cols-2 gap-2.5">
                 <div class="space-y-1">
-                    <label class="text-[11px] text-white/60">Folder Date</label>
-                    <input id="item-date-input" type="date" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="text-[11px] text-white/60">Date</label>
+                    <input id="edit-item-date" type="date" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="space-y-1">
-                    <label class="text-[11px] text-white/60">Media Type</label>
-                    <select id="item-type-input" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-[11px] text-white/60">Type</label>
+                    <select id="edit-item-type" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500">
                         <option value="image">Image</option>
                         <option value="video">Video</option>
                     </select>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-2.5">
                 <div class="space-y-1">
-                    <label class="text-[11px] text-white/60">Item Title</label>
-                    <input id="item-title-input" type="text" placeholder="Photo / Clip title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="text-[11px] text-white/60">Title</label>
+                    <input id="edit-item-title" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="space-y-1">
                     <label class="text-[11px] text-white/60">Category</label>
-                    <input id="item-category-input" type="text" placeholder="Memory" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <input id="edit-item-category" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
             </div>
-
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Google Drive / Media URL</label>
-                <input id="item-media-input" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                <label class="text-[11px] text-white/60">Media URL</label>
+                <input id="edit-item-media" type="text" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
             </div>
-
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Item Caption / Description</label>
-                <textarea id="item-desc-input" rows="2" placeholder="Note for this photo or video..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                <label class="text-[11px] text-white/60">Description</label>
+                <textarea id="edit-item-desc" rows="2" class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
+            <button id="save-item-edit-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Save Item</button>
+        </div>
+    </div>
 
-            <button id="submit-item-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">
-                Upload Item to Folder
-            </button>
-            <p id="item-save-status" class="text-[11px] text-emerald-400 hidden"></p>
-        </section>
+    <!-- FULL-SCREEN SWIPEABLE VIEWER (STRICTLY INSIDE SELECTED DATE FOLDER) -->
+    <div id="fullscreen-viewer" class="hidden fixed inset-0 z-50 bg-black/98 backdrop-blur-md flex flex-col justify-between select-none">
+        <div class="px-4 pt-4 pb-2 flex items-center justify-between text-xs text-white/75">
+            <span id="fs-counter" class="font-mono font-semibold text-blue-400">1 / 1</span>
+            <span id="fs-folder-label" class="text-[11px] text-white/55 truncate max-w-[160px]"></span>
+            <button id="fs-close-btn" type="button" class="px-2.5 py-1 rounded-lg bg-white/10 text-white text-xs font-semibold">✕</button>
+        </div>
 
-        <!-- 3. DATE FOLDERS OVERVIEW -->
-        <section class="space-y-2.5">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">3 • Date Folders</span>
-            <div id="admin-folders-list" class="space-y-2.5"></div>
-        </section>
+        <div id="fullscreen-stage" class="relative flex-1 flex items-center justify-center px-3 overflow-hidden">
+            <img id="fs-image" src="" alt="" class="max-h-[76vh] w-full object-contain rounded-2xl transition-transform duration-200 ease-out" />
+            <iframe id="fs-video" src="" class="hidden w-full aspect-video rounded-2xl border-0 bg-black" allow="autoplay; fullscreen" allowfullscreen></iframe>
 
-        <!-- 4. ALL ITEMS ACROSS FOLDERS (EDIT / DELETE ANY ITEM) -->
-        <section class="space-y-2.5">
-            <div class="flex items-center justify-between px-1">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">4 • All Folder Items</span>
-                <span id="all-items-count" class="text-[10px] font-mono text-white/50">0 items</span>
+            <button id="fs-prev-btn" type="button" aria-label="Previous item in folder" class="hidden sm:flex absolute left-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">‹</button>
+            <button id="fs-next-btn" type="button" aria-label="Next item in folder" class="hidden sm:flex absolute right-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">›</button>
+        </div>
+
+        <div class="px-4 pb-5 pt-2 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
+                <span id="fs-category"></span>
+                <span id="fs-date" class="text-white/55 font-normal"></span>
             </div>
-            <input id="admin-item-search" type="search" placeholder="Filter items by title, date, category..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-            <div id="admin-all-items-list" class="space-y-2.5"></div>
-        </section>
+            <h3 id="fs-title" class="text-base font-extrabold text-white mt-0.5 truncate"></h3>
+            <p id="fs-caption" class="text-xs text-white/75 mt-1 line-clamp-2 leading-relaxed"></p>
+        </div>
+    </div>
 
-    </main>
+    <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
+        <div class="max-w-md mx-auto h-14 grid grid-cols-4 items-center text-center text-[10px] font-medium">
+            <a href="index.html#home" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">⌂</span><span>Home</span></a>
+            <button id="nav-mag-refresh" type="button" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span class="text-xs">✎</span><span>Admin</span></button>
+            <a href="index.html#stats" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">◈</span><span>Stats</span></a>
+            <a href="index.html#vault" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">✦</span><span>Vault</span></a>
+        </div>
+    </nav>
 
     <script src="js/store.js"></script>
     <script>
-        const folderDateEl = document.getElementById('folder-date-input');
-        const folderTitleEl = document.getElementById('folder-title-input');
-        const folderCoverEl = document.getElementById('folder-cover-input');
-        const folderDescEl = document.getElementById('folder-desc-input');
-        const folderStatusEl = document.getElementById('folder-save-status');
+        const MAG_ACTIVE_FOLDER_KEY = 'osd_mag_admin_active_folder_v1';
+        const MAG_SCROLL_KEY = 'osd_mag_admin_scroll_v1';
 
-        const itemEditorHeadingEl = document.getElementById('item-editor-heading');
-        const cancelEditItemBtn = document.getElementById('cancel-edit-item-btn');
-        const submitItemBtn = document.getElementById('submit-item-btn');
-        const itemStatusEl = document.getElementById('item-save-status');
+        const searchInput = document.getElementById('search-posts');
+        const feedEl = document.getElementById('magazine-feed');
+        const logoEl = document.getElementById('mag-logo');
+        const brandEl = document.getElementById('mag-brand');
 
-        const itemDateEl = document.getElementById('item-date-input');
-        const itemTypeEl = document.getElementById('item-type-input');
-        const itemTitleEl = document.getElementById('item-title-input');
-        const itemCategoryEl = document.getElementById('item-category-input');
-        const itemMediaEl = document.getElementById('item-media-input');
-        const itemDescEl = document.getElementById('item-desc-input');
-        const itemSearchEl = document.getElementById('admin-item-search');
+        const editModal = document.getElementById('edit-modal');
+        const editFolderForm = document.getElementById('edit-folder-form');
+        const editItemForm = document.getElementById('edit-item-form');
+        const editFolderDate = document.getElementById('edit-folder-date');
+        const editFolderTitle = document.getElementById('edit-folder-title');
+        const editFolderCover = document.getElementById('edit-folder-cover');
+        const editFolderDesc = document.getElementById('edit-folder-desc');
 
+        const editItemDate = document.getElementById('edit-item-date');
+        const editItemType = document.getElementById('edit-item-type');
+        const editItemTitle = document.getElementById('edit-item-title');
+        const editItemCategory = document.getElementById('edit-item-category');
+        const editItemMedia = document.getElementById('edit-item-media');
+        const editItemDesc = document.getElementById('edit-item-desc');
+
+        const fsViewer = document.getElementById('fullscreen-viewer');
+        const fsStage = document.getElementById('fullscreen-stage');
+        const fsImg = document.getElementById('fs-image');
+        const fsVideo = document.getElementById('fs-video');
+        const fsCounter = document.getElementById('fs-counter');
+        const fsFolderLabel = document.getElementById('fs-folder-label');
+        const fsCategory = document.getElementById('fs-category');
+        const fsDate = document.getElementById('fs-date');
+        const fsTitle = document.getElementById('fs-title');
+        const fsCaption = document.getElementById('fs-caption');
+
+        let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
+        let scaledItemId = null;
+        let fullscreenFolderKey = null;
+        let fullscreenItemId = null;
+        let editingFolderKey = null;
         let editingItemId = null;
+        let scrollSaveTimer = null;
 
         function escapeHtml(str = '') {
             return String(str).replace(/[&<>"']/g, ch => ({
@@ -163,14 +235,72 @@
             }[ch]));
         }
 
-        function showStatus(el, msg) {
-            el.textContent = msg;
-            el.classList.remove('hidden');
-            clearTimeout(el._timer);
-            el._timer = setTimeout(() => el.classList.add('hidden'), 2200);
+        function extractDriveFileId(rawUrl = '') {
+            const url = String(rawUrl || '').trim();
+            if (!url) return '';
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
+            }
+            return '';
         }
 
-        function ensureFolderStructure(data) {
+        function resolveMediaSrc(rawUrl, mediaType = 'image') {
+            const cleaned = String(rawUrl || '').trim();
+            if (!cleaned) return '';
+
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === 'function') {
+                const storeResult = parseDriveMedia(cleaned, mediaType);
+                if (storeResult && typeof storeResult === 'string') {
+                    parsed = storeResult.trim();
+                }
+            }
+
+            if (mediaType !== 'video') {
+                const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+                if (driveId) {
+                    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+                }
+            }
+            return parsed;
+        }
+
+        function handleImgFallback(imgEl, originalUrl) {
+            if (!imgEl || imgEl.dataset.fallbackApplied) return;
+            imgEl.dataset.fallbackApplied = '1';
+            const driveId = extractDriveFileId(originalUrl || imgEl.dataset.rawSrc || imgEl.src);
+            if (driveId) {
+                imgEl.src = `https://lh3.googleusercontent.com/d/${driveId}`;
+                imgEl.onerror = () => {
+                    imgEl.style.display = 'none';
+                };
+                return;
+            }
+            imgEl.style.display = 'none';
+        }
+
+        function syncFolderStorage() {
+            if (activeFolderKey) {
+                sessionStorage.setItem(MAG_ACTIVE_FOLDER_KEY, activeFolderKey);
+            } else {
+                sessionStorage.removeItem(MAG_ACTIVE_FOLDER_KEY);
+            }
+        }
+
+        function ensureBackAnchor() {
+            try {
+                history.pushState({ osdMagAdminGuard: true }, '', window.location.href);
+            } catch {}
+        }
+
+        function ensureFolderStore(data) {
             if (!Array.isArray(data.posts)) data.posts = [];
             if (!data.dateFolders || typeof data.dateFolders !== 'object') {
                 data.dateFolders = {};
@@ -178,274 +308,537 @@
             return data;
         }
 
-        function loadFolderMetaIntoForm(dateStr) {
-            const data = ensureFolderStructure(getOSDData());
-            const meta = data.dateFolders[dateStr] || {};
-            folderDateEl.value = dateStr;
-            folderTitleEl.value = meta.title || '';
-            folderCoverEl.value = meta.coverUrl || '';
-            folderDescEl.value = meta.description || '';
-            if (!editingItemId) {
-                itemDateEl.value = dateStr;
-            }
-        }
-
-        function saveFolderMeta() {
-            const dateStr = (folderDateEl.value || '').trim();
-            if (!dateStr) return;
-
-            const data = ensureFolderStructure(getOSDData());
-            data.dateFolders[dateStr] = {
-                title: folderTitleEl.value.trim(),
-                coverUrl: folderCoverEl.value.trim(),
-                description: folderDescEl.value.trim()
-            };
-
-            saveOSDData(data);
-            window.dispatchEvent(new Event('osd_data_updated'));
-            renderAllAdminViews();
-            showStatus(folderStatusEl, `Saved folder ${dateStr}`);
-        }
-
-        function deleteDateFolder(dateKey) {
-            const targetDate = (dateKey || folderDateEl.value || '').trim();
-            if (!targetDate) return;
-
-            const data = ensureFolderStructure(getOSDData());
-            delete data.dateFolders[targetDate];
-            data.posts = data.posts.filter(p => (p.date || '').trim() !== targetDate);
-
-            if (editingItemId && !data.posts.some(p => p.id === editingItemId)) {
-                resetItemEditor();
-            }
-
-            saveOSDData(data);
-            window.dispatchEvent(new Event('osd_data_updated'));
-            renderAllAdminViews();
-            showStatus(folderStatusEl, `Deleted folder ${targetDate} and its items`);
-        }
-
-        function resetItemEditor() {
+        function closeEditModal() {
+            editingFolderKey = null;
             editingItemId = null;
-            itemEditorHeadingEl.textContent = '2 • Upload Item to Folder';
-            submitItemBtn.textContent = 'Upload Item to Folder';
-            cancelEditItemBtn.classList.add('hidden');
-            itemTitleEl.value = '';
-            itemCategoryEl.value = '';
-            itemMediaEl.value = '';
-            itemDescEl.value = '';
-            itemTypeEl.value = 'image';
-            itemDateEl.value = folderDateEl.value || new Date().toISOString().slice(0, 10);
+            editFolderForm.classList.add('hidden');
+            editItemForm.classList.add('hidden');
+            editModal.classList.add('hidden');
         }
 
-        function startEditItem(itemId) {
-            const data = ensureFolderStructure(getOSDData());
+        function openEditFolderModal(event, folderKey) {
+            event.stopPropagation();
+            const data = ensureFolderStore(getOSDData());
+            const meta = data.dateFolders[folderKey] || {};
+            editingFolderKey = folderKey;
+            editingItemId = null;
+
+            editFolderDate.value = folderKey;
+            editFolderTitle.value = meta.title || '';
+            editFolderCover.value = meta.coverUrl || '';
+            editFolderDesc.value = meta.description || '';
+
+            editItemForm.classList.add('hidden');
+            editFolderForm.classList.remove('hidden');
+            editModal.classList.remove('hidden');
+        }
+
+        function saveFolderEdit() {
+            if (!editingFolderKey) return;
+            const data = ensureFolderStore(getOSDData());
+            data.dateFolders[editingFolderKey] = {
+                title: editFolderTitle.value.trim(),
+                coverUrl: editFolderCover.value.trim(),
+                description: editFolderDesc.value.trim()
+            };
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+            closeEditModal();
+            renderMagazine(searchInput.value);
+        }
+
+        function openEditItemModal(event, itemId) {
+            event.stopPropagation();
+            const data = ensureFolderStore(getOSDData());
             const item = data.posts.find(p => p.id === itemId);
             if (!item) return;
 
             editingItemId = item.id;
-            itemEditorHeadingEl.textContent = '2 • Editing Folder Item';
-            submitItemBtn.textContent = 'Update Item';
-            cancelEditItemBtn.classList.remove('hidden');
+            editingFolderKey = null;
 
-            itemDateEl.value = item.date || new Date().toISOString().slice(0, 10);
-            itemTypeEl.value = item.mediaType === 'video' ? 'video' : 'image';
-            itemTitleEl.value = item.title || '';
-            itemCategoryEl.value = item.category || '';
-            itemMediaEl.value = item.mediaUrl || '';
-            itemDescEl.value = item.description || '';
+            editItemDate.value = item.date || '';
+            editItemType.value = item.mediaType === 'video' ? 'video' : 'image';
+            editItemTitle.value = item.title || '';
+            editItemCategory.value = item.category || '';
+            editItemMedia.value = item.mediaUrl || '';
+            editItemDesc.value = item.description || '';
 
-            document.getElementById('item-editor-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            editFolderForm.classList.add('hidden');
+            editItemForm.classList.remove('hidden');
+            editModal.classList.remove('hidden');
         }
 
-        function saveOrUploadItem() {
-            const mediaUrl = itemMediaEl.value.trim();
-            const title = itemTitleEl.value.trim();
-            if (!mediaUrl || !title) return;
+        function saveItemEdit() {
+            if (!editingItemId) return;
+            const data = ensureFolderStore(getOSDData());
+            const idx = data.posts.findIndex(p => p.id === editingItemId);
+            if (idx < 0) return;
 
-            const dateStr = (itemDateEl.value || folderDateEl.value || new Date().toISOString().slice(0, 10)).trim();
-            const mediaType = itemTypeEl.value === 'video' ? 'video' : 'image';
-            const category = (itemCategoryEl.value || 'Memory').trim();
-            const description = itemDescEl.value.trim();
-
-            const data = ensureFolderStructure(getOSDData());
-
-            if (!data.dateFolders[dateStr]) {
-                data.dateFolders[dateStr] = {
-                    title: dateStr,
-                    coverUrl: '',
-                    description: ''
-                };
+            const updatedDate = (editItemDate.value || data.posts[idx].date || '').trim();
+            if (updatedDate && !data.dateFolders[updatedDate]) {
+                data.dateFolders[updatedDate] = { title: updatedDate, coverUrl: '', description: '' };
             }
 
-            if (editingItemId) {
-                const idx = data.posts.findIndex(p => p.id === editingItemId);
-                if (idx >= 0) {
-                    data.posts[idx] = {
-                        ...data.posts[idx],
-                        date: dateStr,
-                        title,
-                        category,
-                        mediaType,
-                        mediaUrl,
-                        description
-                    };
-                }
-                showStatus(itemStatusEl, `Updated "${title}"`);
-                resetItemEditor();
-            } else {
-                data.posts.unshift({
-                    id: 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                    date: dateStr,
-                    title,
-                    category,
-                    mediaType,
-                    mediaUrl,
-                    description
+            data.posts[idx] = {
+                ...data.posts[idx],
+                date: updatedDate,
+                mediaType: editItemType.value === 'video' ? 'video' : 'image',
+                title: editItemTitle.value.trim(),
+                category: editItemCategory.value.trim() || 'Memory',
+                mediaUrl: editItemMedia.value.trim(),
+                description: editItemDesc.value.trim()
+            };
+
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+            closeEditModal();
+            renderMagazine(searchInput.value);
+        }
+
+        function buildDateFolders(q = '') {
+            const data = ensureFolderStore(getOSDData());
+            const posts = data.posts;
+            const customFolders = data.dateFolders;
+            const term = (q || '').trim().toLowerCase();
+
+            const map = new Map();
+
+            Object.entries(customFolders).forEach(([dateKey, meta]) => {
+                const cleanKey = (dateKey || '').trim();
+                if (!cleanKey) return;
+                map.set(cleanKey, {
+                    key: cleanKey,
+                    dateLabel: cleanKey,
+                    folderTitle: (meta && meta.title) ? meta.title : cleanKey,
+                    folderDescription: (meta && meta.description) ? meta.description : '',
+                    coverUrl: (meta && meta.coverUrl) ? meta.coverUrl : '',
+                    items: []
                 });
-                showStatus(itemStatusEl, `Uploaded "${title}" to ${dateStr}`);
-                itemTitleEl.value = '';
-                itemMediaEl.value = '';
-                itemDescEl.value = '';
-            }
+            });
 
-            saveOSDData(data);
-            window.dispatchEvent(new Event('osd_data_updated'));
-            loadFolderMetaIntoForm(dateStr);
-            renderAllAdminViews();
-        }
+            posts.forEach((post, index) => {
+                const rawDate = (post.date || '').trim();
+                const dateKey = rawDate || `undated-${index}`;
+                const dateLabel = rawDate || 'Undated';
+                if (!map.has(dateKey)) {
+                    const meta = customFolders[dateKey] || {};
+                    map.set(dateKey, {
+                        key: dateKey,
+                        dateLabel,
+                        folderTitle: meta.title || dateLabel,
+                        folderDescription: meta.description || '',
+                        coverUrl: meta.coverUrl || '',
+                        items: []
+                    });
+                }
+                map.get(dateKey).items.push(post);
+            });
 
-        function deleteMediaItem(postId) {
-            const data = ensureFolderStructure(getOSDData());
-            data.posts = data.posts.filter(p => p.id !== postId);
-            if (editingItemId === postId) {
-                resetItemEditor();
-            }
-            saveOSDData(data);
-            window.dispatchEvent(new Event('osd_data_updated'));
-            renderAllAdminViews();
-        }
+            const allFolders = Array.from(map.values()).map(folder => {
+                const fallbackMedia = folder.items[0] ? folder.items[0].mediaUrl : '';
+                const resolvedCover = folder.coverUrl || fallbackMedia;
+                const resolvedTitle = folder.folderTitle || (folder.items[0] && folder.items[0].title) || folder.dateLabel;
+                const resolvedDesc = folder.folderDescription || '';
+                return {
+                    ...folder,
+                    resolvedCover,
+                    resolvedTitle,
+                    resolvedDesc
+                };
+            });
 
-        function renderAdminFolders() {
-            const data = ensureFolderStructure(getOSDData());
-            const container = document.getElementById('admin-folders-list');
+            if (!term) return allFolders;
 
-            const dates = Array.from(new Set([
-                ...Object.keys(data.dateFolders),
-                ...data.posts.map(p => (p.date || '').trim()).filter(Boolean)
-            ]));
+            return allFolders.filter(folder => {
+                const folderMatch =
+                    folder.dateLabel.toLowerCase().includes(term) ||
+                    folder.resolvedTitle.toLowerCase().includes(term) ||
+                    folder.resolvedDesc.toLowerCase().includes(term);
 
-            if (!dates.length) {
-                container.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No date folders yet.</div>`;
-                return;
-            }
-
-            container.innerHTML = dates.map(dateKey => {
-                const safeKey = escapeHtml(dateKey);
-                const meta = data.dateFolders[dateKey] || {};
-                const items = data.posts.filter(p => (p.date || '').trim() === dateKey);
-                const coverPreview = escapeHtml(parseDriveMedia(meta.coverUrl || (items[0] && items[0].mediaUrl) || '', 'image'));
-                const folderTitle = escapeHtml(meta.title || dateKey);
-                const folderDesc = escapeHtml(meta.description || 'No folder description set');
-
-                return `
-                    <div class="rounded-2xl bg-[#1E2126] border border-white/10 p-3 flex items-center gap-3">
-                        <img src="${coverPreview}" alt="${safeKey}" class="w-12 h-12 rounded-xl object-cover bg-black shrink-0 border border-white/10" />
-                        <div class="min-w-0 flex-1">
-                            <div class="text-[10px] font-bold uppercase text-blue-400">${safeKey} • ${items.length} item${items.length === 1 ? '' : 's'}</div>
-                            <div class="text-xs font-bold text-white truncate">${folderTitle}</div>
-                            <div class="text-[10px] text-white/55 truncate">${folderDesc}</div>
-                        </div>
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <button type="button" onclick="loadFolderMetaIntoForm('${safeKey}')" class="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
-                            <button type="button" onclick="deleteDateFolder('${safeKey}')" class="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/25">Delete</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderAllItemsList(query = '') {
-            const data = ensureFolderStructure(getOSDData());
-            const container = document.getElementById('admin-all-items-list');
-            const countBadge = document.getElementById('all-items-count');
-
-            const term = (query || '').trim().toLowerCase();
-            const filtered = data.posts.filter(item => {
-                if (!term) return true;
-                return (
+                const itemMatch = folder.items.some(item =>
                     (item.title || '').toLowerCase().includes(term) ||
                     (item.description || '').toLowerCase().includes(term) ||
                     (item.category || '').toLowerCase().includes(term) ||
-                    (item.date || '').toLowerCase().includes(term) ||
-                    (item.mediaType || '').toLowerCase().includes(term)
+                    (item.date || '').toLowerCase().includes(term)
                 );
+
+                return folderMatch || itemMatch;
             });
+        }
 
-            countBadge.textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+        function selectFolder(folderKey) {
+            activeFolderKey = activeFolderKey === folderKey ? null : folderKey;
+            scaledItemId = null;
+            fullscreenFolderKey = null;
+            fullscreenItemId = null;
+            syncFolderStorage();
+            syncFullscreenUI();
+            renderMagazine(searchInput.value);
+            if (activeFolderKey) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
 
-            if (!filtered.length) {
-                container.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No items found.</div>`;
+        function handleFolderItemTap(event, folderKey, itemId) {
+            event.stopPropagation();
+            if (scaledItemId === itemId) {
+                activeFolderKey = folderKey;
+                fullscreenFolderKey = folderKey;
+                fullscreenItemId = itemId;
+                syncFolderStorage();
+                syncFullscreenUI();
+                return;
+            }
+            scaledItemId = itemId;
+            renderMagazine(searchInput.value);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exitFullscreenToFolder() {
+            const targetFolder = fullscreenFolderKey || activeFolderKey;
+            const targetItem = fullscreenItemId || scaledItemId;
+            fullscreenFolderKey = null;
+            fullscreenItemId = null;
+            activeFolderKey = targetFolder;
+            scaledItemId = targetItem;
+            syncFolderStorage();
+            syncFullscreenUI();
+            renderMagazine(searchInput.value);
+            if (activeFolderKey) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function getLockedFolderContext() {
+            const folders = buildDateFolders(searchInput.value);
+            const targetKey = fullscreenFolderKey || activeFolderKey;
+            return folders.find(f => f.key === targetKey) || null;
+        }
+
+        function stepFullscreenItem(delta) {
+            const folder = getLockedFolderContext();
+            if (!folder || !folder.items.length) return;
+            const items = folder.items;
+            const currentIdx = Math.max(0, items.findIndex(item => item.id === fullscreenItemId));
+            const nextIdx = (currentIdx + delta + items.length) % items.length;
+            const nextItem = items[nextIdx];
+            if (!nextItem) return;
+
+            fullscreenItemId = nextItem.id;
+            scaledItemId = nextItem.id;
+            syncFullscreenUI();
+        }
+
+        function syncFullscreenUI() {
+            const folder = getLockedFolderContext();
+            if (!fullscreenItemId || !folder || !folder.items.length) {
+                fsViewer.classList.add('hidden');
+                fsVideo.src = '';
+                document.documentElement.style.overflow = '';
                 return;
             }
 
-            container.innerHTML = filtered.map(item => {
-                const safeId = escapeHtml(item.id);
-                const safeTitle = escapeHtml(item.title || 'Untitled');
-                const safeDate = escapeHtml(item.date || 'No date');
-                const safeCat = escapeHtml(item.category || 'Memory');
-                const safeDesc = escapeHtml(item.description || '');
-                const mediaType = item.mediaType === 'video' ? 'video' : 'image';
-                const thumbSrc = escapeHtml(parseDriveMedia(item.mediaUrl, 'image'));
+            const items = folder.items;
+            const idx = items.findIndex(item => item.id === fullscreenItemId);
+            const item = idx >= 0 ? items[idx] : items[0];
+            const safeIdx = idx >= 0 ? idx : 0;
+            const media = resolveMediaSrc(item.mediaUrl, item.mediaType);
 
-                const thumbHtml = mediaType === 'video'
-                    ? `<div class="w-14 h-14 rounded-xl bg-black border border-white/10 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">▶ VID</div>`
-                    : `<img src="${thumbSrc}" alt="${safeTitle}" class="w-14 h-14 rounded-xl object-cover bg-black border border-white/10 shrink-0" />`;
+            fsViewer.classList.remove('hidden');
+            document.documentElement.style.overflow = 'hidden';
 
-                return `
-                    <div class="rounded-2xl bg-[#1E2126] border ${editingItemId === item.id ? 'border-emerald-400/60' : 'border-white/10'} p-3 flex items-center gap-3">
-                        ${thumbHtml}
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase text-blue-400">
-                                <span>${safeDate}</span>
-                                <span class="text-white/35">•</span>
-                                <span class="text-emerald-400">${mediaType}</span>
-                                <span class="text-white/35">•</span>
-                                <span class="truncate">${safeCat}</span>
+            fsCounter.textContent = `${safeIdx + 1} / ${items.length}`;
+            fsFolderLabel.textContent = `${folder.resolvedTitle} (${folder.dateLabel})`;
+            fsCategory.textContent = item.category || 'JOURNAL';
+            fsDate.textContent = item.date || folder.dateLabel;
+            fsTitle.textContent = item.title || '';
+            fsCaption.textContent = item.description || '';
+
+            if (item.mediaType === 'video') {
+                fsImg.classList.add('hidden');
+                fsVideo.classList.remove('hidden');
+                fsVideo.src = media;
+            } else {
+                fsVideo.classList.add('hidden');
+                fsVideo.src = '';
+                fsImg.classList.remove('hidden');
+                delete fsImg.dataset.fallbackApplied;
+                fsImg.dataset.rawSrc = item.mediaUrl || '';
+                fsImg.onerror = () => handleImgFallback(fsImg, item.mediaUrl || '');
+                fsImg.src = media;
+                fsImg.alt = item.title || '';
+            }
+        }
+
+        window.addEventListener('popstate', () => {
+            ensureBackAnchor();
+
+            if (!editModal.classList.contains('hidden')) {
+                closeEditModal();
+                return;
+            }
+
+            if (fullscreenItemId) {
+                exitFullscreenToFolder();
+                return;
+            }
+
+            if (scaledItemId) {
+                scaledItemId = null;
+                renderMagazine(searchInput.value);
+                return;
+            }
+
+            if (activeFolderKey) {
+                activeFolderKey = null;
+                syncFolderStorage();
+                renderMagazine(searchInput.value);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            window.location.href = 'index.html';
+        });
+
+        let touchStartX = 0;
+        let touchDeltaX = 0;
+
+        fsStage.addEventListener('touchstart', (e) => {
+            if (!e.touches || !e.touches.length) return;
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+            fsImg.style.transition = 'none';
+        }, { passive: true });
+
+        fsStage.addEventListener('touchmove', (e) => {
+            if (!e.touches || !e.touches.length) return;
+            touchDeltaX = e.touches[0].clientX - touchStartX;
+            if (Math.abs(touchDeltaX) > 6 && !fsImg.classList.contains('hidden')) {
+                fsImg.style.transform = `translateX(${touchDeltaX * 0.45}px) rotate(${touchDeltaX * 0.015}deg)`;
+            }
+        }, { passive: true });
+
+        fsStage.addEventListener('touchend', () => {
+            fsImg.style.transition = 'transform 0.22s ease-out';
+            fsImg.style.transform = 'translateX(0px) rotate(0deg)';
+            if (Math.abs(touchDeltaX) > 55) {
+                stepFullscreenItem(touchDeltaX < 0 ? 1 : -1);
+            }
+            touchStartX = 0;
+            touchDeltaX = 0;
+        });
+
+        document.getElementById('fs-close-btn').addEventListener('click', exitFullscreenToFolder);
+        document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenItem(-1));
+        document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenItem(1));
+
+        document.getElementById('close-folder-edit-btn').addEventListener('click', closeEditModal);
+        document.getElementById('close-item-edit-btn').addEventListener('click', closeEditModal);
+        document.getElementById('save-folder-edit-btn').addEventListener('click', saveFolderEdit);
+        document.getElementById('save-item-edit-btn').addEventListener('click', saveItemEdit);
+
+        function renderCoverBox(folder, heightClass) {
+            const safeTitle = escapeHtml(folder.resolvedTitle);
+            const rawUrl = folder.resolvedCover || '';
+            const coverSrc = resolveMediaSrc(rawUrl, 'image');
+            if (!coverSrc) {
+                return `<div class="${heightClass} w-full bg-[#121417] flex items-center justify-center text-[10px] text-white/40">No Cover</div>`;
+            }
+            return `
+                <div class="${heightClass} w-full bg-black overflow-hidden flex items-center justify-center">
+                    <img src="${escapeHtml(coverSrc)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />
+                </div>`;
+        }
+
+        function buildBigScaledItem(item, folderKey) {
+            const rawUrl = item.mediaUrl || '';
+            const media = resolveMediaSrc(rawUrl, item.mediaType);
+            const safeTitle = escapeHtml(item.title);
+            const safeFolder = escapeHtml(folderKey);
+            const safeId = escapeHtml(item.id);
+            const safeCategory = escapeHtml(item.category || 'JOURNAL');
+            const safeDesc = escapeHtml(item.description || '');
+            const mediaType = escapeHtml(item.mediaType || 'image');
+
+            const visual = item.mediaType === 'video'
+                ? `<div class="h-52 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400">▶ PLAY VIDEO</div>`
+                : `<div class="h-56 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+
+            return `
+                <div
+                    onclick="handleFolderItemTap(event, '${safeFolder}', '${safeId}')"
+                    class="scaled-feature-card cursor-pointer rounded-2xl bg-[#121417]/95 border border-blue-400/60 shadow-xl shadow-black/70 overflow-hidden"
+                >
+                    ${visual}
+                    <div class="p-3">
+                        <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-blue-400">
+                            <span>${safeCategory}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-white/45 font-normal">${mediaType}</span>
+                                <button type="button" onclick="openEditItemModal(event, '${safeId}')" class="px-2 py-0.5 rounded bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
                             </div>
-                            <div class="text-xs font-bold text-white truncate mt-0.5">${safeTitle}</div>
-                            ${safeDesc ? `<div class="text-[10px] text-white/60 truncate mt-0.5">${safeDesc}</div>` : ''}
                         </div>
-                        <div class="flex flex-col gap-1 shrink-0">
-                            <button type="button" onclick="startEditItem('${safeId}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">Edit</button>
-                            <button type="button" onclick="deleteMediaItem('${safeId}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/25">Delete</button>
+                        <h3 class="text-base font-extrabold text-white leading-snug mt-0.5">${safeTitle}</h3>
+                        ${safeDesc ? `<p class="text-xs text-white/80 mt-1 leading-relaxed whitespace-pre-line">${safeDesc}</p>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        function renderThreeColTile(item, folderKey) {
+            const rawUrl = item.mediaUrl || '';
+            const media = resolveMediaSrc(rawUrl, item.mediaType);
+            const safeTitle = escapeHtml(item.title);
+            const safeFolder = escapeHtml(folderKey);
+            const safeId = escapeHtml(item.id);
+            const safeCategory = escapeHtml(item.category || 'JOURNAL');
+
+            const mediaBox = item.mediaType === 'video'
+                ? `<div class="h-24 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
+                : `<div class="h-24 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+
+            return `
+                <div
+                    onclick="handleFolderItemTap(event, '${safeFolder}', '${safeId}')"
+                    class="cursor-pointer rounded-xl bg-[#121417]/85 border border-white/10 hover:border-blue-400/40 overflow-hidden flex flex-col"
+                >
+                    ${mediaBox}
+                    <div class="p-1.5 flex-1">
+                        <div class="flex items-center justify-between gap-1 text-[9px] font-bold uppercase text-blue-400">
+                            <span class="truncate">${safeCategory}</span>
+                            <button type="button" onclick="openEditItemModal(event, '${safeId}')" class="px-1.5 py-0.2 rounded bg-blue-600/25 text-blue-300 shrink-0">Edit</button>
+                        </div>
+                        <div class="text-[10px] font-bold text-white leading-tight truncate mt-0.5">${safeTitle}</div>
+                    </div>
+                </div>`;
+        }
+
+        function getFolderCountsText(items) {
+            const photos = items.filter(i => i.mediaType !== 'video').length;
+            const videos = items.filter(i => i.mediaType === 'video').length;
+            const parts = [];
+            if (photos) parts.push(`${photos} photo${photos > 1 ? 's' : ''}`);
+            if (videos) parts.push(`${videos} video${videos > 1 ? 's' : ''}`);
+            return parts.join(' • ') || '0 items';
+        }
+
+        function buildExpandedFolder(folder) {
+            const safeFolderKey = escapeHtml(folder.key);
+            const safeDate = escapeHtml(folder.dateLabel);
+            const countsText = escapeHtml(getFolderCountsText(folder.items));
+
+            if (!folder.items.length) {
+                return `
+                    <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-2.5">
+                        <div onclick="selectFolder('${safeFolderKey}')" class="cursor-pointer flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
+                                <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                            </div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-[#121417]/70 text-center text-xs text-white/50">No photos or videos in this date folder yet.</div>
+                    </article>`;
+            }
+
+            const scaledItem = scaledItemId ? folder.items.find(i => i.id === scaledItemId) : null;
+            const gridItems = scaledItem ? folder.items.filter(i => i.id !== scaledItem.id) : folder.items;
+
+            const scaledHtml = scaledItem ? buildBigScaledItem(scaledItem, folder.key) : '';
+            const gridHtml = gridItems.length
+                ? `<div class="grid grid-cols-3 gap-2">${gridItems.map(item => renderThreeColTile(item, folder.key)).join('')}</div>`
+                : '';
+
+            return `
+                <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-3">
+                    <div onclick="selectFolder('${safeFolderKey}')" class="cursor-pointer flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
+                            <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    ${scaledHtml}
+                    ${gridHtml}
+                </article>`;
         }
 
-        function renderAllAdminViews() {
-            renderAdminFolders();
-            renderAllItemsList(itemSearchEl.value);
+        function buildFolderCard(folder) {
+            const safeFolderKey = escapeHtml(folder.key);
+            const safeDate = escapeHtml(folder.dateLabel);
+            const safeTitle = escapeHtml(folder.resolvedTitle);
+            const safeDesc = escapeHtml(folder.resolvedDesc);
+            const countsText = escapeHtml(getFolderCountsText(folder.items));
+
+            return `
+                <article
+                    onclick="selectFolder('${safeFolderKey}')"
+                    class="compact-card cursor-pointer rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/35 overflow-hidden"
+                >
+                    ${renderCoverBox(folder, 'h-36')}
+                    <div class="p-3">
+                        <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-blue-400">
+                            <span>${safeDate}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-white/50 font-mono font-normal">${countsText}</span>
+                                <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                            </div>
+                        </div>
+                        <h3 class="text-sm font-bold text-white leading-snug mt-0.5">${safeTitle}</h3>
+                        <p class="text-xs mt-1 line-clamp-2 text-white/75 leading-relaxed">${safeDesc}</p>
+                    </div>
+                </article>`;
         }
 
-        document.getElementById('save-folder-meta-btn').addEventListener('click', saveFolderMeta);
-        document.getElementById('delete-folder-btn').addEventListener('click', () => deleteDateFolder(folderDateEl.value));
-        submitItemBtn.addEventListener('click', saveOrUploadItem);
-        cancelEditItemBtn.addEventListener('click', resetItemEditor);
-        itemSearchEl.addEventListener('input', e => renderAllItemsList(e.target.value));
+        function renderMagazine(q = '') {
+            const data = getOSDData();
+            logoEl.src = resolveMediaSrc(data.brand.logoUrl, 'image');
+            brandEl.textContent = data.brand.siteName;
 
-        folderDateEl.addEventListener('change', e => {
-            if (e.target.value) loadFolderMetaIntoForm(e.target.value);
+            const folders = buildDateFolders(q);
+
+            if (!folders.length) {
+                feedEl.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No matching date folders found.</div>`;
+                return;
+            }
+
+            const featuredFolder = activeFolderKey ? folders.find(f => f.key === activeFolderKey) : null;
+
+            if (featuredFolder) {
+                feedEl.innerHTML = buildExpandedFolder(featuredFolder);
+                return;
+            }
+
+            feedEl.innerHTML = folders.map(folder => buildFolderCard(folder)).join('');
+        }
+
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollSaveTimer);
+            scrollSaveTimer = setTimeout(() => {
+                sessionStorage.setItem(MAG_SCROLL_KEY, String(window.scrollY));
+            }, 80);
+        }, { passive: true });
+
+        searchInput.addEventListener('input', e => renderMagazine(e.target.value));
+        document.getElementById('nav-mag-refresh').addEventListener('click', () => {
+            renderMagazine(searchInput.value);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-            const initialDate = new Date().toISOString().slice(0, 10);
-            loadFolderMetaIntoForm(initialDate);
-            renderAllAdminViews();
+            try {
+                history.replaceState({ osdMagAdminBase: true }, '', window.location.href);
+                history.pushState({ osdMagAdminGuard: true }, '', window.location.href);
+            } catch {}
+            renderMagazine();
+            const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
+            if (savedScroll > 0) {
+                requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+            }
             enforceRoleLock('magazine_admin', 'Magazine Admin');
         });
+
+        window.addEventListener('storage', () => renderMagazine(searchInput.value));
+        window.addEventListener('osd_data_updated', () => renderMagazine(searchInput.value));
     </script>
 </body>
 </html>
