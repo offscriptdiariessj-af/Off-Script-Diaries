@@ -6,7 +6,7 @@
     <title>E-Magazine — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes spotlightRise {
+        @keyframes folderRise {
             0% {
                 opacity: 0.72;
                 transform: translateY(10px) scale(0.97);
@@ -38,7 +38,7 @@
             z-index: 25;
             transform: scale(1.01);
             transform-origin: center top;
-            animation: spotlightRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+            animation: folderRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
             will-change: transform, opacity;
         }
 
@@ -83,7 +83,7 @@
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
-    <!-- FULL-SCREEN SWIPEABLE PICTURE VIEWER -->
+    <!-- FULL-SCREEN SWIPEABLE VIEWER FOR ACTIVE DATE FOLDER -->
     <div id="fullscreen-viewer" class="hidden fixed inset-0 z-50 bg-black/98 backdrop-blur-md flex flex-col justify-between select-none">
         <div class="px-4 pt-4 pb-2 flex items-center justify-between text-xs text-white/75">
             <span id="fs-counter" class="font-mono font-semibold text-blue-400">1 / 1</span>
@@ -95,8 +95,8 @@
             <img id="fs-image" src="" alt="" class="max-h-[76vh] w-full object-contain rounded-2xl transition-transform duration-200 ease-out" />
             <iframe id="fs-video" src="" class="hidden w-full aspect-video rounded-2xl border-0 bg-black" allow="autoplay; fullscreen" allowfullscreen></iframe>
 
-            <button id="fs-prev-btn" type="button" aria-label="Previous picture" class="hidden sm:flex absolute left-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">‹</button>
-            <button id="fs-next-btn" type="button" aria-label="Next picture" class="hidden sm:flex absolute right-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">›</button>
+            <button id="fs-prev-btn" type="button" aria-label="Previous item" class="hidden sm:flex absolute left-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">‹</button>
+            <button id="fs-next-btn" type="button" aria-label="Next item" class="hidden sm:flex absolute right-3 w-10 h-10 rounded-full bg-black/60 border border-white/15 items-center justify-center text-white hover:border-blue-400">›</button>
         </div>
 
         <div class="px-4 pb-5 pt-2 bg-gradient-to-t from-black via-black/80 to-transparent">
@@ -120,7 +120,7 @@
 
     <script src="js/store.js"></script>
     <script>
-        const MAG_ACTIVE_POST_KEY = 'osd_mag_active_post_v1';
+        const MAG_ACTIVE_FOLDER_KEY = 'osd_mag_active_folder_v1';
         const MAG_SCROLL_KEY = 'osd_mag_scroll_v1';
 
         const searchInput = document.getElementById('search-posts');
@@ -138,8 +138,8 @@
         const fsTitle = document.getElementById('fs-title');
         const fsCaption = document.getElementById('fs-caption');
 
-        let activePostId = sessionStorage.getItem(MAG_ACTIVE_POST_KEY) || null;
-        let fullscreenPostId = null;
+        let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
+        let fullscreenItemId = null;
         let scrollSaveTimer = null;
 
         function escapeHtml(str = '') {
@@ -152,11 +152,11 @@
             }[ch]));
         }
 
-        function syncStageStorage() {
-            if (activePostId) {
-                sessionStorage.setItem(MAG_ACTIVE_POST_KEY, activePostId);
+        function syncFolderStorage() {
+            if (activeFolderKey) {
+                sessionStorage.setItem(MAG_ACTIVE_FOLDER_KEY, activeFolderKey);
             } else {
-                sessionStorage.removeItem(MAG_ACTIVE_POST_KEY);
+                sessionStorage.removeItem(MAG_ACTIVE_FOLDER_KEY);
             }
         }
 
@@ -169,8 +169,8 @@
         function getFilteredPosts(q = '') {
             const data = getOSDData();
             const term = (q || '').trim().toLowerCase();
-            if (!term) return data.posts;
-            return data.posts.filter(p =>
+            if (!term) return data.posts || [];
+            return (data.posts || []).filter(p =>
                 (p.title || '').toLowerCase().includes(term) ||
                 (p.description || '').toLowerCase().includes(term) ||
                 (p.category || '').toLowerCase().includes(term) ||
@@ -178,84 +178,111 @@
             );
         }
 
-        // Tap post -> open scaled version; tapping active scaled post again -> return to e-magazine list
-        function selectPost(postId) {
-            activePostId = activePostId === postId ? null : postId;
-            fullscreenPostId = null;
-            syncStageStorage();
+        function groupPostsByDate(posts) {
+            const map = new Map();
+            posts.forEach((post, index) => {
+                const rawDate = (post.date || '').trim();
+                const dateKey = rawDate || `undated-${index}`;
+                const label = rawDate || 'Undated';
+                if (!map.has(dateKey)) {
+                    map.set(dateKey, {
+                        key: dateKey,
+                        dateLabel: label,
+                        items: []
+                    });
+                }
+                map.get(dateKey).items.push(post);
+            });
+            return Array.from(map.values());
+        }
+
+        function selectFolder(folderKey) {
+            activeFolderKey = activeFolderKey === folderKey ? null : folderKey;
+            fullscreenItemId = null;
+            syncFolderStorage();
             syncFullscreenUI();
             renderMagazine(searchInput.value);
-            if (activePostId) {
+            if (activeFolderKey) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
-        // Tap image inside scaled version -> open full-screen viewer
-        function openScaledImageFullscreen(event, postId) {
+        function openItemFullscreen(event, folderKey, itemId) {
             event.stopPropagation();
-            if (activePostId !== postId) {
-                selectPost(postId);
+            if (activeFolderKey !== folderKey) {
+                selectFolder(folderKey);
                 return;
             }
-            activePostId = postId;
-            fullscreenPostId = postId;
-            syncStageStorage();
+            activeFolderKey = folderKey;
+            fullscreenItemId = itemId;
+            syncFolderStorage();
             syncFullscreenUI();
         }
 
-        // Exit full-screen to scaled version of currently viewed image
-        function exitFullscreenToScaled() {
-            const targetScaledId = fullscreenPostId || activePostId;
-            fullscreenPostId = null;
-            activePostId = targetScaledId;
-            syncStageStorage();
+        function exitFullscreenToFolder() {
+            const folders = groupPostsByDate(getFilteredPosts(searchInput.value));
+            let targetFolderKey = activeFolderKey;
+
+            if (fullscreenItemId) {
+                const ownerFolder = folders.find(f => f.items.some(item => item.id === fullscreenItemId));
+                if (ownerFolder) targetFolderKey = ownerFolder.key;
+            }
+
+            fullscreenItemId = null;
+            activeFolderKey = targetFolderKey;
+            syncFolderStorage();
             syncFullscreenUI();
             renderMagazine(searchInput.value);
-            if (activePostId) {
+            if (activeFolderKey) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
-        // Swiping in full-screen updates only the currently viewed picture
-        function stepFullscreenPicture(delta) {
-            const posts = getFilteredPosts(searchInput.value);
-            if (!posts.length) return;
-            const currentId = fullscreenPostId || activePostId;
-            const currentIdx = Math.max(0, posts.findIndex(p => p.id === currentId));
-            const nextIdx = (currentIdx + delta + posts.length) % posts.length;
-            const nextPost = posts[nextIdx];
-            if (!nextPost) return;
+        function getActiveFolderItems() {
+            const folders = groupPostsByDate(getFilteredPosts(searchInput.value));
+            if (!folders.length) return [];
+            const currentFolder = folders.find(f => f.key === activeFolderKey)
+                || folders.find(f => f.items.some(item => item.id === fullscreenItemId))
+                || folders[0];
+            return currentFolder ? currentFolder.items : [];
+        }
 
-            fullscreenPostId = nextPost.id;
-            activePostId = nextPost.id;
-            syncStageStorage();
+        function stepFullscreenItem(delta) {
+            const items = getActiveFolderItems();
+            if (!items.length) return;
+            const currentIdx = Math.max(0, items.findIndex(item => item.id === fullscreenItemId));
+            const nextIdx = (currentIdx + delta + items.length) % items.length;
+            const nextItem = items[nextIdx];
+            if (!nextItem) return;
+
+            fullscreenItemId = nextItem.id;
             syncFullscreenUI();
         }
 
         function syncFullscreenUI() {
-            const posts = getFilteredPosts(searchInput.value);
-            if (!fullscreenPostId || !posts.length) {
+            const items = getActiveFolderItems();
+            if (!fullscreenItemId || !items.length) {
                 fsViewer.classList.add('hidden');
                 fsVideo.src = '';
                 document.documentElement.style.overflow = '';
                 return;
             }
 
-            const idx = posts.findIndex(p => p.id === fullscreenPostId);
-            const post = idx >= 0 ? posts[idx] : posts[0];
+            const idx = items.findIndex(item => item.id === fullscreenItemId);
+            const item = idx >= 0 ? items[idx] : items[0];
             const safeIdx = idx >= 0 ? idx : 0;
-            const media = parseDriveMedia(post.mediaUrl, post.mediaType);
+            const media = parseDriveMedia(item.mediaUrl, item.mediaType);
 
             fsViewer.classList.remove('hidden');
             document.documentElement.style.overflow = 'hidden';
 
-            fsCounter.textContent = `${safeIdx + 1} / ${posts.length}`;
-            fsCategory.textContent = post.category || 'JOURNAL';
-            fsDate.textContent = post.date || '';
-            fsTitle.textContent = post.title || '';
-            fsCaption.textContent = post.description || '';
+            fsCounter.textContent = `${safeIdx + 1} / ${items.length}`;
+            fsCategory.textContent = item.category || 'JOURNAL';
+            fsDate.textContent = item.date || '';
+            fsTitle.textContent = item.title || '';
+            fsCaption.textContent = item.description || '';
 
-            if (post.mediaType === 'video') {
+            if (item.mediaType === 'video') {
                 fsImg.classList.add('hidden');
                 fsVideo.classList.remove('hidden');
                 fsVideo.src = media;
@@ -264,25 +291,21 @@
                 fsVideo.src = '';
                 fsImg.classList.remove('hidden');
                 fsImg.src = media;
-                fsImg.alt = post.title || '';
+                fsImg.alt = item.title || '';
             }
         }
 
-        // Native Back button progression:
-        // 1) Full-screen -> Scaled version of current image
-        // 2) Scaled version -> E-Magazine section (all posts)
-        // 3) E-Magazine section -> index.html directly (no history back)
         window.addEventListener('popstate', () => {
             ensureBackAnchor();
 
-            if (fullscreenPostId) {
-                exitFullscreenToScaled();
+            if (fullscreenItemId) {
+                exitFullscreenToFolder();
                 return;
             }
 
-            if (activePostId) {
-                activePostId = null;
-                syncStageStorage();
+            if (activeFolderKey) {
+                activeFolderKey = null;
+                syncFolderStorage();
                 renderMagazine(searchInput.value);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
@@ -313,106 +336,139 @@
             fsImg.style.transition = 'transform 0.22s ease-out';
             fsImg.style.transform = 'translateX(0px) rotate(0deg)';
             if (Math.abs(touchDeltaX) > 55) {
-                stepFullscreenPicture(touchDeltaX < 0 ? 1 : -1);
+                stepFullscreenItem(touchDeltaX < 0 ? 1 : -1);
             }
             touchStartX = 0;
             touchDeltaX = 0;
         });
 
-        document.getElementById('fs-close-btn').addEventListener('click', exitFullscreenToScaled);
-        document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenPicture(-1));
-        document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenPicture(1));
+        document.getElementById('fs-close-btn').addEventListener('click', exitFullscreenToFolder);
+        document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenItem(-1));
+        document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenItem(1));
 
-        function renderMediaBox(post, media, heightClass, isScaledPost) {
-            const safeTitle = escapeHtml(post.title);
+        function renderThumbTile(item, folderKey, heightClass) {
+            const media = parseDriveMedia(item.mediaUrl, item.mediaType);
+            const safeTitle = escapeHtml(item.title);
             const safeMedia = escapeHtml(media);
-            const safeId = escapeHtml(post.id);
+            const safeFolder = escapeHtml(folderKey);
+            const safeId = escapeHtml(item.id);
 
-            const content = post.mediaType === 'video'
-                ? `<iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe>`
-                : `<img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />`;
-
-            const tapAttr = isScaledPost
-                ? `onclick="openScaledImageFullscreen(event, '${safeId}')"`
-                : '';
-
+            if (item.mediaType === 'video') {
+                return `
+                    <div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="${heightClass} w-full bg-black flex flex-col items-center justify-center text-[10px] font-bold text-blue-400 cursor-zoom-in">
+                        <span>▶ VIDEO</span>
+                    </div>`;
+            }
             return `
-                <div ${tapAttr} class="${heightClass} w-full bg-black overflow-hidden relative ${isScaledPost ? 'cursor-zoom-in' : ''}">
-                    ${content}
+                <div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="${heightClass} w-full bg-black overflow-hidden cursor-zoom-in">
+                    <img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />
                 </div>`;
         }
 
-        function buildFeaturedCard(post, media) {
-            const title = escapeHtml(post.title);
-            const category = escapeHtml(post.category || 'JOURNAL');
-            const date = escapeHtml(post.date || '');
-            const desc = escapeHtml(post.description || '');
-            const mediaType = escapeHtml(post.mediaType || 'image');
+        function getFolderCountsText(items) {
+            const photos = items.filter(i => i.mediaType !== 'video').length;
+            const videos = items.filter(i => i.mediaType === 'video').length;
+            const parts = [];
+            if (photos) parts.push(`${photos} photo${photos > 1 ? 's' : ''}`);
+            if (videos) parts.push(`${videos} video${videos > 1 ? 's' : ''}`);
+            return parts.join(' • ') || `${items.length} item${items.length > 1 ? 's' : ''}`;
+        }
+
+        function buildExpandedFolder(folder) {
+            const safeFolderKey = escapeHtml(folder.key);
+            const safeDate = escapeHtml(folder.dateLabel);
+            const countsText = escapeHtml(getFolderCountsText(folder.items));
+            const leadItem = folder.items[0];
+            const summaryTitle = escapeHtml(leadItem ? leadItem.title : folder.dateLabel);
+
+            const itemsHtml = folder.items.map(item => {
+                const title = escapeHtml(item.title);
+                const category = escapeHtml(item.category || 'JOURNAL');
+                const desc = escapeHtml(item.description || '');
+                const mediaType = escapeHtml(item.mediaType || 'image');
+
+                return `
+                    <div class="rounded-xl bg-[#121417]/80 border border-white/10 overflow-hidden">
+                        ${renderThumbTile(item, folder.key, item.mediaType === 'video' ? 'h-40' : 'h-36')}
+                        <div class="p-2.5">
+                            <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
+                                <span>${category}</span>
+                                <span class="text-white/45 font-normal">${mediaType}</span>
+                            </div>
+                            <h4 class="text-xs font-bold text-white leading-snug mt-0.5">${title}</h4>
+                            <p class="text-[11px] text-white/75 mt-1 leading-relaxed whitespace-pre-line">${desc}</p>
+                        </div>
+                    </div>`;
+            }).join('');
 
             return `
                 <article
-                    onclick="selectPost('${escapeHtml(post.id)}')"
-                    class="lead-stage cursor-pointer rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden"
+                    onclick="selectFolder('${safeFolderKey}')"
+                    class="lead-stage cursor-pointer rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-2.5"
                 >
-                    ${renderMediaBox(post, media, 'h-48', true)}
-                    <div class="p-3.5">
-                        <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
-                            <span>${category}</span>
-                            <span class="text-white/50 font-normal">${date}</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${safeDate}</div>
+                            <h2 class="text-base font-extrabold text-white leading-snug">${summaryTitle}</h2>
                         </div>
-                        <h2 class="text-lg font-extrabold text-white leading-snug mt-0.5">${title}</h2>
-                        <p class="text-xs mt-1.5 text-white/90 leading-relaxed whitespace-pre-line">${desc}</p>
-                        <div class="mt-2.5 pt-2 border-t border-white/10 text-[10px] text-white/50 uppercase">
-                            ${mediaType}
-                        </div>
+                        <span class="text-[10px] font-mono px-2 py-1 rounded-lg bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
+                    </div>
+                    <div class="space-y-2 max-h-[58vh] overflow-y-auto pr-0.5">
+                        ${itemsHtml}
                     </div>
                 </article>`;
         }
 
-        function buildThreeColCard(post, media) {
-            const title = escapeHtml(post.title);
-            const category = escapeHtml(post.category || 'DIARY');
-            const date = escapeHtml(post.date || '');
-            const desc = escapeHtml(post.description || '');
-            const safeId = escapeHtml(post.id);
-
-            const thumb = post.mediaType === 'video'
-                ? `<div class="h-16 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
-                : `<div class="h-16 w-full bg-black overflow-hidden"><img src="${escapeHtml(media)}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+        function buildThreeColFolder(folder) {
+            const safeFolderKey = escapeHtml(folder.key);
+            const safeDate = escapeHtml(folder.dateLabel);
+            const firstItem = folder.items[0];
+            const title = escapeHtml(firstItem ? firstItem.title : folder.dateLabel);
+            const desc = escapeHtml(firstItem ? (firstItem.description || '') : '');
+            const countBadge = `${folder.items.length}`;
 
             return `
                 <article
-                    onclick="selectPost('${safeId}')"
+                    onclick="selectFolder('${safeFolderKey}')"
                     class="mini-grid-card cursor-pointer rounded-xl bg-[#1E2126]/90 border border-white/10 hover:border-blue-400/40 overflow-hidden flex flex-col"
                 >
-                    ${thumb}
+                    ${firstItem ? renderThumbTile(firstItem, folder.key, 'h-16') : '<div class="h-16 bg-black"></div>'}
                     <div class="p-2 flex-1 flex flex-col justify-between">
                         <div>
-                            <div class="text-[9px] font-bold uppercase text-blue-400 truncate">${category}</div>
+                            <div class="flex items-center justify-between text-[9px] font-bold text-blue-400 truncate">
+                                <span class="truncate">${safeDate}</span>
+                                <span class="font-mono text-white/60">${countBadge}</span>
+                            </div>
                             <h3 class="text-[11px] font-bold text-white leading-tight line-clamp-1 mt-0.5">${title}</h3>
                             <p class="text-[10px] text-white/60 line-clamp-2 mt-0.5 leading-snug">${desc}</p>
                         </div>
-                        <div class="text-[9px] text-white/40 mt-1 truncate">${date}</div>
                     </div>
                 </article>`;
         }
 
-        function buildNormalCard(post, media) {
-            const title = escapeHtml(post.title);
-            const category = escapeHtml(post.category || 'JOURNAL');
-            const date = escapeHtml(post.date || '');
-            const desc = escapeHtml(post.description || '');
+        function buildFolderCard(folder) {
+            const safeFolderKey = escapeHtml(folder.key);
+            const safeDate = escapeHtml(folder.dateLabel);
+            const countsText = escapeHtml(getFolderCountsText(folder.items));
+            const firstItem = folder.items[0];
+            const title = escapeHtml(firstItem ? firstItem.title : folder.dateLabel);
+            const desc = escapeHtml(firstItem ? (firstItem.description || '') : '');
+            const previewItems = folder.items.slice(0, 3);
+
+            const stripHtml = previewItems.length > 1
+                ? `<div class="grid grid-cols-3 gap-1.5 px-3 pt-3">${previewItems.map(item => renderThumbTile(item, folder.key, 'h-20')).join('')}</div>`
+                : (firstItem ? `<div class="px-3 pt-3">${renderThumbTile(firstItem, folder.key, 'h-36')}</div>` : '');
 
             return `
                 <article
-                    onclick="selectPost('${escapeHtml(post.id)}')"
+                    onclick="selectFolder('${safeFolderKey}')"
                     class="compact-card cursor-pointer rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/35 overflow-hidden"
                 >
-                    ${renderMediaBox(post, media, 'h-36', false)}
+                    ${stripHtml}
                     <div class="p-3">
                         <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
-                            <span>${category}</span>
-                            <span class="text-white/45 font-normal">${date}</span>
+                            <span>${safeDate}</span>
+                            <span class="text-white/50 font-mono font-normal">${countsText}</span>
                         </div>
                         <h3 class="text-sm font-bold text-white leading-snug mt-0.5">${title}</h3>
                         <p class="text-xs mt-1 line-clamp-2 text-white/75 leading-relaxed">${desc}</p>
@@ -426,36 +482,37 @@
             brandEl.textContent = data.brand.siteName;
 
             const posts = getFilteredPosts(q);
+            const folders = groupPostsByDate(posts);
 
-            if (!posts.length) {
+            if (!folders.length) {
                 feedEl.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No matching posts found.</div>`;
                 return;
             }
 
-            const featuredPost = activePostId ? posts.find(p => p.id === activePostId) : null;
+            const featuredFolder = activeFolderKey ? folders.find(f => f.key === activeFolderKey) : null;
 
-            if (featuredPost) {
-                const others = posts.filter(p => p.id !== featuredPost.id);
+            if (featuredFolder) {
+                const others = folders.filter(f => f.key !== featuredFolder.key);
                 const topThree = others.slice(0, 3);
                 const remaining = others.slice(3);
 
                 const topThreeHtml = topThree.length
-                    ? `<div class="grid grid-cols-3 gap-2 pt-1">${topThree.map(p => buildThreeColCard(p, parseDriveMedia(p.mediaUrl, p.mediaType))).join('')}</div>`
+                    ? `<div class="grid grid-cols-3 gap-2 pt-1">${topThree.map(f => buildThreeColFolder(f)).join('')}</div>`
                     : '';
 
                 const remainingHtml = remaining.length
-                    ? `<div class="space-y-2.5 pt-1">${remaining.map(p => buildNormalCard(p, parseDriveMedia(p.mediaUrl, p.mediaType))).join('')}</div>`
+                    ? `<div class="space-y-2.5 pt-1">${remaining.map(f => buildFolderCard(f)).join('')}</div>`
                     : '';
 
                 feedEl.innerHTML = `
-                    ${buildFeaturedCard(featuredPost, parseDriveMedia(featuredPost.mediaUrl, featuredPost.mediaType))}
+                    ${buildExpandedFolder(featuredFolder)}
                     ${topThreeHtml}
                     ${remainingHtml}
                 `;
                 return;
             }
 
-            feedEl.innerHTML = posts.map(post => buildNormalCard(post, parseDriveMedia(post.mediaUrl, post.mediaType))).join('');
+            feedEl.innerHTML = folders.map(folder => buildFolderCard(folder)).join('');
         }
 
         window.addEventListener('scroll', () => {
