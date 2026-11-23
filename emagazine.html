@@ -66,14 +66,17 @@
                 <img id="mag-logo" src="" alt="Brand Logo" class="w-8 h-8 rounded-full object-cover aspect-square border border-blue-400/50 shrink-0" />
                 <span id="mag-brand" class="text-sm font-bold truncate">Off Script Diaries</span>
             </a>
-            <button type="button" onclick="lockRoleSession('magazine')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
-                Lock
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <a href="emagazineadmin.html" class="text-[10px] font-bold uppercase tracking-wider text-white/80 px-2.5 py-1 rounded-full bg-white/10">Admin</a>
+                <button type="button" onclick="lockRoleSession('magazine')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
+                    Lock
+                </button>
+            </div>
         </div>
     </header>
 
     <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
-        <input id="search-posts" type="search" placeholder="Search folder, date, title, category..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+        <input id="search-posts" type="search" placeholder="Search folder date, title, description..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
@@ -106,52 +109,78 @@
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-14 grid grid-cols-4 items-center text-center text-[10px] font-medium">
             <a href="index.html#home" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">⌂</span><span>Home</span></a>
-            <button id="nav-mag-refresh" type="button" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span class="text-xs">📖</span><span>Magazine</span></button>
+            <button id="nav-mag-refresh" type="button" class="text-blue-400 flex flex-col items-center gap-0.5 font-semibold"><span class="text-xs">◫</span><span>Magazine</span></button>
             <a href="index.html#stats" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">◈</span><span>Stats</span></a>
             <a href="index.html#vault" class="text-white/65 hover:text-white flex flex-col items-center gap-0.5"><span class="text-xs">✦</span><span>Vault</span></a>
         </div>
     </nav>
 
     <script src="js/store.js"></script>
-    <script>
-        const MAG_ACTIVE_FOLDER_KEY = 'osd_mag_active_folder_v1';
-        const MAG_SCROLL_KEY = 'osd_mag_scroll_v1';
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getDatabase,
+            ref,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-        const searchInput = document.getElementById('search-posts');
-        const feedEl = document.getElementById('magazine-feed');
-        const logoEl = document.getElementById('mag-logo');
-        const brandEl = document.getElementById('mag-brand');
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
+            authDomain: "offscript-3cf92.firebaseapp.com",
+            databaseURL: "https://offscript-3cf92-default-rtdb.firebaseio.com",
+            projectId: "offscript-3cf92",
+            storageBucket: "offscript-3cf92.firebasestorage.app",
+            messagingSenderId: "887672343934",
+            appId: "1:887672343934:web:c457cea9a21b696b60f72f",
+            measurementId: "G-ZDWB2367X1"
+        };
 
-        const fsViewer = document.getElementById('fullscreen-viewer');
-        const fsStage = document.getElementById('fullscreen-stage');
-        const fsImg = document.getElementById('fs-image');
-        const fsVideo = document.getElementById('fs-video');
-        const fsCounter = document.getElementById('fs-counter');
-        const fsFolderLabel = document.getElementById('fs-folder-label');
-        const fsCategory = document.getElementById('fs-category');
-        const fsDate = document.getElementById('fs-date');
-        const fsTitle = document.getElementById('fs-title');
-        const fsCaption = document.getElementById('fs-caption');
+        const app = initializeApp(firebaseConfig);
+        const rtdb = getDatabase(app);
 
+        const foldersRef = ref(rtdb, "magazineFolders");
+        const itemsRef = ref(rtdb, "magazineItems");
+
+        const MAG_ACTIVE_FOLDER_KEY = "osd_mag_active_folder_v1";
+        const MAG_SCROLL_KEY = "osd_mag_scroll_v1";
+
+        const searchInput = document.getElementById("search-posts");
+        const feedEl = document.getElementById("magazine-feed");
+        const logoEl = document.getElementById("mag-logo");
+        const brandEl = document.getElementById("mag-brand");
+
+        const fsViewer = document.getElementById("fullscreen-viewer");
+        const fsStage = document.getElementById("fullscreen-stage");
+        const fsImg = document.getElementById("fs-image");
+        const fsVideo = document.getElementById("fs-video");
+        const fsCounter = document.getElementById("fs-counter");
+        const fsFolderLabel = document.getElementById("fs-folder-label");
+        const fsCategory = document.getElementById("fs-category");
+        const fsDate = document.getElementById("fs-date");
+        const fsTitle = document.getElementById("fs-title");
+        const fsCaption = document.getElementById("fs-caption");
+
+        let rtdbFolders = {};
+        let rtdbItems = [];
         let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
         let scaledItemId = null;
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
         let scrollSaveTimer = null;
 
-        function escapeHtml(str = '') {
+        function escapeHtml(str = "") {
             return String(str).replace(/[&<>"']/g, ch => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
             }[ch]));
         }
 
-        function extractDriveFileId(rawUrl = '') {
-            const url = String(rawUrl || '').trim();
-            if (!url) return '';
+        function extractDriveFileId(rawUrl = "") {
+            const url = String(rawUrl || "").trim();
+            if (!url) return "";
             const patterns = [
                 /\/file\/d\/([a-zA-Z0-9_-]+)/,
                 /\/d\/([a-zA-Z0-9_-]+)/,
@@ -162,22 +191,22 @@
                 const match = url.match(re);
                 if (match && match[1]) return match[1];
             }
-            return '';
+            return "";
         }
 
-        function resolveMediaSrc(rawUrl, mediaType = 'image') {
-            const cleaned = String(rawUrl || '').trim();
-            if (!cleaned) return '';
+        function resolveMediaSrc(rawUrl, mediaType = "image") {
+            const cleaned = String(rawUrl || "").trim();
+            if (!cleaned) return "";
 
             let parsed = cleaned;
-            if (typeof parseDriveMedia === 'function') {
+            if (typeof parseDriveMedia === "function") {
                 const storeResult = parseDriveMedia(cleaned, mediaType);
-                if (storeResult && typeof storeResult === 'string') {
+                if (storeResult && typeof storeResult === "string") {
                     parsed = storeResult.trim();
                 }
             }
 
-            if (mediaType !== 'video') {
+            if (mediaType !== "video") {
                 const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
                 if (driveId) {
                     return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
@@ -188,16 +217,16 @@
 
         function handleImgFallback(imgEl, originalUrl) {
             if (!imgEl || imgEl.dataset.fallbackApplied) return;
-            imgEl.dataset.fallbackApplied = '1';
+            imgEl.dataset.fallbackApplied = "1";
             const driveId = extractDriveFileId(originalUrl || imgEl.dataset.rawSrc || imgEl.src);
             if (driveId) {
                 imgEl.src = `https://lh3.googleusercontent.com/d/${driveId}`;
                 imgEl.onerror = () => {
-                    imgEl.style.display = 'none';
+                    imgEl.style.display = "none";
                 };
                 return;
             }
-            imgEl.style.display = 'none';
+            imgEl.style.display = "none";
         }
 
         function syncFolderStorage() {
@@ -210,61 +239,59 @@
 
         function ensureBackAnchor() {
             try {
-                history.pushState({ osdMagGuard: true }, '', window.location.href);
+                history.pushState({ osdMagGuard: true }, "", window.location.href);
             } catch {}
         }
 
-        function buildDateFolders(q = '') {
-            const data = getOSDData();
-            const posts = Array.isArray(data.posts) ? data.posts : [];
-            const customFolders = (data.dateFolders && typeof data.dateFolders === 'object') ? data.dateFolders : {};
-            const term = (q || '').trim().toLowerCase();
-
+        function buildDateFolders(q = "") {
+            const term = (q || "").trim().toLowerCase();
             const map = new Map();
 
-            Object.entries(customFolders).forEach(([dateKey, meta]) => {
-                const cleanKey = (dateKey || '').trim();
+            Object.entries(rtdbFolders).forEach(([dateKey, meta]) => {
+                const cleanKey = (meta?.date || dateKey || "").trim();
                 if (!cleanKey) return;
                 map.set(cleanKey, {
                     key: cleanKey,
                     dateLabel: cleanKey,
-                    folderTitle: (meta && meta.title) ? meta.title : cleanKey,
-                    folderDescription: (meta && meta.description) ? meta.description : '',
-                    coverUrl: (meta && meta.coverUrl) ? meta.coverUrl : '',
+                    folderTitle: (meta?.title || "").trim() || cleanKey,
+                    folderDescription: (meta?.description || "").trim(),
+                    coverUrl: (meta?.coverUrl || "").trim(),
                     items: []
                 });
             });
 
-            posts.forEach((post, index) => {
-                const rawDate = (post.date || '').trim();
+            rtdbItems.forEach((item, index) => {
+                const rawDate = (item.date || "").trim();
                 const dateKey = rawDate || `undated-${index}`;
-                const dateLabel = rawDate || 'Undated';
+                const dateLabel = rawDate || "Undated";
                 if (!map.has(dateKey)) {
-                    const meta = customFolders[dateKey] || {};
+                    const meta = rtdbFolders[dateKey] || {};
                     map.set(dateKey, {
                         key: dateKey,
                         dateLabel,
-                        folderTitle: meta.title || dateLabel,
-                        folderDescription: meta.description || '',
-                        coverUrl: meta.coverUrl || '',
+                        folderTitle: (meta.title || "").trim() || dateLabel,
+                        folderDescription: (meta.description || "").trim(),
+                        coverUrl: (meta.coverUrl || "").trim(),
                         items: []
                     });
                 }
-                map.get(dateKey).items.push(post);
+                map.get(dateKey).items.push(item);
             });
 
-            const allFolders = Array.from(map.values()).map(folder => {
-                const fallbackMedia = folder.items[0] ? folder.items[0].mediaUrl : '';
-                const resolvedCover = folder.coverUrl || fallbackMedia;
-                const resolvedTitle = folder.folderTitle || (folder.items[0] && folder.items[0].title) || folder.dateLabel;
-                const resolvedDesc = folder.folderDescription || '';
-                return {
-                    ...folder,
-                    resolvedCover,
-                    resolvedTitle,
-                    resolvedDesc
-                };
-            });
+            const allFolders = Array.from(map.values())
+                .sort((a, b) => b.dateLabel.localeCompare(a.dateLabel))
+                .map(folder => {
+                    const fallbackMedia = folder.items[0] ? folder.items[0].mediaUrl : "";
+                    const resolvedCover = folder.coverUrl || fallbackMedia;
+                    const resolvedTitle = folder.folderTitle || (folder.items[0] && folder.items[0].title) || folder.dateLabel;
+                    const resolvedDesc = folder.folderDescription || "";
+                    return {
+                        ...folder,
+                        resolvedCover,
+                        resolvedTitle,
+                        resolvedDesc
+                    };
+                });
 
             if (!term) return allFolders;
 
@@ -275,10 +302,10 @@
                     folder.resolvedDesc.toLowerCase().includes(term);
 
                 const itemMatch = folder.items.some(item =>
-                    (item.title || '').toLowerCase().includes(term) ||
-                    (item.description || '').toLowerCase().includes(term) ||
-                    (item.category || '').toLowerCase().includes(term) ||
-                    (item.date || '').toLowerCase().includes(term)
+                    (item.title || "").toLowerCase().includes(term) ||
+                    (item.description || "").toLowerCase().includes(term) ||
+                    (item.category || "").toLowerCase().includes(term) ||
+                    (item.date || "").toLowerCase().includes(term)
                 );
 
                 return folderMatch || itemMatch;
@@ -294,7 +321,7 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (activeFolderKey) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
 
@@ -310,7 +337,7 @@
             }
             scaledItemId = itemId;
             renderMagazine(searchInput.value);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function exitFullscreenToFolder() {
@@ -324,7 +351,7 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (activeFolderKey) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
 
@@ -351,9 +378,9 @@
         function syncFullscreenUI() {
             const folder = getLockedFolderContext();
             if (!fullscreenItemId || !folder || !folder.items.length) {
-                fsViewer.classList.add('hidden');
-                fsVideo.src = '';
-                document.documentElement.style.overflow = '';
+                fsViewer.classList.add("hidden");
+                fsVideo.src = "";
+                document.documentElement.style.overflow = "";
                 return;
             }
 
@@ -363,33 +390,33 @@
             const safeIdx = idx >= 0 ? idx : 0;
             const media = resolveMediaSrc(item.mediaUrl, item.mediaType);
 
-            fsViewer.classList.remove('hidden');
-            document.documentElement.style.overflow = 'hidden';
+            fsViewer.classList.remove("hidden");
+            document.documentElement.style.overflow = "hidden";
 
             fsCounter.textContent = `${safeIdx + 1} / ${items.length}`;
             fsFolderLabel.textContent = `${folder.resolvedTitle} (${folder.dateLabel})`;
-            fsCategory.textContent = item.category || 'JOURNAL';
+            fsCategory.textContent = item.category || "JOURNAL";
             fsDate.textContent = item.date || folder.dateLabel;
-            fsTitle.textContent = item.title || '';
-            fsCaption.textContent = item.description || '';
+            fsTitle.textContent = item.title || "";
+            fsCaption.textContent = item.description || "";
 
-            if (item.mediaType === 'video') {
-                fsImg.classList.add('hidden');
-                fsVideo.classList.remove('hidden');
+            if (item.mediaType === "video") {
+                fsImg.classList.add("hidden");
+                fsVideo.classList.remove("hidden");
                 fsVideo.src = media;
             } else {
-                fsVideo.classList.add('hidden');
-                fsVideo.src = '';
-                fsImg.classList.remove('hidden');
+                fsVideo.classList.add("hidden");
+                fsVideo.src = "";
+                fsImg.classList.remove("hidden");
                 delete fsImg.dataset.fallbackApplied;
-                fsImg.dataset.rawSrc = item.mediaUrl || '';
-                fsImg.onerror = () => handleImgFallback(fsImg, item.mediaUrl || '');
+                fsImg.dataset.rawSrc = item.mediaUrl || "";
+                fsImg.onerror = () => handleImgFallback(fsImg, item.mediaUrl || "");
                 fsImg.src = media;
-                fsImg.alt = item.title || '';
+                fsImg.alt = item.title || "";
             }
         }
 
-        window.addEventListener('popstate', () => {
+        window.addEventListener("popstate", () => {
             ensureBackAnchor();
 
             if (fullscreenItemId) {
@@ -407,34 +434,34 @@
                 activeFolderKey = null;
                 syncFolderStorage();
                 renderMagazine(searchInput.value);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: "smooth" });
                 return;
             }
 
-            window.location.href = 'index.html';
+            window.location.href = "index.html";
         });
 
         let touchStartX = 0;
         let touchDeltaX = 0;
 
-        fsStage.addEventListener('touchstart', (e) => {
+        fsStage.addEventListener("touchstart", (e) => {
             if (!e.touches || !e.touches.length) return;
             touchStartX = e.touches[0].clientX;
             touchDeltaX = 0;
-            fsImg.style.transition = 'none';
+            fsImg.style.transition = "none";
         }, { passive: true });
 
-        fsStage.addEventListener('touchmove', (e) => {
+        fsStage.addEventListener("touchmove", (e) => {
             if (!e.touches || !e.touches.length) return;
             touchDeltaX = e.touches[0].clientX - touchStartX;
-            if (Math.abs(touchDeltaX) > 6 && !fsImg.classList.contains('hidden')) {
+            if (Math.abs(touchDeltaX) > 6 && !fsImg.classList.contains("hidden")) {
                 fsImg.style.transform = `translateX(${touchDeltaX * 0.45}px) rotate(${touchDeltaX * 0.015}deg)`;
             }
         }, { passive: true });
 
-        fsStage.addEventListener('touchend', () => {
-            fsImg.style.transition = 'transform 0.22s ease-out';
-            fsImg.style.transform = 'translateX(0px) rotate(0deg)';
+        fsStage.addEventListener("touchend", () => {
+            fsImg.style.transition = "transform 0.22s ease-out";
+            fsImg.style.transform = "translateX(0px) rotate(0deg)";
             if (Math.abs(touchDeltaX) > 55) {
                 stepFullscreenItem(touchDeltaX < 0 ? 1 : -1);
             }
@@ -442,14 +469,18 @@
             touchDeltaX = 0;
         });
 
-        document.getElementById('fs-close-btn').addEventListener('click', exitFullscreenToFolder);
-        document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenItem(-1));
-        document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenItem(1));
+        document.getElementById("fs-close-btn").addEventListener("click", exitFullscreenToFolder);
+        document.getElementById("fs-prev-btn").addEventListener("click", () => stepFullscreenItem(-1));
+        document.getElementById("fs-next-btn").addEventListener("click", () => stepFullscreenItem(1));
+
+        window.selectFolder = selectFolder;
+        window.handleFolderItemTap = handleFolderItemTap;
+        window.handleImgFallback = handleImgFallback;
 
         function renderCoverBox(folder, heightClass) {
             const safeTitle = escapeHtml(folder.resolvedTitle);
-            const rawUrl = folder.resolvedCover || '';
-            const coverSrc = resolveMediaSrc(rawUrl, 'image');
+            const rawUrl = folder.resolvedCover || "";
+            const coverSrc = resolveMediaSrc(rawUrl, "image");
             if (!coverSrc) {
                 return `<div class="${heightClass} w-full bg-[#121417] flex items-center justify-center text-[10px] text-white/40">No Cover</div>`;
             }
@@ -460,16 +491,16 @@
         }
 
         function buildBigScaledItem(item, folderKey) {
-            const rawUrl = item.mediaUrl || '';
+            const rawUrl = item.mediaUrl || "";
             const media = resolveMediaSrc(rawUrl, item.mediaType);
             const safeTitle = escapeHtml(item.title);
             const safeFolder = escapeHtml(folderKey);
             const safeId = escapeHtml(item.id);
-            const safeCategory = escapeHtml(item.category || 'JOURNAL');
-            const safeDesc = escapeHtml(item.description || '');
-            const mediaType = escapeHtml(item.mediaType || 'image');
+            const safeCategory = escapeHtml(item.category || "JOURNAL");
+            const safeDesc = escapeHtml(item.description || "");
+            const mediaType = escapeHtml(item.mediaType || "image");
 
-            const visual = item.mediaType === 'video'
+            const visual = item.mediaType === "video"
                 ? `<div class="h-52 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400">▶ PLAY VIDEO</div>`
                 : `<div class="h-56 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
@@ -485,20 +516,20 @@
                             <span class="text-white/45 font-normal">${mediaType}</span>
                         </div>
                         <h3 class="text-base font-extrabold text-white leading-snug mt-0.5">${safeTitle}</h3>
-                        ${safeDesc ? `<p class="text-xs text-white/80 mt-1 leading-relaxed whitespace-pre-line">${safeDesc}</p>` : ''}
+                        ${safeDesc ? `<p class="text-xs text-white/80 mt-1 leading-relaxed whitespace-pre-line">${safeDesc}</p>` : ""}
                     </div>
                 </div>`;
         }
 
         function renderThreeColTile(item, folderKey) {
-            const rawUrl = item.mediaUrl || '';
+            const rawUrl = item.mediaUrl || "";
             const media = resolveMediaSrc(rawUrl, item.mediaType);
             const safeTitle = escapeHtml(item.title);
             const safeFolder = escapeHtml(folderKey);
             const safeId = escapeHtml(item.id);
-            const safeCategory = escapeHtml(item.category || 'JOURNAL');
+            const safeCategory = escapeHtml(item.category || "JOURNAL");
 
-            const mediaBox = item.mediaType === 'video'
+            const mediaBox = item.mediaType === "video"
                 ? `<div class="h-24 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
                 : `<div class="h-24 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
@@ -516,12 +547,12 @@
         }
 
         function getFolderCountsText(items) {
-            const photos = items.filter(i => i.mediaType !== 'video').length;
-            const videos = items.filter(i => i.mediaType === 'video').length;
+            const photos = items.filter(i => i.mediaType !== "video").length;
+            const videos = items.filter(i => i.mediaType === "video").length;
             const parts = [];
-            if (photos) parts.push(`${photos} photo${photos > 1 ? 's' : ''}`);
-            if (videos) parts.push(`${videos} video${videos > 1 ? 's' : ''}`);
-            return parts.join(' • ') || '0 items';
+            if (photos) parts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
+            if (videos) parts.push(`${videos} video${videos > 1 ? "s" : ""}`);
+            return parts.join(" • ") || "0 items";
         }
 
         function buildExpandedFolder(folder) {
@@ -543,10 +574,10 @@
             const scaledItem = scaledItemId ? folder.items.find(i => i.id === scaledItemId) : null;
             const gridItems = scaledItem ? folder.items.filter(i => i.id !== scaledItem.id) : folder.items;
 
-            const scaledHtml = scaledItem ? buildBigScaledItem(scaledItem, folder.key) : '';
+            const scaledHtml = scaledItem ? buildBigScaledItem(scaledItem, folder.key) : "";
             const gridHtml = gridItems.length
-                ? `<div class="grid grid-cols-3 gap-2">${gridItems.map(item => renderThreeColTile(item, folder.key)).join('')}</div>`
-                : '';
+                ? `<div class="grid grid-cols-3 gap-2">${gridItems.map(item => renderThreeColTile(item, folder.key)).join("")}</div>`
+                : "";
 
             return `
                 <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-3">
@@ -571,9 +602,9 @@
                     onclick="selectFolder('${safeFolderKey}')"
                     class="compact-card cursor-pointer rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/35 overflow-hidden"
                 >
-                    ${renderCoverBox(folder, 'h-36')}
+                    ${renderCoverBox(folder, "h-36")}
                     <div class="p-3">
-                        <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
+                        <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-blue-400">
                             <span>${safeDate}</span>
                             <span class="text-white/50 font-mono font-normal">${countsText}</span>
                         </div>
@@ -583,10 +614,10 @@
                 </article>`;
         }
 
-        function renderMagazine(q = '') {
-            const data = getOSDData();
-            logoEl.src = resolveMediaSrc(data.brand.logoUrl, 'image');
-            brandEl.textContent = data.brand.siteName;
+        function renderMagazine(q = "") {
+            const brandFallback = typeof getOSDData === "function" ? getOSDData().brand : null;
+            logoEl.src = resolveMediaSrc(brandFallback?.logoUrl || "", "image");
+            brandEl.textContent = brandFallback?.siteName || "Off Script Diaries";
 
             const folders = buildDateFolders(q);
 
@@ -602,37 +633,73 @@
                 return;
             }
 
-            feedEl.innerHTML = folders.map(folder => buildFolderCard(folder)).join('');
+            feedEl.innerHTML = folders.map(folder => buildFolderCard(folder)).join("");
         }
 
-        window.addEventListener('scroll', () => {
+        window.addEventListener("scroll", () => {
             clearTimeout(scrollSaveTimer);
             scrollSaveTimer = setTimeout(() => {
                 sessionStorage.setItem(MAG_SCROLL_KEY, String(window.scrollY));
             }, 80);
         }, { passive: true });
 
-        searchInput.addEventListener('input', e => renderMagazine(e.target.value));
-        document.getElementById('nav-mag-refresh').addEventListener('click', () => {
+        searchInput.addEventListener("input", e => renderMagazine(e.target.value));
+        document.getElementById("nav-mag-refresh").addEventListener("click", () => {
             renderMagazine(searchInput.value);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: "smooth" });
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
+        onValue(foldersRef, (snap) => {
+            const raw = snap.val() || {};
+            const nextFolders = {};
+            Object.entries(raw).forEach(([key, data]) => {
+                const cleanKey = ((data && data.date) || key || "").trim();
+                if (cleanKey) {
+                    nextFolders[cleanKey] = {
+                        date: cleanKey,
+                        title: (data && data.title) || "",
+                        coverUrl: (data && data.coverUrl) || "",
+                        description: (data && data.description) || ""
+                    };
+                }
+            });
+            rtdbFolders = nextFolders;
+            renderMagazine(searchInput.value);
+            if (fullscreenItemId) syncFullscreenUI();
+        });
+
+        onValue(itemsRef, (snap) => {
+            const raw = snap.val() || {};
+            const list = Object.entries(raw).map(([key, data]) => ({
+                id: (data && data.id) || key,
+                date: (data && data.date) || "",
+                mediaType: data && data.mediaType === "video" ? "video" : "image",
+                title: (data && data.title) || "",
+                category: (data && data.category) || "Memory",
+                mediaUrl: (data && data.mediaUrl) || "",
+                description: (data && data.description) || "",
+                createdAtMs: Number((data && data.createdAtMs) || 0)
+            }));
+            list.sort((a, b) => b.createdAtMs - a.createdAtMs);
+            rtdbItems = list;
+            renderMagazine(searchInput.value);
+            if (fullscreenItemId) syncFullscreenUI();
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
             try {
-                history.replaceState({ osdMagBase: true }, '', window.location.href);
-                history.pushState({ osdMagGuard: true }, '', window.location.href);
+                history.replaceState({ osdMagBase: true }, "", window.location.href);
+                history.pushState({ osdMagGuard: true }, "", window.location.href);
             } catch {}
             renderMagazine();
-            const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
+            const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || "0");
             if (savedScroll > 0) {
                 requestAnimationFrame(() => window.scrollTo(0, savedScroll));
             }
-            enforceRoleLock('magazine', 'E-Magazine');
+            if (typeof enforceRoleLock === "function") {
+                enforceRoleLock("magazine", "Magazine");
+            }
         });
-
-        window.addEventListener('storage', () => renderMagazine(searchInput.value));
-        window.addEventListener('osd_data_updated', () => renderMagazine(searchInput.value));
     </script>
 </body>
 </html>
