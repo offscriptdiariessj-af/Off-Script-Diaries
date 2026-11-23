@@ -76,7 +76,7 @@
     </header>
 
     <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
-        <input id="search-posts" type="search" placeholder="Search folder date, title, description..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+        <input id="search-posts" type="search" placeholder="Search date (dd/mm/yyyy), title, description..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
@@ -124,7 +124,6 @@
             onValue
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-        // Match this databaseURL with emagazineadmin.html
         const firebaseConfig = {
             apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
             authDomain: "offscript-3cf92.firebaseapp.com",
@@ -168,6 +167,20 @@
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
         let scrollSaveTimer = null;
+
+        function formatDateDDMMYYYY(rawDate = "") {
+            const clean = String(rawDate || "").trim();
+            if (!clean) return "";
+            const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (isoMatch) {
+                return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+            }
+            const dmyMatch = clean.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (dmyMatch) {
+                return `${dmyMatch[1]}/${dmyMatch[2]}/${dmyMatch[3]}`;
+            }
+            return clean;
+        }
 
         function escapeHtml(str = "") {
             return String(str).replace(/[&<>"']/g, ch => ({
@@ -253,8 +266,8 @@
                 if (!cleanKey) return;
                 map.set(cleanKey, {
                     key: cleanKey,
-                    dateLabel: cleanKey,
-                    folderTitle: (meta?.title || "").trim() || cleanKey,
+                    dateDisplay: formatDateDDMMYYYY(cleanKey),
+                    folderTitle: (meta?.title || "").trim() || formatDateDDMMYYYY(cleanKey),
                     folderDescription: (meta?.description || "").trim(),
                     coverUrl: (meta?.coverUrl || "").trim(),
                     items: []
@@ -264,13 +277,13 @@
             rtdbItems.forEach((item, index) => {
                 const rawDate = (item.date || "").trim();
                 const dateKey = rawDate || `undated-${index}`;
-                const dateLabel = rawDate || "Undated";
+                const dateDisplay = rawDate ? formatDateDDMMYYYY(rawDate) : "Undated";
                 if (!map.has(dateKey)) {
                     const meta = rtdbFolders[dateKey] || {};
                     map.set(dateKey, {
                         key: dateKey,
-                        dateLabel,
-                        folderTitle: (meta.title || "").trim() || dateLabel,
+                        dateDisplay,
+                        folderTitle: (meta.title || "").trim() || dateDisplay,
                         folderDescription: (meta.description || "").trim(),
                         coverUrl: (meta.coverUrl || "").trim(),
                         items: []
@@ -280,11 +293,11 @@
             });
 
             const allFolders = Array.from(map.values())
-                .sort((a, b) => b.dateLabel.localeCompare(a.dateLabel))
+                .sort((a, b) => b.key.localeCompare(a.key))
                 .map(folder => {
                     const fallbackMedia = folder.items[0] ? folder.items[0].mediaUrl : "";
                     const resolvedCover = folder.coverUrl || fallbackMedia;
-                    const resolvedTitle = folder.folderTitle || (folder.items[0] && folder.items[0].title) || folder.dateLabel;
+                    const resolvedTitle = folder.folderTitle || (folder.items[0] && folder.items[0].title) || folder.dateDisplay;
                     const resolvedDesc = folder.folderDescription || "";
                     return {
                         ...folder,
@@ -298,7 +311,8 @@
 
             return allFolders.filter(folder => {
                 const folderMatch =
-                    folder.dateLabel.toLowerCase().includes(term) ||
+                    folder.key.toLowerCase().includes(term) ||
+                    folder.dateDisplay.toLowerCase().includes(term) ||
                     folder.resolvedTitle.toLowerCase().includes(term) ||
                     folder.resolvedDesc.toLowerCase().includes(term);
 
@@ -306,7 +320,8 @@
                     (item.title || "").toLowerCase().includes(term) ||
                     (item.description || "").toLowerCase().includes(term) ||
                     (item.category || "").toLowerCase().includes(term) ||
-                    (item.date || "").toLowerCase().includes(term)
+                    (item.date || "").toLowerCase().includes(term) ||
+                    formatDateDDMMYYYY(item.date || "").toLowerCase().includes(term)
                 );
 
                 return folderMatch || itemMatch;
@@ -395,9 +410,9 @@
             document.documentElement.style.overflow = "hidden";
 
             fsCounter.textContent = `${safeIdx + 1} / ${items.length}`;
-            fsFolderLabel.textContent = `${folder.resolvedTitle} (${folder.dateLabel})`;
+            fsFolderLabel.textContent = `${folder.resolvedTitle} (${folder.dateDisplay})`;
             fsCategory.textContent = item.category || "JOURNAL";
-            fsDate.textContent = item.date || folder.dateLabel;
+            fsDate.textContent = formatDateDDMMYYYY(item.date) || folder.dateDisplay;
             fsTitle.textContent = item.title || "";
             fsCaption.textContent = item.description || "";
 
@@ -558,7 +573,7 @@
 
         function buildExpandedFolder(folder) {
             const safeFolderKey = escapeHtml(folder.key);
-            const safeDate = escapeHtml(folder.dateLabel);
+            const safeDate = escapeHtml(folder.dateDisplay);
             const countsText = escapeHtml(getFolderCountsText(folder.items));
 
             if (!folder.items.length) {
@@ -593,7 +608,7 @@
 
         function buildFolderCard(folder) {
             const safeFolderKey = escapeHtml(folder.key);
-            const safeDate = escapeHtml(folder.dateLabel);
+            const safeDate = escapeHtml(folder.dateDisplay);
             const safeTitle = escapeHtml(folder.resolvedTitle);
             const safeDesc = escapeHtml(folder.resolvedDesc);
             const countsText = escapeHtml(getFolderCountsText(folder.items));
