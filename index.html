@@ -30,6 +30,11 @@
         </div>
     </header>
 
+    <!-- BACK AGAIN TO EXIT TOAST -->
+    <div id="exit-toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-[#1E2126] border border-blue-400/40 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-xl text-center">
+        Tap back button again to exit
+    </div>
+
     <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
 
         <!-- VIEW MODE 1: HOME (ALL 10 UNIQUE SECTIONS) -->
@@ -70,8 +75,7 @@
             <section class="grid grid-cols-2 gap-3">
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Days Together</span>
-                    <div id="home-stat-days" class="text-2xl font-extrabold text-blue-400 mt-1">0</div>
-                    <div id="home-stat-hms" class="text-[11px] font-mono text-blue-300/90 mt-1">00h : 00m : 00s</div>
+                    <div id="home-stat-days" class="text-xl font-extrabold text-blue-400 mt-1 leading-tight">0</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Cities</span>
@@ -227,10 +231,6 @@
 
     </main>
 
-    <div id="back-exit-toast" class="hidden fixed bottom-20 inset-x-4 max-w-md mx-auto z-50 bg-[#1E2126] border border-blue-400/50 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-xl text-center">
-        Tap back button again to exit
-    </div>
-
     <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR -->
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
@@ -252,97 +252,46 @@
     <script src="js/store.js"></script>
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
-        let currentActiveMode = 'home';
-
         const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
-        let togetherTimerId = null;
-        let lastKnownSecondKey = '';
+        let currentActiveMode = 'home';
+        let backExitArmed = false;
+        let backExitTimer = null;
+        let togetherTimer = null;
 
-        let backArmedForExit = false;
-        let backArmTimer = null;
-
-        function pad2(n) {
-            return String(Math.max(0, Math.floor(n))).padStart(2, '0');
-        }
-
-        function computeTogetherBreakdown(nowDate = new Date()) {
-            const diffMs = Math.max(0, nowDate.getTime() - TOGETHER_START_MS);
+        function formatTogetherLive() {
+            const now = new Date();
+            const diffMs = Math.max(0, now.getTime() - TOGETHER_START_MS);
             const totalSeconds = Math.floor(diffMs / 1000);
             const days = Math.floor(totalSeconds / 86400);
-            const remAfterDays = totalSeconds % 86400;
-            const hours = Math.floor(remAfterDays / 3600);
-            const minutes = Math.floor((remAfterDays % 3600) / 60);
-            const seconds = remAfterDays % 60;
-            return { days, hours, minutes, seconds, totalSeconds };
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const pad = n => String(n).padStart(2, '0');
+            return {
+                homeText: `${days.toLocaleString()}d <span class="text-xs font-mono text-white/85">${pad(hours)}h:${pad(minutes)}m:${pad(seconds)}s</span>`,
+                deckText: `${days.toLocaleString()}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+            };
         }
 
         function updateTogetherCounter() {
-            const now = new Date();
-            const secondKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`;
-            if (secondKey === lastKnownSecondKey) return;
-            lastKnownSecondKey = secondKey;
-
-            const { days, hours, minutes, seconds } = computeTogetherBreakdown(now);
-            const dayText = days.toLocaleString();
-            const hmsText = `${pad2(hours)}h : ${pad2(minutes)}m : ${pad2(seconds)}s`;
-
-            const homeDaysEl = document.getElementById('home-stat-days');
-            const homeHmsEl = document.getElementById('home-stat-hms');
-            const deckDaysEl = document.getElementById('deck-stat-days');
-
-            if (homeDaysEl) homeDaysEl.textContent = dayText;
-            if (homeHmsEl) homeHmsEl.textContent = hmsText;
-            if (deckDaysEl) deckDaysEl.textContent = dayText;
+            const { homeText, deckText } = formatTogetherLive();
+            const homeEl = document.getElementById('home-stat-days');
+            const deckEl = document.getElementById('deck-stat-days');
+            if (homeEl) homeEl.innerHTML = homeText;
+            if (deckEl) deckEl.textContent = deckText;
         }
 
-        function startTogetherClockSync() {
+        function startTogetherTicker() {
             updateTogetherCounter();
-            if (togetherTimerId) clearInterval(togetherTimerId);
-            togetherTimerId = setInterval(() => {
+            if (togetherTimer) clearInterval(togetherTimer);
+            const nowMs = Date.now();
+            const msToNextSecond = 1000 - (nowMs % 1000);
+            togetherTimer = setTimeout(() => {
                 updateTogetherCounter();
-            }, 250);
+                togetherTimer = setInterval(updateTogetherCounter, 1000);
+            }, msToNextSecond);
         }
-
-        function showBackExitPrompt() {
-            const toast = document.getElementById('back-exit-toast');
-            if (!toast) return;
-            toast.textContent = 'Tap back button again to exit';
-            toast.classList.remove('hidden');
-            clearTimeout(backArmTimer);
-            backArmTimer = setTimeout(() => {
-                backArmedForExit = false;
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        function exitPageImmediately() {
-            backArmedForExit = false;
-            clearTimeout(backArmTimer);
-            const toast = document.getElementById('back-exit-toast');
-            if (toast) toast.classList.add('hidden');
-            try { window.close(); } catch {}
-            try { window.open('', '_self').close(); } catch {}
-            try { window.location.replace('about:blank'); } catch {}
-        }
-
-        function installNativeBackExitTrap() {
-            try {
-                history.replaceState({ osdIndexBase: true }, '', window.location.href);
-                history.pushState({ osdIndexTrap: true }, '', window.location.href);
-            } catch {}
-        }
-
-        window.addEventListener('popstate', () => {
-            if (backArmedForExit) {
-                exitPageImmediately();
-                return;
-            }
-            backArmedForExit = true;
-            try {
-                history.pushState({ osdIndexTrap: true }, '', window.location.href);
-            } catch {}
-            showBackExitPrompt();
-        });
 
         function getSavedMode() {
             const hashMode = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -356,7 +305,7 @@
             currentActiveMode = targetMode;
             sessionStorage.setItem('osd_index_active_mode', targetMode);
             if ((window.location.hash || '').replace('#', '') !== targetMode) {
-                history.replaceState(null, '', `#${targetMode}`);
+                history.replaceState({ osdHomeTrap: true, mode: targetMode }, '', `#${targetMode}`);
             }
 
             const views = {
@@ -394,6 +343,41 @@
             switchIndexMode(mode, true);
         }
 
+        function pushHomeLockState() {
+            try {
+                history.pushState({ osdHomeTrap: true, mode: 'home' }, '', '#home');
+            } catch {}
+        }
+
+        function showExitToast() {
+            const toast = document.getElementById('exit-toast');
+            if (!toast) return;
+            toast.classList.remove('hidden');
+            clearTimeout(backExitTimer);
+            backExitTimer = setTimeout(() => {
+                backExitArmed = false;
+                toast.classList.add('hidden');
+            }, 2200);
+        }
+
+        function exitSiteCompletely() {
+            document.body.innerHTML = '';
+            try { window.open('', '_self'); } catch {}
+            try { window.close(); } catch {}
+            try { window.location.replace('about:blank'); } catch {}
+        }
+
+        window.addEventListener('popstate', () => {
+            switchIndexMode('home', false);
+            if (!backExitArmed) {
+                backExitArmed = true;
+                pushHomeLockState();
+                showExitToast();
+                return;
+            }
+            exitSiteCompletely();
+        });
+
         function renderIndexPage() {
             const data = getOSDData();
             const logoSrc = parseDriveMedia(data.brand.logoUrl, 'image');
@@ -419,13 +403,12 @@
             document.getElementById('origin-story').textContent = data.sections.origin.story;
             document.getElementById('origin-quote').textContent = data.sections.origin.quote;
 
+            updateTogetherCounter();
             ['home', 'deck'].forEach(prefix => {
                 document.getElementById(`${prefix}-stat-cities`).textContent = data.sections.telemetry.citiesExplored;
                 document.getElementById(`${prefix}-stat-coffee`).textContent = data.sections.telemetry.coffeeCups;
                 document.getElementById(`${prefix}-stat-calls`).textContent = data.sections.telemetry.midnightCalls;
             });
-            lastKnownSecondKey = '';
-            updateTogetherCounter();
 
             document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
             document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
@@ -518,21 +501,14 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            installNativeBackExitTrap();
             renderIndexPage();
             switchIndexMode(getSavedMode(), false);
-            startTogetherClockSync();
+            startTogetherTicker();
+            try {
+                history.replaceState({ osdHomeTrap: true, mode: currentActiveMode }, '', `#${currentActiveMode}`);
+                history.pushState({ osdHomeTrap: true, mode: 'home' }, '', '#home');
+            } catch {}
             enforceRoleLock('index', 'Off Script Diaries');
-        });
-        window.addEventListener('focus', () => {
-            lastKnownSecondKey = '';
-            updateTogetherCounter();
-        });
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                lastKnownSecondKey = '';
-                updateTogetherCounter();
-            }
         });
         window.addEventListener('hashchange', () => switchIndexMode(getSavedMode(), false));
         window.addEventListener('storage', renderIndexPage);
