@@ -14,7 +14,7 @@
                 <span class="w-8 h-8 rounded-full bg-blue-600/25 border border-blue-400/40 text-blue-300 flex items-center justify-center text-xs font-bold shrink-0">✎</span>
                 <div class="truncate">
                     <h1 class="text-sm font-bold text-white truncate">Magazine Folder Studio</h1>
-                    <p class="text-[10px] text-blue-400 truncate">Date Folders • Covers &amp; Media</p>
+                    <p class="text-[10px] text-blue-400 truncate">Folders &amp; Items • Edit, Delete, Upload</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -26,11 +26,11 @@
 
     <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
-        <!-- DATE FOLDER META (COVER PICTURE, FOLDER TITLE, FOLDER DESCRIPTION) -->
+        <!-- 1. DATE FOLDER MANAGER (EDIT / CREATE / DELETE FOLDER) -->
         <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Date Folder Details</span>
-                <span class="text-[10px] text-white/45">Separate from items inside</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">1 • Date Folder</span>
+                <span class="text-[10px] text-white/45">Cover, title &amp; info</span>
             </div>
 
             <div class="space-y-1">
@@ -50,22 +50,30 @@
 
             <div class="space-y-1">
                 <label class="text-[11px] text-white/60">Folder Description</label>
-                <textarea id="folder-desc-input" rows="2" placeholder="Overall story or summary for this date folder..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                <textarea id="folder-desc-input" rows="2" placeholder="Overall summary for this date folder..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
 
-            <button id="save-folder-meta-btn" type="button" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                Save Date Folder Cover &amp; Info
-            </button>
+            <div class="flex gap-2">
+                <button id="save-folder-meta-btn" type="button" class="flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                    Save Folder
+                </button>
+                <button id="delete-folder-btn" type="button" class="px-3.5 h-10 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 border border-rose-400/30 text-xs font-bold text-rose-300 transition">
+                    Delete Folder
+                </button>
+            </div>
             <p id="folder-save-status" class="text-[11px] text-emerald-400 hidden"></p>
         </section>
 
-        <!-- ADD PHOTO OR VIDEO TO A DATE FOLDER -->
-        <section class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Add Photo / Video to Date</span>
+        <!-- 2. ITEM INSIDE FOLDER (UPLOAD NEW OR EDIT EXISTING ITEM) -->
+        <section id="item-editor-section" class="rounded-2xl bg-[#1E2126] border border-white/10 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <span id="item-editor-heading" class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">2 • Upload Item to Folder</span>
+                <button id="cancel-edit-item-btn" type="button" class="hidden text-[10px] font-bold px-2 py-1 rounded bg-white/10 text-white/75">Cancel Edit</button>
+            </div>
 
             <div class="grid grid-cols-2 gap-2.5">
                 <div class="space-y-1">
-                    <label class="text-[11px] text-white/60">Item Date</label>
+                    <label class="text-[11px] text-white/60">Folder Date</label>
                     <input id="item-date-input" type="date" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="space-y-1">
@@ -94,19 +102,30 @@
             </div>
 
             <div class="space-y-1">
-                <label class="text-[11px] text-white/60">Item Caption / Note</label>
-                <textarea id="item-desc-input" rows="2" placeholder="Note for this specific photo or video..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                <label class="text-[11px] text-white/60">Item Caption / Description</label>
+                <textarea id="item-desc-input" rows="2" placeholder="Note for this photo or video..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
 
-            <button id="add-item-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">
-                Add to Date Folder
+            <button id="submit-item-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">
+                Upload Item to Folder
             </button>
+            <p id="item-save-status" class="text-[11px] text-emerald-400 hidden"></p>
         </section>
 
-        <!-- EXISTING DATE FOLDERS & ITEMS -->
-        <section class="space-y-3">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">Manage Date Folders</span>
-            <div id="admin-folders-list" class="space-y-3"></div>
+        <!-- 3. DATE FOLDERS OVERVIEW -->
+        <section class="space-y-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">3 • Date Folders</span>
+            <div id="admin-folders-list" class="space-y-2.5"></div>
+        </section>
+
+        <!-- 4. ALL ITEMS ACROSS FOLDERS (EDIT / DELETE ANY ITEM) -->
+        <section class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">4 • All Folder Items</span>
+                <span id="all-items-count" class="text-[10px] font-mono text-white/50">0 items</span>
+            </div>
+            <input id="admin-item-search" type="search" placeholder="Filter items by title, date, category..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            <div id="admin-all-items-list" class="space-y-2.5"></div>
         </section>
 
     </main>
@@ -119,12 +138,37 @@
         const folderDescEl = document.getElementById('folder-desc-input');
         const folderStatusEl = document.getElementById('folder-save-status');
 
+        const itemEditorHeadingEl = document.getElementById('item-editor-heading');
+        const cancelEditItemBtn = document.getElementById('cancel-edit-item-btn');
+        const submitItemBtn = document.getElementById('submit-item-btn');
+        const itemStatusEl = document.getElementById('item-save-status');
+
         const itemDateEl = document.getElementById('item-date-input');
         const itemTypeEl = document.getElementById('item-type-input');
         const itemTitleEl = document.getElementById('item-title-input');
         const itemCategoryEl = document.getElementById('item-category-input');
         const itemMediaEl = document.getElementById('item-media-input');
         const itemDescEl = document.getElementById('item-desc-input');
+        const itemSearchEl = document.getElementById('admin-item-search');
+
+        let editingItemId = null;
+
+        function escapeHtml(str = '') {
+            return String(str).replace(/[&<>"']/g, ch => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
+
+        function showStatus(el, msg) {
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.add('hidden'), 2200);
+        }
 
         function ensureFolderStructure(data) {
             if (!Array.isArray(data.posts)) data.posts = [];
@@ -141,7 +185,9 @@
             folderTitleEl.value = meta.title || '';
             folderCoverEl.value = meta.coverUrl || '';
             folderDescEl.value = meta.description || '';
-            itemDateEl.value = dateStr;
+            if (!editingItemId) {
+                itemDateEl.value = dateStr;
+            }
         }
 
         function saveFolderMeta() {
@@ -157,55 +203,127 @@
 
             saveOSDData(data);
             window.dispatchEvent(new Event('osd_data_updated'));
-            renderAdminFolders();
-
-            folderStatusEl.textContent = `Saved folder details for ${dateStr}`;
-            folderStatusEl.classList.remove('hidden');
-            setTimeout(() => folderStatusEl.classList.add('hidden'), 2000);
+            renderAllAdminViews();
+            showStatus(folderStatusEl, `Saved folder ${dateStr}`);
         }
 
-        function addMediaItem() {
+        function deleteDateFolder(dateKey) {
+            const targetDate = (dateKey || folderDateEl.value || '').trim();
+            if (!targetDate) return;
+
+            const data = ensureFolderStructure(getOSDData());
+            delete data.dateFolders[targetDate];
+            data.posts = data.posts.filter(p => (p.date || '').trim() !== targetDate);
+
+            if (editingItemId && !data.posts.some(p => p.id === editingItemId)) {
+                resetItemEditor();
+            }
+
+            saveOSDData(data);
+            window.dispatchEvent(new Event('osd_data_updated'));
+            renderAllAdminViews();
+            showStatus(folderStatusEl, `Deleted folder ${targetDate} and its items`);
+        }
+
+        function resetItemEditor() {
+            editingItemId = null;
+            itemEditorHeadingEl.textContent = '2 • Upload Item to Folder';
+            submitItemBtn.textContent = 'Upload Item to Folder';
+            cancelEditItemBtn.classList.add('hidden');
+            itemTitleEl.value = '';
+            itemCategoryEl.value = '';
+            itemMediaEl.value = '';
+            itemDescEl.value = '';
+            itemTypeEl.value = 'image';
+            itemDateEl.value = folderDateEl.value || new Date().toISOString().slice(0, 10);
+        }
+
+        function startEditItem(itemId) {
+            const data = ensureFolderStructure(getOSDData());
+            const item = data.posts.find(p => p.id === itemId);
+            if (!item) return;
+
+            editingItemId = item.id;
+            itemEditorHeadingEl.textContent = '2 • Editing Folder Item';
+            submitItemBtn.textContent = 'Update Item';
+            cancelEditItemBtn.classList.remove('hidden');
+
+            itemDateEl.value = item.date || new Date().toISOString().slice(0, 10);
+            itemTypeEl.value = item.mediaType === 'video' ? 'video' : 'image';
+            itemTitleEl.value = item.title || '';
+            itemCategoryEl.value = item.category || '';
+            itemMediaEl.value = item.mediaUrl || '';
+            itemDescEl.value = item.description || '';
+
+            document.getElementById('item-editor-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function saveOrUploadItem() {
             const mediaUrl = itemMediaEl.value.trim();
             const title = itemTitleEl.value.trim();
             if (!mediaUrl || !title) return;
 
             const dateStr = (itemDateEl.value || folderDateEl.value || new Date().toISOString().slice(0, 10)).trim();
+            const mediaType = itemTypeEl.value === 'video' ? 'video' : 'image';
+            const category = (itemCategoryEl.value || 'Memory').trim();
+            const description = itemDescEl.value.trim();
+
             const data = ensureFolderStructure(getOSDData());
 
             if (!data.dateFolders[dateStr]) {
                 data.dateFolders[dateStr] = {
-                    title: folderTitleEl.value.trim() || dateStr,
-                    coverUrl: folderCoverEl.value.trim() || '',
-                    description: folderDescEl.value.trim() || ''
+                    title: dateStr,
+                    coverUrl: '',
+                    description: ''
                 };
             }
 
-            data.posts.unshift({
-                id: 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                date: dateStr,
-                title,
-                category: (itemCategoryEl.value || 'Memory').trim(),
-                mediaType: itemTypeEl.value === 'video' ? 'video' : 'image',
-                mediaUrl,
-                description: itemDescEl.value.trim()
-            });
+            if (editingItemId) {
+                const idx = data.posts.findIndex(p => p.id === editingItemId);
+                if (idx >= 0) {
+                    data.posts[idx] = {
+                        ...data.posts[idx],
+                        date: dateStr,
+                        title,
+                        category,
+                        mediaType,
+                        mediaUrl,
+                        description
+                    };
+                }
+                showStatus(itemStatusEl, `Updated "${title}"`);
+                resetItemEditor();
+            } else {
+                data.posts.unshift({
+                    id: 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                    date: dateStr,
+                    title,
+                    category,
+                    mediaType,
+                    mediaUrl,
+                    description
+                });
+                showStatus(itemStatusEl, `Uploaded "${title}" to ${dateStr}`);
+                itemTitleEl.value = '';
+                itemMediaEl.value = '';
+                itemDescEl.value = '';
+            }
 
             saveOSDData(data);
             window.dispatchEvent(new Event('osd_data_updated'));
-
-            itemTitleEl.value = '';
-            itemMediaEl.value = '';
-            itemDescEl.value = '';
             loadFolderMetaIntoForm(dateStr);
-            renderAdminFolders();
+            renderAllAdminViews();
         }
 
         function deleteMediaItem(postId) {
             const data = ensureFolderStructure(getOSDData());
             data.posts = data.posts.filter(p => p.id !== postId);
+            if (editingItemId === postId) {
+                resetItemEditor();
+            }
             saveOSDData(data);
             window.dispatchEvent(new Event('osd_data_updated'));
-            renderAdminFolders();
+            renderAllAdminViews();
         }
 
         function renderAdminFolders() {
@@ -218,44 +336,106 @@
             ]));
 
             if (!dates.length) {
-                container.innerHTML = `<div class="p-6 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No date folders yet.</div>`;
+                container.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No date folders yet.</div>`;
                 return;
             }
 
             container.innerHTML = dates.map(dateKey => {
+                const safeKey = escapeHtml(dateKey);
                 const meta = data.dateFolders[dateKey] || {};
                 const items = data.posts.filter(p => (p.date || '').trim() === dateKey);
-                const coverPreview = parseDriveMedia(meta.coverUrl || (items[0] && items[0].mediaUrl) || '', 'image');
-
-                const itemRows = items.map(item => `
-                    <div class="flex items-center justify-between gap-2 py-2 border-t border-white/10 text-xs">
-                        <div class="min-w-0">
-                            <span class="text-[9px] font-bold uppercase text-blue-400 mr-1.5">[${item.mediaType || 'image'}]</span>
-                            <span class="font-semibold text-white truncate">${item.title}</span>
-                        </div>
-                        <button type="button" onclick="deleteMediaItem('${item.id}')" class="text-[10px] text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-500/10 shrink-0">Delete</button>
-                    </div>
-                `).join('');
+                const coverPreview = escapeHtml(parseDriveMedia(meta.coverUrl || (items[0] && items[0].mediaUrl) || '', 'image'));
+                const folderTitle = escapeHtml(meta.title || dateKey);
+                const folderDesc = escapeHtml(meta.description || 'No folder description set');
 
                 return `
-                    <div class="rounded-2xl bg-[#1E2126] border border-white/10 p-3.5 space-y-2.5">
-                        <div class="flex items-center gap-3">
-                            <img src="${coverPreview}" alt="${dateKey}" class="w-14 h-14 rounded-xl object-cover bg-black shrink-0 border border-white/10" />
-                            <div class="min-w-0 flex-1">
-                                <div class="text-[10px] font-bold uppercase text-blue-400">${dateKey} • ${items.length} item${items.length === 1 ? '' : 's'}</div>
-                                <div class="text-sm font-bold text-white truncate">${meta.title || dateKey}</div>
-                                <div class="text-[11px] text-white/60 line-clamp-1">${meta.description || 'No folder description set'}</div>
-                            </div>
-                            <button type="button" onclick="loadFolderMetaIntoForm('${dateKey}')" class="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-600/25 text-blue-300 border border-blue-400/30 shrink-0">Edit Folder</button>
+                    <div class="rounded-2xl bg-[#1E2126] border border-white/10 p-3 flex items-center gap-3">
+                        <img src="${coverPreview}" alt="${safeKey}" class="w-12 h-12 rounded-xl object-cover bg-black shrink-0 border border-white/10" />
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[10px] font-bold uppercase text-blue-400">${safeKey} • ${items.length} item${items.length === 1 ? '' : 's'}</div>
+                            <div class="text-xs font-bold text-white truncate">${folderTitle}</div>
+                            <div class="text-[10px] text-white/55 truncate">${folderDesc}</div>
                         </div>
-                        ${itemRows ? `<div class="pt-1">${itemRows}</div>` : ''}
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button type="button" onclick="loadFolderMetaIntoForm('${safeKey}')" class="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                            <button type="button" onclick="deleteDateFolder('${safeKey}')" class="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/25">Delete</button>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
+        function renderAllItemsList(query = '') {
+            const data = ensureFolderStructure(getOSDData());
+            const container = document.getElementById('admin-all-items-list');
+            const countBadge = document.getElementById('all-items-count');
+
+            const term = (query || '').trim().toLowerCase();
+            const filtered = data.posts.filter(item => {
+                if (!term) return true;
+                return (
+                    (item.title || '').toLowerCase().includes(term) ||
+                    (item.description || '').toLowerCase().includes(term) ||
+                    (item.category || '').toLowerCase().includes(term) ||
+                    (item.date || '').toLowerCase().includes(term) ||
+                    (item.mediaType || '').toLowerCase().includes(term)
+                );
+            });
+
+            countBadge.textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+
+            if (!filtered.length) {
+                container.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] text-center text-xs text-white/50">No items found.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const safeId = escapeHtml(item.id);
+                const safeTitle = escapeHtml(item.title || 'Untitled');
+                const safeDate = escapeHtml(item.date || 'No date');
+                const safeCat = escapeHtml(item.category || 'Memory');
+                const safeDesc = escapeHtml(item.description || '');
+                const mediaType = item.mediaType === 'video' ? 'video' : 'image';
+                const thumbSrc = escapeHtml(parseDriveMedia(item.mediaUrl, 'image'));
+
+                const thumbHtml = mediaType === 'video'
+                    ? `<div class="w-14 h-14 rounded-xl bg-black border border-white/10 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">▶ VID</div>`
+                    : `<img src="${thumbSrc}" alt="${safeTitle}" class="w-14 h-14 rounded-xl object-cover bg-black border border-white/10 shrink-0" />`;
+
+                return `
+                    <div class="rounded-2xl bg-[#1E2126] border ${editingItemId === item.id ? 'border-emerald-400/60' : 'border-white/10'} p-3 flex items-center gap-3">
+                        ${thumbHtml}
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase text-blue-400">
+                                <span>${safeDate}</span>
+                                <span class="text-white/35">•</span>
+                                <span class="text-emerald-400">${mediaType}</span>
+                                <span class="text-white/35">•</span>
+                                <span class="truncate">${safeCat}</span>
+                            </div>
+                            <div class="text-xs font-bold text-white truncate mt-0.5">${safeTitle}</div>
+                            ${safeDesc ? `<div class="text-[10px] text-white/60 truncate mt-0.5">${safeDesc}</div>` : ''}
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0">
+                            <button type="button" onclick="startEditItem('${safeId}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">Edit</button>
+                            <button type="button" onclick="deleteMediaItem('${safeId}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/25">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAllAdminViews() {
+            renderAdminFolders();
+            renderAllItemsList(itemSearchEl.value);
+        }
+
         document.getElementById('save-folder-meta-btn').addEventListener('click', saveFolderMeta);
-        document.getElementById('add-item-btn').addEventListener('click', addMediaItem);
+        document.getElementById('delete-folder-btn').addEventListener('click', () => deleteDateFolder(folderDateEl.value));
+        submitItemBtn.addEventListener('click', saveOrUploadItem);
+        cancelEditItemBtn.addEventListener('click', resetItemEditor);
+        itemSearchEl.addEventListener('input', e => renderAllItemsList(e.target.value));
+
         folderDateEl.addEventListener('change', e => {
             if (e.target.value) loadFolderMetaIntoForm(e.target.value);
         });
@@ -263,7 +443,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const initialDate = new Date().toISOString().slice(0, 10);
             loadFolderMetaIntoForm(initialDate);
-            renderAdminFolders();
+            renderAllAdminViews();
             enforceRoleLock('magazine_admin', 'Magazine Admin');
         });
     </script>
