@@ -30,11 +30,6 @@
         </div>
     </header>
 
-    <!-- BACK EXIT PROMPT TOAST -->
-    <div id="back-exit-toast" class="hidden fixed bottom-20 inset-x-4 max-w-md mx-auto z-50 px-4 py-2.5 rounded-xl bg-[#1E2126] border border-blue-400/40 text-xs text-white text-center shadow-xl">
-        Tap back button again to exit
-    </div>
-
     <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
 
         <!-- VIEW MODE 1: HOME (ALL 10 UNIQUE SECTIONS) -->
@@ -76,7 +71,7 @@
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Days Together</span>
                     <div id="home-stat-days" class="text-2xl font-extrabold text-blue-400 mt-1">0</div>
-                    <div id="home-stat-hms" class="text-[11px] font-mono text-blue-300/80 mt-0.5">00h : 00m : 00s</div>
+                    <div id="home-stat-hms" class="text-[11px] font-mono text-blue-300/90 mt-1">00h : 00m : 00s</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Cities</span>
@@ -178,7 +173,6 @@
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Days Together</span>
                     <div id="deck-stat-days" class="text-3xl font-extrabold text-blue-400 mt-1">0</div>
-                    <div id="deck-stat-hms" class="text-[11px] font-mono text-blue-300/80 mt-0.5">00h : 00m : 00s</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
                     <span class="text-[11px] text-white/50">Cities</span>
@@ -233,6 +227,10 @@
 
     </main>
 
+    <div id="back-exit-toast" class="hidden fixed bottom-20 inset-x-4 max-w-md mx-auto z-50 bg-[#1E2126] border border-blue-400/50 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-xl text-center">
+        Tap back button again to exit
+    </div>
+
     <!-- DISTINCT 4-TAB VIEWER BOTTOM BAR -->
     <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#1E2126]/95 backdrop-blur-md border-t border-white/10">
         <div class="max-w-md mx-auto h-16 grid grid-cols-4 items-center text-center text-[11px] font-medium">
@@ -255,8 +253,96 @@
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
         let currentActiveMode = 'home';
-        let togetherStartDateStr = '';
-        let togetherTickerId = null;
+
+        const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+        let togetherTimerId = null;
+        let lastKnownSecondKey = '';
+
+        let backArmedForExit = false;
+        let backArmTimer = null;
+
+        function pad2(n) {
+            return String(Math.max(0, Math.floor(n))).padStart(2, '0');
+        }
+
+        function computeTogetherBreakdown(nowDate = new Date()) {
+            const diffMs = Math.max(0, nowDate.getTime() - TOGETHER_START_MS);
+            const totalSeconds = Math.floor(diffMs / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const remAfterDays = totalSeconds % 86400;
+            const hours = Math.floor(remAfterDays / 3600);
+            const minutes = Math.floor((remAfterDays % 3600) / 60);
+            const seconds = remAfterDays % 60;
+            return { days, hours, minutes, seconds, totalSeconds };
+        }
+
+        function updateTogetherCounter() {
+            const now = new Date();
+            const secondKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`;
+            if (secondKey === lastKnownSecondKey) return;
+            lastKnownSecondKey = secondKey;
+
+            const { days, hours, minutes, seconds } = computeTogetherBreakdown(now);
+            const dayText = days.toLocaleString();
+            const hmsText = `${pad2(hours)}h : ${pad2(minutes)}m : ${pad2(seconds)}s`;
+
+            const homeDaysEl = document.getElementById('home-stat-days');
+            const homeHmsEl = document.getElementById('home-stat-hms');
+            const deckDaysEl = document.getElementById('deck-stat-days');
+
+            if (homeDaysEl) homeDaysEl.textContent = dayText;
+            if (homeHmsEl) homeHmsEl.textContent = hmsText;
+            if (deckDaysEl) deckDaysEl.textContent = dayText;
+        }
+
+        function startTogetherClockSync() {
+            updateTogetherCounter();
+            if (togetherTimerId) clearInterval(togetherTimerId);
+            togetherTimerId = setInterval(() => {
+                updateTogetherCounter();
+            }, 250);
+        }
+
+        function showBackExitPrompt() {
+            const toast = document.getElementById('back-exit-toast');
+            if (!toast) return;
+            toast.textContent = 'Tap back button again to exit';
+            toast.classList.remove('hidden');
+            clearTimeout(backArmTimer);
+            backArmTimer = setTimeout(() => {
+                backArmedForExit = false;
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function exitPageImmediately() {
+            backArmedForExit = false;
+            clearTimeout(backArmTimer);
+            const toast = document.getElementById('back-exit-toast');
+            if (toast) toast.classList.add('hidden');
+            try { window.close(); } catch {}
+            try { window.open('', '_self').close(); } catch {}
+            try { window.location.replace('about:blank'); } catch {}
+        }
+
+        function installNativeBackExitTrap() {
+            try {
+                history.replaceState({ osdIndexBase: true }, '', window.location.href);
+                history.pushState({ osdIndexTrap: true }, '', window.location.href);
+            } catch {}
+        }
+
+        window.addEventListener('popstate', () => {
+            if (backArmedForExit) {
+                exitPageImmediately();
+                return;
+            }
+            backArmedForExit = true;
+            try {
+                history.pushState({ osdIndexTrap: true }, '', window.location.href);
+            } catch {}
+            showBackExitPrompt();
+        });
 
         function getSavedMode() {
             const hashMode = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -308,90 +394,6 @@
             switchIndexMode(mode, true);
         }
 
-        function parseStartDateLocal(dateStr) {
-            if (!dateStr || typeof dateStr !== 'string') return new Date();
-            const parts = dateStr.trim().split('-').map(Number);
-            if (parts.length === 3 && parts.every(n => !isNaN(n) && n > 0)) {
-                return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
-            }
-            const parsed = new Date(dateStr);
-            return isNaN(parsed.getTime()) ? new Date() : parsed;
-        }
-
-        function pad2(n) {
-            return String(Math.max(0, Math.floor(n))).padStart(2, '0');
-        }
-
-        function updateDaysTogetherCounter() {
-            const now = new Date();
-            const start = parseStartDateLocal(togetherStartDateStr);
-            const diffMs = Math.max(0, now.getTime() - start.getTime());
-            const totalSeconds = Math.floor(diffMs / 1000);
-
-            const days = Math.floor(totalSeconds / 86400);
-            const remAfterDays = totalSeconds % 86400;
-            const hours = Math.floor(remAfterDays / 3600);
-            const minutes = Math.floor((remAfterDays % 3600) / 60);
-            const seconds = now.getSeconds();
-
-            const dayText = days.toLocaleString();
-            const hmsText = `${pad2(hours)}h : ${pad2(minutes)}m : ${pad2(seconds)}s`;
-
-            ['home', 'deck'].forEach(prefix => {
-                const dayEl = document.getElementById(`${prefix}-stat-days`);
-                const hmsEl = document.getElementById(`${prefix}-stat-hms`);
-                if (dayEl) dayEl.textContent = dayText;
-                if (hmsEl) hmsEl.textContent = hmsText;
-            });
-        }
-
-        function startTogetherClockSync() {
-            updateDaysTogetherCounter();
-            if (togetherTickerId) clearTimeout(togetherTickerId);
-            const now = new Date();
-            const msUntilNextSecond = 1000 - now.getMilliseconds();
-            togetherTickerId = setTimeout(() => {
-                updateDaysTogetherCounter();
-                togetherTickerId = setInterval(updateDaysTogetherCounter, 1000);
-            }, msUntilNextSecond);
-        }
-
-        let backExitArmed = false;
-        let backExitTimer = null;
-
-        function pushIndexBackGuard() {
-            try {
-                history.pushState({ osdIndexExitGuard: true }, '', window.location.href);
-            } catch {}
-        }
-
-        function showBackExitPrompt() {
-            const toast = document.getElementById('back-exit-toast');
-            if (!toast) return;
-            toast.classList.remove('hidden');
-            clearTimeout(backExitTimer);
-            backExitTimer = setTimeout(() => {
-                backExitArmed = false;
-                toast.classList.add('hidden');
-            }, 2500);
-        }
-
-        function exitPageEntirely() {
-            try { window.close(); } catch {}
-            try { window.open('', '_self'); window.close(); } catch {}
-            window.location.replace('about:blank');
-        }
-
-        window.addEventListener('popstate', () => {
-            if (!backExitArmed) {
-                backExitArmed = true;
-                pushIndexBackGuard();
-                showBackExitPrompt();
-                return;
-            }
-            exitPageEntirely();
-        });
-
         function renderIndexPage() {
             const data = getOSDData();
             const logoSrc = parseDriveMedia(data.brand.logoUrl, 'image');
@@ -417,13 +419,13 @@
             document.getElementById('origin-story').textContent = data.sections.origin.story;
             document.getElementById('origin-quote').textContent = data.sections.origin.quote;
 
-            togetherStartDateStr = data.sections.telemetry.startDate;
-            startTogetherClockSync();
             ['home', 'deck'].forEach(prefix => {
                 document.getElementById(`${prefix}-stat-cities`).textContent = data.sections.telemetry.citiesExplored;
                 document.getElementById(`${prefix}-stat-coffee`).textContent = data.sections.telemetry.coffeeCups;
                 document.getElementById(`${prefix}-stat-calls`).textContent = data.sections.telemetry.midnightCalls;
             });
+            lastKnownSecondKey = '';
+            updateTogetherCounter();
 
             document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
             document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
@@ -516,10 +518,21 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            installNativeBackExitTrap();
             renderIndexPage();
             switchIndexMode(getSavedMode(), false);
-            pushIndexBackGuard();
+            startTogetherClockSync();
             enforceRoleLock('index', 'Off Script Diaries');
+        });
+        window.addEventListener('focus', () => {
+            lastKnownSecondKey = '';
+            updateTogetherCounter();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                lastKnownSecondKey = '';
+                updateTogetherCounter();
+            }
         });
         window.addEventListener('hashchange', () => switchIndexMode(getSavedMode(), false));
         window.addEventListener('storage', renderIndexPage);
