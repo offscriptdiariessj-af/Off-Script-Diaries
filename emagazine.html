@@ -21,11 +21,29 @@
             }
         }
 
+        @keyframes itemPop {
+            0% {
+                transform: scale(0.95);
+            }
+            65% {
+                transform: scale(1.03);
+            }
+            100% {
+                transform: scale(1.015);
+            }
+        }
+
         .lead-stage {
             transform: scale(1.01);
             transform-origin: center top;
             animation: folderRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
             will-change: transform, opacity;
+        }
+
+        .scaled-media-item {
+            transform: scale(1.015);
+            animation: itemPop 0.24s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+            will-change: transform;
         }
 
         .compact-card {
@@ -117,6 +135,7 @@
         const fsCaption = document.getElementById('fs-caption');
 
         let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
+        let scaledItemId = null;
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
         let scrollSaveTimer = null;
@@ -218,6 +237,7 @@
 
         function selectFolder(folderKey) {
             activeFolderKey = activeFolderKey === folderKey ? null : folderKey;
+            scaledItemId = null;
             fullscreenFolderKey = null;
             fullscreenItemId = null;
             syncFolderStorage();
@@ -228,24 +248,28 @@
             }
         }
 
-        function openItemFullscreen(event, folderKey, itemId) {
+        // First tap on photo/video inside folder -> scaled version; second tap on scaled item -> full screen
+        function handleFolderItemTap(event, folderKey, itemId) {
             event.stopPropagation();
-            if (activeFolderKey !== folderKey) {
-                selectFolder(folderKey);
+            if (scaledItemId === itemId) {
+                activeFolderKey = folderKey;
+                fullscreenFolderKey = folderKey;
+                fullscreenItemId = itemId;
+                syncFolderStorage();
+                syncFullscreenUI();
                 return;
             }
-            activeFolderKey = folderKey;
-            fullscreenFolderKey = folderKey;
-            fullscreenItemId = itemId;
-            syncFolderStorage();
-            syncFullscreenUI();
+            scaledItemId = itemId;
+            renderMagazine(searchInput.value);
         }
 
         function exitFullscreenToFolder() {
             const targetFolder = fullscreenFolderKey || activeFolderKey;
+            const targetItem = fullscreenItemId || scaledItemId;
             fullscreenFolderKey = null;
             fullscreenItemId = null;
             activeFolderKey = targetFolder;
+            scaledItemId = targetItem;
             syncFolderStorage();
             syncFullscreenUI();
             renderMagazine(searchInput.value);
@@ -271,6 +295,7 @@
             if (!nextItem) return;
 
             fullscreenItemId = nextItem.id;
+            scaledItemId = nextItem.id;
             syncFullscreenUI();
         }
 
@@ -317,6 +342,12 @@
 
             if (fullscreenItemId) {
                 exitFullscreenToFolder();
+                return;
+            }
+
+            if (scaledItemId) {
+                scaledItemId = null;
+                renderMagazine(searchInput.value);
                 return;
             }
 
@@ -375,7 +406,7 @@
                 </div>`;
         }
 
-        function renderInsideMediaTile(item, folderKey) {
+        function renderThreeColTile(item, folderKey) {
             const media = parseDriveMedia(item.mediaUrl, item.mediaType);
             const safeTitle = escapeHtml(item.title);
             const safeMedia = escapeHtml(media);
@@ -383,22 +414,22 @@
             const safeId = escapeHtml(item.id);
             const safeCategory = escapeHtml(item.category || 'JOURNAL');
             const safeDesc = escapeHtml(item.description || '');
-            const mediaType = escapeHtml(item.mediaType || 'image');
+            const isScaled = scaledItemId === item.id;
 
-            const visual = item.mediaType === 'video'
-                ? `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-44 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400 cursor-zoom-in">▶ PLAY VIDEO</div>`
-                : `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-44 w-full bg-black overflow-hidden cursor-zoom-in"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+            const mediaBox = item.mediaType === 'video'
+                ? `<div class="${isScaled ? 'h-28' : 'h-20'} w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
+                : `<div class="${isScaled ? 'h-28' : 'h-20'} w-full bg-black overflow-hidden"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
-                <div class="rounded-xl bg-[#121417]/85 border border-white/10 overflow-hidden">
-                    ${visual}
-                    <div class="p-2.5">
-                        <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
-                            <span>${safeCategory}</span>
-                            <span class="text-white/45 font-normal">${mediaType}</span>
-                        </div>
-                        <h4 class="text-xs font-bold text-white leading-snug mt-0.5">${safeTitle}</h4>
-                        <p class="text-[11px] text-white/75 mt-1 leading-relaxed whitespace-pre-line">${safeDesc}</p>
+                <div
+                    onclick="handleFolderItemTap(event, '${safeFolder}', '${safeId}')"
+                    class="cursor-pointer rounded-xl bg-[#121417]/85 border ${isScaled ? 'scaled-media-item border-blue-400 ring-2 ring-blue-500/40 z-10' : 'border-white/10 hover:border-blue-400/40'} overflow-hidden flex flex-col"
+                >
+                    ${mediaBox}
+                    <div class="p-1.5 flex-1">
+                        <div class="text-[9px] font-bold uppercase text-blue-400 truncate">${safeCategory}</div>
+                        <div class="text-[10px] font-bold text-white leading-tight ${isScaled ? '' : 'truncate'} mt-0.5">${safeTitle}</div>
+                        ${isScaled && safeDesc ? `<p class="text-[10px] text-white/80 mt-1 leading-snug">${safeDesc}</p>` : ''}
                     </div>
                 </div>`;
         }
@@ -412,14 +443,14 @@
             return parts.join(' • ') || '0 items';
         }
 
-        // Opened folder view: only this folder's photos and videos, no cover or description, no other folders
+        // Opened folder view: 3 photos per row, tap once for scaled version, tap again for full screen
         function buildExpandedFolder(folder) {
             const safeFolderKey = escapeHtml(folder.key);
             const safeDate = escapeHtml(folder.dateLabel);
             const countsText = escapeHtml(getFolderCountsText(folder.items));
 
             const insideHtml = folder.items.length
-                ? folder.items.map(item => renderInsideMediaTile(item, folder.key)).join('')
+                ? `<div class="grid grid-cols-3 gap-2">${folder.items.map(item => renderThreeColTile(item, folder.key)).join('')}</div>`
                 : `<div class="p-4 rounded-xl bg-[#121417]/70 text-center text-xs text-white/50">No photos or videos in this date folder yet.</div>`;
 
             return `
@@ -428,7 +459,7 @@
                         <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
                         <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
                     </div>
-                    <div class="space-y-2.5">
+                    <div>
                         ${insideHtml}
                     </div>
                 </article>`;
