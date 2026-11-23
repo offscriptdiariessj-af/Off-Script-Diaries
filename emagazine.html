@@ -160,6 +160,12 @@
             }
         }
 
+        function ensureBackAnchor() {
+            try {
+                history.pushState({ osdMagGuard: true }, '', window.location.href);
+            } catch {}
+        }
+
         function getFilteredPosts(q = '') {
             const data = getOSDData();
             const term = (q || '').trim().toLowerCase();
@@ -172,7 +178,7 @@
             );
         }
 
-        // 1st tap on post -> opens in scaled version; tapping active scaled post again -> toggles off
+        // Tap post -> open scaled version; tapping active scaled post again -> return to e-magazine list
         function selectPost(postId) {
             activePostId = activePostId === postId ? null : postId;
             fullscreenPostId = null;
@@ -184,7 +190,7 @@
             }
         }
 
-        // Tap image inside scaled version -> opens full-screen viewer & adds a single full-screen entry
+        // Tap image inside scaled version -> open full-screen viewer
         function openScaledImageFullscreen(event, postId) {
             event.stopPropagation();
             if (activePostId !== postId) {
@@ -194,13 +200,10 @@
             activePostId = postId;
             fullscreenPostId = postId;
             syncStageStorage();
-            try {
-                history.pushState({ osdFullscreenEntry: true, osdPostId: postId }, '', window.location.href);
-            } catch {}
             syncFullscreenUI();
         }
 
-        // Exit full-screen to the scaled version of whichever image is currently viewing
+        // Exit full-screen to scaled version of currently viewed image
         function exitFullscreenToScaled() {
             const targetScaledId = fullscreenPostId || activePostId;
             fullscreenPostId = null;
@@ -213,7 +216,7 @@
             }
         }
 
-        // Swiping in full-screen updates only the currently viewed picture without adding swipe history entries
+        // Swiping in full-screen updates only the currently viewed picture
         function stepFullscreenPicture(delta) {
             const posts = getFilteredPosts(searchInput.value);
             if (!posts.length) return;
@@ -265,11 +268,27 @@
             }
         }
 
-        // Native Back button while in full-screen goes straight to scaled version of currently viewed image
+        // Native Back button progression:
+        // 1) Full-screen -> Scaled version of current image
+        // 2) Scaled version -> E-Magazine section (all posts)
+        // 3) E-Magazine section -> index.html directly (no history back)
         window.addEventListener('popstate', () => {
+            ensureBackAnchor();
+
             if (fullscreenPostId) {
                 exitFullscreenToScaled();
+                return;
             }
+
+            if (activePostId) {
+                activePostId = null;
+                syncStageStorage();
+                renderMagazine(searchInput.value);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            window.location.href = 'index.html';
         });
 
         let touchStartX = 0;
@@ -454,7 +473,8 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             try {
-                history.replaceState({ osdFullscreenEntry: false, osdPostId: activePostId }, '', window.location.href);
+                history.replaceState({ osdMagBase: true }, '', window.location.href);
+                history.pushState({ osdMagGuard: true }, '', window.location.href);
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
