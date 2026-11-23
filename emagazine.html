@@ -13,11 +13,11 @@
             }
             65% {
                 opacity: 1;
-                transform: translateY(-2px) scale(1.01);
+                transform: translateY(-2px) scale(1.015);
             }
             100% {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateY(0) scale(1.01);
             }
         }
 
@@ -36,6 +36,8 @@
             position: sticky;
             top: 4rem;
             z-index: 25;
+            transform: scale(1.01);
+            transform-origin: center top;
             animation: spotlightRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
             will-change: transform, opacity;
         }
@@ -138,8 +140,6 @@
 
         let activePostId = sessionStorage.getItem(MAG_ACTIVE_POST_KEY) || null;
         let fullscreenPostId = null;
-        let stageStack = [{ postId: activePostId, fullscreen: false }];
-        let isPopstateStep = false;
         let scrollSaveTimer = null;
 
         function escapeHtml(str = '') {
@@ -172,38 +172,48 @@
             );
         }
 
-        function pushStage(nextPostId, nextFullscreen) {
-            if (!isPopstateStep) {
-                stageStack.push({ postId: nextPostId, fullscreen: nextFullscreen });
-                try {
-                    history.pushState({ osdPostId: nextPostId, osdFs: nextFullscreen }, '', window.location.href);
-                } catch {}
-            }
-            activePostId = nextPostId;
-            fullscreenPostId = nextFullscreen ? nextPostId : null;
+        // 1st tap on post -> opens in scaled version; tapping active scaled post again -> toggles off
+        function selectPost(postId) {
+            activePostId = activePostId === postId ? null : postId;
+            fullscreenPostId = null;
             syncStageStorage();
             syncFullscreenUI();
             renderMagazine(searchInput.value);
-        }
-
-        function selectPost(postId) {
-            const nextId = activePostId === postId ? null : postId;
-            pushStage(nextId, false);
-            if (nextId) {
+            if (activePostId) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
-        function openPictureFullscreen(event, postId) {
+        // Tap image inside scaled version -> opens full-screen viewer & adds a single full-screen entry
+        function openScaledImageFullscreen(event, postId) {
             event.stopPropagation();
-            pushStage(postId, true);
+            if (activePostId !== postId) {
+                selectPost(postId);
+                return;
+            }
+            activePostId = postId;
+            fullscreenPostId = postId;
+            syncStageStorage();
+            try {
+                history.pushState({ osdFullscreenEntry: true, osdPostId: postId }, '', window.location.href);
+            } catch {}
+            syncFullscreenUI();
         }
 
-        function closePictureFullscreen() {
-            // Advance to details view of currently displayed picture without history.back
-            pushStage(fullscreenPostId || activePostId, false);
+        // Exit full-screen to the scaled version of whichever image is currently viewing
+        function exitFullscreenToScaled() {
+            const targetScaledId = fullscreenPostId || activePostId;
+            fullscreenPostId = null;
+            activePostId = targetScaledId;
+            syncStageStorage();
+            syncFullscreenUI();
+            renderMagazine(searchInput.value);
+            if (activePostId) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
+        // Swiping in full-screen updates only the currently viewed picture without adding swipe history entries
         function stepFullscreenPicture(delta) {
             const posts = getFilteredPosts(searchInput.value);
             if (!posts.length) return;
@@ -213,15 +223,9 @@
             const nextPost = posts[nextIdx];
             if (!nextPost) return;
 
-            activePostId = nextPost.id;
             fullscreenPostId = nextPost.id;
+            activePostId = nextPost.id;
             syncStageStorage();
-            if (!isPopstateStep) {
-                stageStack.push({ postId: nextPost.id, fullscreen: true });
-                try {
-                    history.pushState({ osdPostId: nextPost.id, osdFs: true }, '', window.location.href);
-                } catch {}
-            }
             syncFullscreenUI();
         }
 
@@ -261,23 +265,11 @@
             }
         }
 
-        window.addEventListener('popstate', (e) => {
-            isPopstateStep = true;
-            if (stageStack.length > 1) {
-                stageStack.pop();
-                const prev = stageStack[stageStack.length - 1];
-                activePostId = prev.postId ?? null;
-                fullscreenPostId = prev.fullscreen ? activePostId : null;
-            } else if (e.state) {
-                activePostId = e.state.osdPostId ?? null;
-                fullscreenPostId = e.state.osdFs ? activePostId : null;
-            } else {
-                fullscreenPostId = null;
+        // Native Back button while in full-screen goes straight to scaled version of currently viewed image
+        window.addEventListener('popstate', () => {
+            if (fullscreenPostId) {
+                exitFullscreenToScaled();
             }
-            syncStageStorage();
-            syncFullscreenUI();
-            renderMagazine(searchInput.value);
-            isPopstateStep = false;
         });
 
         let touchStartX = 0;
@@ -308,11 +300,11 @@
             touchDeltaX = 0;
         });
 
-        document.getElementById('fs-close-btn').addEventListener('click', closePictureFullscreen);
+        document.getElementById('fs-close-btn').addEventListener('click', exitFullscreenToScaled);
         document.getElementById('fs-prev-btn').addEventListener('click', () => stepFullscreenPicture(-1));
         document.getElementById('fs-next-btn').addEventListener('click', () => stepFullscreenPicture(1));
 
-        function renderMediaBox(post, media, heightClass) {
+        function renderMediaBox(post, media, heightClass, isScaledPost) {
             const safeTitle = escapeHtml(post.title);
             const safeMedia = escapeHtml(media);
             const safeId = escapeHtml(post.id);
@@ -321,8 +313,12 @@
                 ? `<iframe src="${safeMedia}" class="w-full h-full border-0" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe>`
                 : `<img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />`;
 
+            const tapAttr = isScaledPost
+                ? `onclick="openScaledImageFullscreen(event, '${safeId}')"`
+                : '';
+
             return `
-                <div onclick="openPictureFullscreen(event, '${safeId}')" class="${heightClass} w-full bg-black overflow-hidden relative cursor-zoom-in">
+                <div ${tapAttr} class="${heightClass} w-full bg-black overflow-hidden relative ${isScaledPost ? 'cursor-zoom-in' : ''}">
                     ${content}
                 </div>`;
         }
@@ -339,7 +335,7 @@
                     onclick="selectPost('${escapeHtml(post.id)}')"
                     class="lead-stage cursor-pointer rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden"
                 >
-                    ${renderMediaBox(post, media, 'h-48')}
+                    ${renderMediaBox(post, media, 'h-48', true)}
                     <div class="p-3.5">
                         <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
                             <span>${category}</span>
@@ -362,8 +358,8 @@
             const safeId = escapeHtml(post.id);
 
             const thumb = post.mediaType === 'video'
-                ? `<div onclick="openPictureFullscreen(event, '${safeId}')" class="h-16 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400 cursor-zoom-in">▶ VIDEO</div>`
-                : `<div onclick="openPictureFullscreen(event, '${safeId}')" class="h-16 w-full bg-black overflow-hidden cursor-zoom-in"><img src="${escapeHtml(media)}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                ? `<div class="h-16 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
+                : `<div class="h-16 w-full bg-black overflow-hidden"><img src="${escapeHtml(media)}" alt="${title}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
                 <article
@@ -393,7 +389,7 @@
                     onclick="selectPost('${escapeHtml(post.id)}')"
                     class="compact-card cursor-pointer rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/35 overflow-hidden"
                 >
-                    ${renderMediaBox(post, media, 'h-36')}
+                    ${renderMediaBox(post, media, 'h-36', false)}
                     <div class="p-3">
                         <div class="flex items-center justify-between text-[10px] font-bold uppercase text-blue-400">
                             <span>${category}</span>
@@ -458,7 +454,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             try {
-                history.replaceState({ osdPostId: activePostId, osdFs: false }, '', window.location.href);
+                history.replaceState({ osdFullscreenEntry: false, osdPostId: activePostId }, '', window.location.href);
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || '0');
