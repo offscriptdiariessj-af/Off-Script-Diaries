@@ -21,34 +21,11 @@
             }
         }
 
-        @keyframes miniSlotIn {
-            0% {
-                opacity: 0.5;
-                transform: translateY(6px) scale(0.96);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
         .lead-stage {
-            position: sticky;
-            top: 4rem;
-            z-index: 25;
             transform: scale(1.01);
             transform-origin: center top;
             animation: folderRise 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
             will-change: transform, opacity;
-        }
-
-        .mini-grid-card {
-            animation: miniSlotIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .mini-grid-card:active {
-            transform: scale(0.94);
         }
 
         .compact-card {
@@ -409,8 +386,8 @@
             const mediaType = escapeHtml(item.mediaType || 'image');
 
             const visual = item.mediaType === 'video'
-                ? `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-36 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400 cursor-zoom-in">▶ PLAY VIDEO</div>`
-                : `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-36 w-full bg-black overflow-hidden cursor-zoom-in"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                ? `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-44 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400 cursor-zoom-in">▶ PLAY VIDEO</div>`
+                : `<div onclick="openItemFullscreen(event, '${safeFolder}', '${safeId}')" class="h-44 w-full bg-black overflow-hidden cursor-zoom-in"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
                 <div class="rounded-xl bg-[#121417]/85 border border-white/10 overflow-hidden">
@@ -435,11 +412,10 @@
             return parts.join(' • ') || '0 items';
         }
 
+        // Opened folder view: only this folder's photos and videos, no cover or description, no other folders
         function buildExpandedFolder(folder) {
             const safeFolderKey = escapeHtml(folder.key);
             const safeDate = escapeHtml(folder.dateLabel);
-            const safeTitle = escapeHtml(folder.resolvedTitle);
-            const safeDesc = escapeHtml(folder.resolvedDesc);
             const countsText = escapeHtml(getFolderCountsText(folder.items));
 
             const insideHtml = folder.items.length
@@ -447,49 +423,13 @@
                 : `<div class="p-4 rounded-xl bg-[#121417]/70 text-center text-xs text-white/50">No photos or videos in this date folder yet.</div>`;
 
             return `
-                <article
-                    onclick="selectFolder('${safeFolderKey}')"
-                    class="lead-stage cursor-pointer rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden"
-                >
-                    ${renderCoverBox(folder, 'h-44')}
-                    <div class="p-3.5 space-y-2.5">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${safeDate}</span>
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
-                        </div>
-                        <div>
-                            <h2 class="text-lg font-extrabold text-white leading-snug">${safeTitle}</h2>
-                            ${safeDesc ? `<p class="text-xs mt-1 text-white/80 leading-relaxed whitespace-pre-line">${safeDesc}</p>` : ''}
-                        </div>
-                        <div class="pt-2 border-t border-white/10 space-y-2 max-h-[52vh] overflow-y-auto pr-0.5" onclick="event.stopPropagation()">
-                            ${insideHtml}
-                        </div>
+                <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-2.5">
+                    <div onclick="selectFolder('${safeFolderKey}')" class="cursor-pointer flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
                     </div>
-                </article>`;
-        }
-
-        function buildThreeColFolder(folder) {
-            const safeFolderKey = escapeHtml(folder.key);
-            const safeDate = escapeHtml(folder.dateLabel);
-            const safeTitle = escapeHtml(folder.resolvedTitle);
-            const safeDesc = escapeHtml(folder.resolvedDesc);
-            const countBadge = `${folder.items.length}`;
-
-            return `
-                <article
-                    onclick="selectFolder('${safeFolderKey}')"
-                    class="mini-grid-card cursor-pointer rounded-xl bg-[#1E2126]/90 border border-white/10 hover:border-blue-400/40 overflow-hidden flex flex-col"
-                >
-                    ${renderCoverBox(folder, 'h-16')}
-                    <div class="p-2 flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between text-[9px] font-bold text-blue-400 truncate">
-                                <span class="truncate">${safeDate}</span>
-                                <span class="font-mono text-white/60">${countBadge}</span>
-                            </div>
-                            <h3 class="text-[11px] font-bold text-white leading-tight line-clamp-1 mt-0.5">${safeTitle}</h3>
-                            <p class="text-[10px] text-white/60 line-clamp-2 mt-0.5 leading-snug">${safeDesc}</p>
-                        </div>
+                    <div class="space-y-2.5">
+                        ${insideHtml}
                     </div>
                 </article>`;
         }
@@ -533,23 +473,7 @@
             const featuredFolder = activeFolderKey ? folders.find(f => f.key === activeFolderKey) : null;
 
             if (featuredFolder) {
-                const others = folders.filter(f => f.key !== featuredFolder.key);
-                const topThree = others.slice(0, 3);
-                const remaining = others.slice(3);
-
-                const topThreeHtml = topThree.length
-                    ? `<div class="grid grid-cols-3 gap-2 pt-1">${topThree.map(f => buildThreeColFolder(f)).join('')}</div>`
-                    : '';
-
-                const remainingHtml = remaining.length
-                    ? `<div class="space-y-2.5 pt-1">${remaining.map(f => buildFolderCard(f)).join('')}</div>`
-                    : '';
-
-                feedEl.innerHTML = `
-                    ${buildExpandedFolder(featuredFolder)}
-                    ${topThreeHtml}
-                    ${remainingHtml}
-                `;
+                feedEl.innerHTML = buildExpandedFolder(featuredFolder);
                 return;
             }
 
