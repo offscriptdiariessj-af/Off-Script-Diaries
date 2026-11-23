@@ -80,7 +80,7 @@
         <div id="magazine-feed" class="space-y-3"></div>
     </main>
 
-    <!-- EDIT MODAL (FOLDER OR ITEM) -->
+    <!-- EDIT / ADD MODAL (FOLDER OR ITEM) -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div id="edit-folder-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-blue-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
@@ -108,7 +108,7 @@
 
         <div id="edit-item-form" class="hidden w-full max-w-md rounded-2xl bg-[#1E2126] border border-emerald-400/40 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
-                <h3 class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Edit Item</h3>
+                <h3 id="item-modal-title" class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Edit Item</h3>
                 <button id="close-item-edit-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
@@ -199,6 +199,8 @@
         const editFolderCover = document.getElementById('edit-folder-cover');
         const editFolderDesc = document.getElementById('edit-folder-desc');
 
+        const itemModalTitle = document.getElementById('item-modal-title');
+        const saveItemEditBtn = document.getElementById('save-item-edit-btn');
         const editItemDate = document.getElementById('edit-item-date');
         const editItemType = document.getElementById('edit-item-type');
         const editItemTitle = document.getElementById('edit-item-title');
@@ -223,6 +225,7 @@
         let fullscreenItemId = null;
         let editingFolderKey = null;
         let editingItemId = null;
+        let addingToFolderDate = null;
         let scrollSaveTimer = null;
 
         function escapeHtml(str = '') {
@@ -311,6 +314,7 @@
         function closeEditModal() {
             editingFolderKey = null;
             editingItemId = null;
+            addingToFolderDate = null;
             editFolderForm.classList.add('hidden');
             editItemForm.classList.add('hidden');
             editModal.classList.add('hidden');
@@ -322,6 +326,7 @@
             const meta = data.dateFolders[folderKey] || {};
             editingFolderKey = folderKey;
             editingItemId = null;
+            addingToFolderDate = null;
 
             editFolderDate.value = folderKey;
             editFolderTitle.value = meta.title || '';
@@ -347,6 +352,27 @@
             renderMagazine(searchInput.value);
         }
 
+        function openAddItemModal(event, folderKey) {
+            event.stopPropagation();
+            editingItemId = null;
+            editingFolderKey = null;
+            addingToFolderDate = folderKey;
+
+            itemModalTitle.textContent = 'Add Item to Folder';
+            saveItemEditBtn.textContent = 'Add Item';
+
+            editItemDate.value = /^\d{4}-\d{2}-\d{2}$/.test(folderKey) ? folderKey : new Date().toISOString().slice(0, 10);
+            editItemType.value = 'image';
+            editItemTitle.value = '';
+            editItemCategory.value = '';
+            editItemMedia.value = '';
+            editItemDesc.value = '';
+
+            editFolderForm.classList.add('hidden');
+            editItemForm.classList.remove('hidden');
+            editModal.classList.remove('hidden');
+        }
+
         function openEditItemModal(event, itemId) {
             event.stopPropagation();
             const data = ensureFolderStore(getOSDData());
@@ -355,6 +381,10 @@
 
             editingItemId = item.id;
             editingFolderKey = null;
+            addingToFolderDate = null;
+
+            itemModalTitle.textContent = 'Edit Item';
+            saveItemEditBtn.textContent = 'Save Item';
 
             editItemDate.value = item.date || '';
             editItemType.value = item.mediaType === 'video' ? 'video' : 'image';
@@ -369,25 +399,44 @@
         }
 
         function saveItemEdit() {
-            if (!editingItemId) return;
-            const data = ensureFolderStore(getOSDData());
-            const idx = data.posts.findIndex(p => p.id === editingItemId);
-            if (idx < 0) return;
+            const mediaUrl = editItemMedia.value.trim();
+            const title = editItemTitle.value.trim();
+            if (!mediaUrl || !title) return;
 
-            const updatedDate = (editItemDate.value || data.posts[idx].date || '').trim();
-            if (updatedDate && !data.dateFolders[updatedDate]) {
-                data.dateFolders[updatedDate] = { title: updatedDate, coverUrl: '', description: '' };
+            const data = ensureFolderStore(getOSDData());
+            const targetDate = (editItemDate.value || addingToFolderDate || new Date().toISOString().slice(0, 10)).trim();
+            const mediaType = editItemType.value === 'video' ? 'video' : 'image';
+            const category = editItemCategory.value.trim() || 'Memory';
+            const description = editItemDesc.value.trim();
+
+            if (targetDate && !data.dateFolders[targetDate]) {
+                data.dateFolders[targetDate] = { title: targetDate, coverUrl: '', description: '' };
             }
 
-            data.posts[idx] = {
-                ...data.posts[idx],
-                date: updatedDate,
-                mediaType: editItemType.value === 'video' ? 'video' : 'image',
-                title: editItemTitle.value.trim(),
-                category: editItemCategory.value.trim() || 'Memory',
-                mediaUrl: editItemMedia.value.trim(),
-                description: editItemDesc.value.trim()
-            };
+            if (editingItemId) {
+                const idx = data.posts.findIndex(p => p.id === editingItemId);
+                if (idx < 0) return;
+
+                data.posts[idx] = {
+                    ...data.posts[idx],
+                    date: targetDate,
+                    mediaType,
+                    title,
+                    category,
+                    mediaUrl,
+                    description
+                };
+            } else {
+                data.posts.unshift({
+                    id: 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                    date: targetDate,
+                    mediaType,
+                    title,
+                    category,
+                    mediaUrl,
+                    description
+                });
+            }
 
             saveOSDData(data);
             window.dispatchEvent(new Event('osd_data_updated'));
@@ -726,15 +775,19 @@
             const safeDate = escapeHtml(folder.dateLabel);
             const countsText = escapeHtml(getFolderCountsText(folder.items));
 
+            const folderActions = `
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
+                    <button type="button" onclick="openAddItemModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">+ Add</button>
+                    <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                </div>`;
+
             if (!folder.items.length) {
                 return `
                     <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-2.5">
                         <div onclick="selectFolder('${safeFolderKey}')" class="cursor-pointer flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
                             <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
-                                <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
-                            </div>
+                            ${folderActions}
                         </div>
                         <div class="p-4 rounded-xl bg-[#121417]/70 text-center text-xs text-white/50">No photos or videos in this date folder yet.</div>
                     </article>`;
@@ -752,10 +805,7 @@
                 <article class="lead-stage rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/50 shadow-2xl shadow-black/75 overflow-hidden p-3 space-y-3">
                     <div onclick="selectFolder('${safeFolderKey}')" class="cursor-pointer flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
                         <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 shrink-0">${countsText}</span>
-                            <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
-                        </div>
+                        ${folderActions}
                     </div>
                     ${scaledHtml}
                     ${gridHtml}
@@ -780,6 +830,7 @@
                             <span>${safeDate}</span>
                             <div class="flex items-center gap-1.5">
                                 <span class="text-white/50 font-mono font-normal">${countsText}</span>
+                                <button type="button" onclick="openAddItemModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-emerald-600/25 text-emerald-300 border border-emerald-400/30">+ Add</button>
                                 <button type="button" onclick="openEditFolderModal(event, '${safeFolderKey}')" class="px-2 py-0.5 rounded bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
                             </div>
                         </div>
