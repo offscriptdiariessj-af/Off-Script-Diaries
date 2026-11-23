@@ -149,6 +149,57 @@
             }[ch]));
         }
 
+        function extractDriveFileId(rawUrl = '') {
+            const url = String(rawUrl || '').trim();
+            if (!url) return '';
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
+            }
+            return '';
+        }
+
+        function resolveMediaSrc(rawUrl, mediaType = 'image') {
+            const cleaned = String(rawUrl || '').trim();
+            if (!cleaned) return '';
+
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === 'function') {
+                const storeResult = parseDriveMedia(cleaned, mediaType);
+                if (storeResult && typeof storeResult === 'string') {
+                    parsed = storeResult.trim();
+                }
+            }
+
+            if (mediaType !== 'video') {
+                const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+                if (driveId) {
+                    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+                }
+            }
+            return parsed;
+        }
+
+        function handleImgFallback(imgEl, originalUrl) {
+            if (!imgEl || imgEl.dataset.fallbackApplied) return;
+            imgEl.dataset.fallbackApplied = '1';
+            const driveId = extractDriveFileId(originalUrl || imgEl.dataset.rawSrc || imgEl.src);
+            if (driveId) {
+                imgEl.src = `https://lh3.googleusercontent.com/d/${driveId}`;
+                imgEl.onerror = () => {
+                    imgEl.style.display = 'none';
+                };
+                return;
+            }
+            imgEl.style.display = 'none';
+        }
+
         function syncFolderStorage() {
             if (activeFolderKey) {
                 sessionStorage.setItem(MAG_ACTIVE_FOLDER_KEY, activeFolderKey);
@@ -247,7 +298,6 @@
             }
         }
 
-        // First tap on photo/video inside folder -> big scaled version; tapping scaled card -> full screen
         function handleFolderItemTap(event, folderKey, itemId) {
             event.stopPropagation();
             if (scaledItemId === itemId) {
@@ -284,7 +334,6 @@
             return folders.find(f => f.key === targetKey) || null;
         }
 
-        // Swiping left/right stays strictly inside the open date folder's items
         function stepFullscreenItem(delta) {
             const folder = getLockedFolderContext();
             if (!folder || !folder.items.length) return;
@@ -312,7 +361,7 @@
             const idx = items.findIndex(item => item.id === fullscreenItemId);
             const item = idx >= 0 ? items[idx] : items[0];
             const safeIdx = idx >= 0 ? idx : 0;
-            const media = parseDriveMedia(item.mediaUrl, item.mediaType);
+            const media = resolveMediaSrc(item.mediaUrl, item.mediaType);
 
             fsViewer.classList.remove('hidden');
             document.documentElement.style.overflow = 'hidden';
@@ -332,6 +381,9 @@
                 fsVideo.classList.add('hidden');
                 fsVideo.src = '';
                 fsImg.classList.remove('hidden');
+                delete fsImg.dataset.fallbackApplied;
+                fsImg.dataset.rawSrc = item.mediaUrl || '';
+                fsImg.onerror = () => handleImgFallback(fsImg, item.mediaUrl || '');
                 fsImg.src = media;
                 fsImg.alt = item.title || '';
             }
@@ -396,20 +448,21 @@
 
         function renderCoverBox(folder, heightClass) {
             const safeTitle = escapeHtml(folder.resolvedTitle);
-            const coverSrc = escapeHtml(parseDriveMedia(folder.resolvedCover, 'image'));
+            const rawUrl = folder.resolvedCover || '';
+            const coverSrc = resolveMediaSrc(rawUrl, 'image');
             if (!coverSrc) {
                 return `<div class="${heightClass} w-full bg-[#121417] flex items-center justify-center text-[10px] text-white/40">No Cover</div>`;
             }
             return `
-                <div class="${heightClass} w-full bg-black overflow-hidden">
-                    <img src="${coverSrc}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />
+                <div class="${heightClass} w-full bg-black overflow-hidden flex items-center justify-center">
+                    <img src="${escapeHtml(coverSrc)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" />
                 </div>`;
         }
 
         function buildBigScaledItem(item, folderKey) {
-            const media = parseDriveMedia(item.mediaUrl, item.mediaType);
+            const rawUrl = item.mediaUrl || '';
+            const media = resolveMediaSrc(rawUrl, item.mediaType);
             const safeTitle = escapeHtml(item.title);
-            const safeMedia = escapeHtml(media);
             const safeFolder = escapeHtml(folderKey);
             const safeId = escapeHtml(item.id);
             const safeCategory = escapeHtml(item.category || 'JOURNAL');
@@ -418,7 +471,7 @@
 
             const visual = item.mediaType === 'video'
                 ? `<div class="h-52 w-full bg-black flex items-center justify-center text-xs font-bold text-blue-400">▶ PLAY VIDEO</div>`
-                : `<div class="h-52 w-full bg-black overflow-hidden"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                : `<div class="h-56 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
                 <div
@@ -438,16 +491,16 @@
         }
 
         function renderThreeColTile(item, folderKey) {
-            const media = parseDriveMedia(item.mediaUrl, item.mediaType);
+            const rawUrl = item.mediaUrl || '';
+            const media = resolveMediaSrc(rawUrl, item.mediaType);
             const safeTitle = escapeHtml(item.title);
-            const safeMedia = escapeHtml(media);
             const safeFolder = escapeHtml(folderKey);
             const safeId = escapeHtml(item.id);
             const safeCategory = escapeHtml(item.category || 'JOURNAL');
 
             const mediaBox = item.mediaType === 'video'
-                ? `<div class="h-20 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
-                : `<div class="h-20 w-full bg-black overflow-hidden"><img src="${safeMedia}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
+                ? `<div class="h-24 w-full bg-black flex items-center justify-center text-[10px] font-bold text-blue-400">▶ VIDEO</div>`
+                : `<div class="h-24 w-full bg-black overflow-hidden flex items-center justify-center"><img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover" /></div>`;
 
             return `
                 <div
@@ -471,7 +524,6 @@
             return parts.join(' • ') || '0 items';
         }
 
-        // Opened folder view: big scaled item on top (when tapped), other items below 3 per row
         function buildExpandedFolder(folder) {
             const safeFolderKey = escapeHtml(folder.key);
             const safeDate = escapeHtml(folder.dateLabel);
@@ -533,7 +585,7 @@
 
         function renderMagazine(q = '') {
             const data = getOSDData();
-            logoEl.src = parseDriveMedia(data.brand.logoUrl, 'image');
+            logoEl.src = resolveMediaSrc(data.brand.logoUrl, 'image');
             brandEl.textContent = data.brand.siteName;
 
             const folders = buildDateFolders(q);
