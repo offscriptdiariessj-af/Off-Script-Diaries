@@ -80,8 +80,8 @@
 
     <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
         <div id="db-status-bar" class="px-3 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 text-[11px] text-white/70 flex items-center justify-between gap-2">
-            <span id="db-status-text" class="truncate">Connecting to Firebase Firestore...</span>
-            <span id="db-status-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">Firestore</span>
+            <span id="db-status-text" class="truncate">Connecting to Firebase Realtime DB...</span>
+            <span id="db-status-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">Realtime DB</span>
         </div>
         <input id="search-posts" type="search" placeholder="Search folder date, title, description..." class="w-full h-10 px-3.5 rounded-xl bg-[#1E2126] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
         <div id="magazine-feed" class="space-y-3"></div>
@@ -196,18 +196,18 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import {
-            getFirestore,
-            collection,
-            doc,
-            setDoc,
-            updateDoc,
-            onSnapshot,
-            serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+            getDatabase,
+            ref,
+            set,
+            update,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+        // Paste your exact Realtime Database URL from Firebase Console > Realtime Database > Data tab
         const firebaseConfig = {
             apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
             authDomain: "offscript-3cf92.firebaseapp.com",
+            databaseURL: "https://offscript-3cf92-default-rtdb.firebaseio.com",
             projectId: "offscript-3cf92",
             storageBucket: "offscript-3cf92.firebasestorage.app",
             messagingSenderId: "887672343934",
@@ -216,10 +216,10 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const rtdb = getDatabase(app, firebaseConfig.databaseURL);
 
-        const foldersColRef = collection(db, "magazineFolders");
-        const itemsColRef = collection(db, "magazineItems");
+        const foldersRef = ref(rtdb, "magazineFolders");
+        const itemsRef = ref(rtdb, "magazineItems");
 
         const MAG_ACTIVE_FOLDER_KEY = "osd_mag_admin_active_folder_v1";
         const MAG_SCROLL_KEY = "osd_mag_admin_scroll_v1";
@@ -263,8 +263,8 @@
         const fsTitle = document.getElementById("fs-title");
         const fsCaption = document.getElementById("fs-caption");
 
-        let firestoreFolders = {};
-        let firestoreItems = [];
+        let rtdbFolders = {};
+        let rtdbItems = [];
         let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
         let scaledItemId = null;
         let fullscreenFolderKey = null;
@@ -275,13 +275,19 @@
         let addingToFolderDate = null;
         let scrollSaveTimer = null;
 
+        function formatFirebaseError(err, fallback) {
+            if (!err) return fallback;
+            const code = err.code ? `[${err.code}] ` : "";
+            return `${code}${err.message || fallback}`;
+        }
+
         function setDbStatus(msg, mode = "ok") {
             dbStatusText.textContent = msg;
             if (mode === "error") {
                 dbStatusPill.textContent = "Error";
                 dbStatusPill.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 shrink-0";
             } else {
-                dbStatusPill.textContent = "Firestore Live";
+                dbStatusPill.textContent = "RTDB Live";
                 dbStatusPill.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 shrink-0";
             }
         }
@@ -394,7 +400,7 @@
 
         function openEditFolderModal(event, folderKey) {
             event.stopPropagation();
-            const meta = firestoreFolders[folderKey] || {};
+            const meta = rtdbFolders[folderKey] || {};
             editingFolderKey = folderKey;
             isCreatingFolder = false;
             editingItemId = null;
@@ -427,17 +433,18 @@
                 title: editFolderTitle.value.trim(),
                 coverUrl: editFolderCover.value.trim(),
                 description: editFolderDesc.value.trim(),
-                updatedAt: serverTimestamp()
+                updatedAtMs: Date.now()
             };
 
             try {
-                await setDoc(doc(db, "magazineFolders", targetDate), payload, { merge: true });
+                await update(ref(rtdb, `magazineFolders/${targetDate}`), payload);
                 closeEditModal();
-                setDbStatus(`Saved folder ${targetDate} to Firestore`, "ok");
+                setDbStatus(`Saved folder ${targetDate} to Realtime DB`, "ok");
             } catch (err) {
-                folderFormError.textContent = err.message || "Failed to save folder to Firestore.";
+                const msg = formatFirebaseError(err, "Failed to save folder.");
+                folderFormError.textContent = msg;
                 folderFormError.classList.remove("hidden");
-                setDbStatus(err.message || "Firestore write error", "error");
+                setDbStatus(msg, "error");
             }
         }
 
@@ -467,7 +474,7 @@
 
         function openEditItemModal(event, itemId) {
             event.stopPropagation();
-            const item = firestoreItems.find(p => p.id === itemId);
+            const item = rtdbItems.find(p => p.id === itemId);
             if (!item) return;
 
             editingItemId = item.id;
@@ -510,29 +517,29 @@
             const description = editItemDesc.value.trim();
 
             try {
-                if (targetDate && !firestoreFolders[targetDate]) {
-                    await setDoc(doc(db, "magazineFolders", targetDate), {
+                if (targetDate && !rtdbFolders[targetDate]) {
+                    await set(ref(rtdb, `magazineFolders/${targetDate}`), {
                         date: targetDate,
                         title: targetDate,
                         coverUrl: "",
                         description: "",
-                        updatedAt: serverTimestamp()
-                    }, { merge: true });
+                        updatedAtMs: Date.now()
+                    });
                 }
 
                 if (editingItemId) {
-                    await updateDoc(doc(db, "magazineItems", editingItemId), {
+                    await update(ref(rtdb, `magazineItems/${editingItemId}`), {
                         date: targetDate,
                         mediaType,
                         title,
                         category,
                         mediaUrl,
                         description,
-                        updatedAt: serverTimestamp()
+                        updatedAtMs: Date.now()
                     });
                 } else {
                     const itemId = "item_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-                    await setDoc(doc(db, "magazineItems", itemId), {
+                    await set(ref(rtdb, `magazineItems/${itemId}`), {
                         id: itemId,
                         date: targetDate,
                         mediaType,
@@ -541,16 +548,17 @@
                         mediaUrl,
                         description,
                         createdAtMs: Date.now(),
-                        updatedAt: serverTimestamp()
+                        updatedAtMs: Date.now()
                     });
                 }
 
                 closeEditModal();
                 setDbStatus(`Saved item "${title}" in ${targetDate}`, "ok");
             } catch (err) {
-                itemFormError.textContent = err.message || "Failed to save item to Firestore.";
+                const msg = formatFirebaseError(err, "Failed to save item.");
+                itemFormError.textContent = msg;
                 itemFormError.classList.remove("hidden");
-                setDbStatus(err.message || "Firestore write error", "error");
+                setDbStatus(msg, "error");
             }
         }
 
@@ -558,7 +566,7 @@
             const term = (q || "").trim().toLowerCase();
             const map = new Map();
 
-            Object.entries(firestoreFolders).forEach(([dateKey, meta]) => {
+            Object.entries(rtdbFolders).forEach(([dateKey, meta]) => {
                 const cleanKey = (meta?.date || dateKey || "").trim();
                 if (!cleanKey) return;
                 map.set(cleanKey, {
@@ -571,12 +579,12 @@
                 });
             });
 
-            firestoreItems.forEach((item, index) => {
+            rtdbItems.forEach((item, index) => {
                 const rawDate = (item.date || "").trim();
                 const dateKey = rawDate || `undated-${index}`;
                 const dateLabel = rawDate || "Undated";
                 if (!map.has(dateKey)) {
-                    const meta = firestoreFolders[dateKey] || {};
+                    const meta = rtdbFolders[dateKey] || {};
                     map.set(dateKey, {
                         key: dateKey,
                         dateLabel,
@@ -991,57 +999,54 @@
             window.scrollTo({ top: 0, behavior: "smooth" });
         });
 
-        onSnapshot(
-            foldersColRef,
+        onValue(
+            foldersRef,
             (snap) => {
+                const raw = snap.val() || {};
                 const nextFolders = {};
-                snap.forEach(docSnap => {
-                    const data = docSnap.data() || {};
-                    const key = (data.date || docSnap.id || "").trim();
-                    if (key) {
-                        nextFolders[key] = {
-                            date: key,
-                            title: data.title || "",
-                            coverUrl: data.coverUrl || "",
-                            description: data.description || ""
+                Object.entries(raw).forEach(([key, data]) => {
+                    const cleanKey = ((data && data.date) || key || "").trim();
+                    if (cleanKey) {
+                        nextFolders[cleanKey] = {
+                            date: cleanKey,
+                            title: (data && data.title) || "",
+                            coverUrl: (data && data.coverUrl) || "",
+                            description: (data && data.description) || ""
                         };
                     }
                 });
-                firestoreFolders = nextFolders;
-                setDbStatus("Connected to Firestore (offscript-3cf92)", "ok");
+                rtdbFolders = nextFolders;
+                setDbStatus(`Connected (${firebaseConfig.databaseURL})`, "ok");
                 renderMagazine(searchInput.value);
                 if (fullscreenItemId) syncFullscreenUI();
             },
             (err) => {
-                setDbStatus(err.message || "Firestore listener error", "error");
+                setDbStatus(formatFirebaseError(err, "Realtime DB folders read error"), "error");
             }
         );
 
-        onSnapshot(
-            itemsColRef,
+        onValue(
+            itemsRef,
             (snap) => {
-                const list = [];
-                snap.forEach(docSnap => {
-                    const data = docSnap.data() || {};
-                    list.push({
-                        id: data.id || docSnap.id,
-                        date: data.date || "",
-                        mediaType: data.mediaType === "video" ? "video" : "image",
-                        title: data.title || "",
-                        category: data.category || "Memory",
-                        mediaUrl: data.mediaUrl || "",
-                        description: data.description || "",
-                        createdAtMs: Number(data.createdAtMs || 0)
-                    });
-                });
+                const raw = snap.val() || {};
+                const list = Object.entries(raw).map(([key, data]) => ({
+                    id: (data && data.id) || key,
+                    date: (data && data.date) || "",
+                    mediaType: data && data.mediaType === "video" ? "video" : "image",
+                    title: (data && data.title) || "",
+                    category: (data && data.category) || "Memory",
+                    mediaUrl: (data && data.mediaUrl) || "",
+                    description: (data && data.description) || "",
+                    createdAtMs: Number((data && data.createdAtMs) || 0)
+                }));
                 list.sort((a, b) => b.createdAtMs - a.createdAtMs);
-                firestoreItems = list;
-                setDbStatus("Connected to Firestore (offscript-3cf92)", "ok");
+                rtdbItems = list;
+                setDbStatus(`Connected (${firebaseConfig.databaseURL})`, "ok");
                 renderMagazine(searchInput.value);
                 if (fullscreenItemId) syncFullscreenUI();
             },
             (err) => {
-                setDbStatus(err.message || "Firestore items listener error", "error");
+                setDbStatus(formatFirebaseError(err, "Realtime DB items read error"), "error");
             }
         );
 
