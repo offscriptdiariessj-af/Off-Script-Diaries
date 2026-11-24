@@ -319,7 +319,8 @@
     <script src="js/store.js"></script>
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
-        const DEFAULT_TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+        const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+
         let togetherStartMs = DEFAULT_TOGETHER_START_MS;
         let currentActiveMode = 'home';
         let backExitArmed = false;
