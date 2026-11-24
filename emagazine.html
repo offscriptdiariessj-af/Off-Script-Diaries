@@ -165,6 +165,7 @@
         let scaledItemId = null;
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
+        let folderGuardArmed = false;
         let scrollSaveTimer = null;
 
         sessionStorage.removeItem(MAG_ACTIVE_FOLDER_KEY);
@@ -258,6 +259,12 @@
             } catch {}
         }
 
+        function armFolderGuardState() {
+            if (!activeFolderKey || folderGuardArmed) return;
+            folderGuardArmed = true;
+            pushViewState("folder-guard");
+        }
+
         function buildDateFolders(q = "") {
             const term = (q || "").trim().toLowerCase();
             const map = new Map();
@@ -339,8 +346,11 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (opening) {
-                pushViewState("folder");
+                folderGuardArmed = true;
+                pushViewState("folder-guard");
                 window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+                folderGuardArmed = false;
             }
         }
 
@@ -352,11 +362,15 @@
                 fullscreenItemId = itemId;
                 syncFolderStorage();
                 syncFullscreenUI();
+                folderGuardArmed = true;
+                pushViewState("folder-guard");
                 pushViewState("fullscreen");
                 return;
             }
             scaledItemId = itemId;
             renderMagazine(searchInput.value);
+            folderGuardArmed = true;
+            pushViewState("folder-guard");
             pushViewState("scaled");
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -372,6 +386,7 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (activeFolderKey) {
+                folderGuardArmed = true;
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
@@ -447,12 +462,14 @@
             if (scaledItemId) {
                 scaledItemId = null;
                 renderMagazine(searchInput.value);
-                pushViewState("folder");
+                folderGuardArmed = true;
+                pushViewState("folder-guard");
                 return;
             }
 
             if (activeFolderKey) {
                 activeFolderKey = null;
+                folderGuardArmed = false;
                 syncFolderStorage();
                 renderMagazine(searchInput.value);
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -461,6 +478,8 @@
 
             window.location.href = "index.html";
         });
+
+        document.addEventListener("pointerdown", armFolderGuardState, { passive: true });
 
         let touchStartX = 0;
         let touchDeltaX = 0;
@@ -668,6 +687,7 @@
         document.getElementById("nav-mag-refresh").addEventListener("click", () => {
             activeFolderKey = null;
             scaledItemId = null;
+            folderGuardArmed = false;
             syncFolderStorage();
             renderMagazine(searchInput.value);
             window.scrollTo({ top: 0, behavior: "smooth" });
