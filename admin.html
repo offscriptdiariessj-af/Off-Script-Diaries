@@ -12,7 +12,7 @@
         <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
             <div class="min-w-0">
                 <h1 class="text-sm font-bold text-white truncate">Admin Console</h1>
-                <p class="text-[10px] text-blue-400 truncate">Home & Circular Logo</p>
+                <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
                 <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
@@ -220,12 +220,109 @@
     </main>
 
     <script src="js/store.js"></script>
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getDatabase,
+            ref,
+            set,
+            update,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
+            authDomain: "offscript-3cf92.firebaseapp.com",
+            databaseURL: "https://offscript-3cf92-default-rtdb.firebaseio.com",
+            projectId: "offscript-3cf92",
+            storageBucket: "offscript-3cf92.firebasestorage.app",
+            messagingSenderId: "887672343934",
+            appId: "1:887672343934:web:c457cea9a21b696b60f72f",
+            measurementId: "G-ZDWB2367X1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const rtdb = getDatabase(app, firebaseConfig.databaseURL);
+
+        // Isolated nodes in Firebase RTDB so existing magazineFolders, magazineItems, magazineRecentlyDeleted are never touched
+        const siteDataRef = ref(rtdb, "siteContent");
+        const authConfigRef = ref(rtdb, "siteAuthConfig");
+
         let currentData = null;
+        let firebaseAuthConfig = null;
+        const statusEl = document.getElementById('admin-db-status');
+
+        function setAdminDbStatus(text, isError = false) {
+            if (!statusEl) return;
+            statusEl.textContent = text;
+            statusEl.className = isError
+                ? 'text-[10px] text-rose-400 truncate'
+                : 'text-[10px] text-blue-400 truncate';
+        }
+
+        function showToast(msg = 'Saved to Firebase!') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
+        }
+
+        function cloneDefaults() {
+            const base = typeof getOSDData === 'function' ? getOSDData() : {};
+            return JSON.parse(JSON.stringify(base));
+        }
+
+        function normalizeSiteData(raw) {
+            const base = cloneDefaults();
+            const src = raw && typeof raw === 'object' ? raw : {};
+
+            base.brand = { ...base.brand, ...(src.brand || {}) };
+            const s = src.sections || {};
+
+            base.sections.hero = { ...base.sections.hero, ...(s.hero || {}) };
+            base.sections.origin = { ...base.sections.origin, ...(s.origin || {}) };
+            base.sections.telemetry = { ...base.sections.telemetry, ...(s.telemetry || {}) };
+            base.sections.magazineSpotlight = { ...base.sections.magazineSpotlight, ...(s.magazineSpotlight || {}) };
+            base.sections.bucketList = Array.isArray(s.bucketList)
+                ? s.bucketList
+                : (s.bucketList && typeof s.bucketList === 'object' ? Object.values(s.bucketList) : base.sections.bucketList);
+            base.sections.perspectives = { ...base.sections.perspectives, ...(s.perspectives || {}) };
+            base.sections.milestones = Array.isArray(s.milestones)
+                ? s.milestones
+                : (s.milestones && typeof s.milestones === 'object' ? Object.values(s.milestones) : base.sections.milestones);
+
+            const snd = s.soundtrack || {};
+            base.sections.soundtrack = {
+                ...base.sections.soundtrack,
+                ...snd,
+                tracks: Array.isArray(snd.tracks)
+                    ? snd.tracks
+                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : base.sections.soundtrack.tracks)
+            };
+
+            base.sections.loveNotes = Array.isArray(s.loveNotes)
+                ? s.loveNotes
+                : (s.loveNotes && typeof s.loveNotes === 'object' ? Object.values(s.loveNotes) : base.sections.loveNotes);
+
+            base.sections.capsule = { ...base.sections.capsule, ...(s.capsule || {}) };
+            return base;
+        }
+
+        function getActiveAuthConfig() {
+            const localCfg = typeof getAuthConfig === 'function'
+                ? getAuthConfig()
+                : { indexLockEnabled: true, magazineLockEnabled: true, indexPassword: '123', adminPassword: '123' };
+            return {
+                ...localCfg,
+                ...(firebaseAuthConfig || {})
+            };
+        }
 
         function openSettingsMenu() {
             document.getElementById('settings-drawer').classList.remove('hidden');
-            attachPasswordEyeToggles(document.getElementById('settings-drawer'));
+            if (typeof attachPasswordEyeToggles === 'function') {
+                attachPasswordEyeToggles(document.getElementById('settings-drawer'));
+            }
             renderLockToggles();
         }
 
@@ -257,12 +354,12 @@
         }
 
         function renderLockToggles() {
-            const cfg = getAuthConfig();
+            const cfg = getActiveAuthConfig();
             paintSwitch(
                 'toggle-index-lock-btn',
                 'toggle-index-lock-knob',
                 'index-lock-label',
-                cfg.indexLockEnabled,
+                Boolean(cfg.indexLockEnabled),
                 'ON — Required for index',
                 'OFF — Open index without password'
             );
@@ -270,24 +367,36 @@
                 'toggle-magazine-lock-btn',
                 'toggle-magazine-lock-knob',
                 'magazine-lock-label',
-                cfg.magazineLockEnabled,
+                Boolean(cfg.magazineLockEnabled),
                 'ON — Required for magazine',
                 'OFF — Open magazine without password'
             );
         }
 
-        function handleToggleLock(role) {
-            const cfg = getAuthConfig();
-            if (role === 'magazine') {
-                setRoleLockEnabled('magazine', !cfg.magazineLockEnabled);
-            } else {
-                setRoleLockEnabled('index', !cfg.indexLockEnabled);
+        async function handleToggleLock(role) {
+            const cfg = getActiveAuthConfig();
+            const nextIndexLock = role === 'index' ? !cfg.indexLockEnabled : Boolean(cfg.indexLockEnabled);
+            const nextMagazineLock = role === 'magazine' ? !cfg.magazineLockEnabled : Boolean(cfg.magazineLockEnabled);
+
+            const nextCfg = {
+                ...cfg,
+                indexLockEnabled: nextIndexLock,
+                magazineLockEnabled: nextMagazineLock,
+                updatedAtMs: Date.now()
+            };
+
+            try {
+                await set(authConfigRef, nextCfg);
+                firebaseAuthConfig = nextCfg;
+                renderLockToggles();
+                setAdminDbStatus('Firebase Live • Lock updated');
+            } catch (err) {
+                setAdminDbStatus(`Firebase error: ${err.message || 'Toggle failed'}`, true);
             }
-            renderLockToggles();
         }
 
-        function applyPasswordChanges() {
-            const verifier = document.getElementById('auth-current-key').value;
+        async function applyPasswordChanges() {
+            const verifier = document.getElementById('auth-current-key').value.trim();
             const newIdx = document.getElementById('auth-new-index').value.trim();
             const newAdm = document.getElementById('auth-new-admin').value.trim();
             const fb = document.getElementById('auth-feedback');
@@ -299,19 +408,42 @@
                 return;
             }
 
-            let lastResult = null;
-            if (newIdx) lastResult = updateRolePassword('index', newIdx, verifier);
-            if (newAdm && (!lastResult || lastResult.ok)) {
-                lastResult = updateRolePassword('admin', newAdm, verifier);
+            const cfg = getActiveAuthConfig();
+            const currentIdxPass = String(cfg.indexPassword || '123');
+            const currentAdmPass = String(cfg.adminPassword || '123');
+            const companyCode = String(cfg.companyCode || (typeof COMPANY_CODE !== 'undefined' ? COMPANY_CODE : ''));
+
+            const isValidVerifier = verifier && (
+                verifier === currentIdxPass ||
+                verifier === currentAdmPass ||
+                (companyCode && verifier === companyCode)
+            );
+
+            if (!isValidVerifier) {
+                fb.className = 'text-xs font-medium text-rose-400';
+                fb.textContent = 'Invalid current password or company code.';
+                return;
             }
 
-            fb.className = `text-xs font-medium ${lastResult.ok ? 'text-emerald-400' : 'text-rose-400'}`;
-            fb.textContent = lastResult.msg;
+            const nextCfg = {
+                ...cfg,
+                indexPassword: newIdx || currentIdxPass,
+                adminPassword: newAdm || currentAdmPass,
+                updatedAtMs: Date.now()
+            };
 
-            if (lastResult.ok) {
+            try {
+                await set(authConfigRef, nextCfg);
+                firebaseAuthConfig = nextCfg;
+                fb.className = 'text-xs font-medium text-emerald-400';
+                fb.textContent = 'Passwords saved to Firebase!';
                 document.getElementById('auth-current-key').value = '';
                 document.getElementById('auth-new-index').value = '';
                 document.getElementById('auth-new-admin').value = '';
+                setAdminDbStatus('Firebase Live • Passwords updated');
+            } catch (err) {
+                fb.className = 'text-xs font-medium text-rose-400';
+                fb.textContent = `Firebase error: ${err.message || 'Password update failed'}`;
             }
         }
 
@@ -319,93 +451,113 @@
             document.getElementById('preview-logo').src = parseDriveMedia(document.getElementById('inp-logoUrl').value, 'image');
         }
 
-        function loadAdminForm() {
+        function loadAdminForm(sourceData = null) {
             renderLockToggles();
-            currentData = getOSDData();
+            currentData = normalizeSiteData(sourceData || currentData);
             const b = currentData.brand;
             const s = currentData.sections;
 
-            document.getElementById('inp-siteName').value = b.siteName;
-            document.getElementById('inp-coupleNames').value = b.coupleNames;
-            document.getElementById('inp-logoUrl').value = b.logoUrl;
-            document.getElementById('inp-location').value = b.location;
-            document.getElementById('inp-year').value = b.establishedYear;
+            document.getElementById('inp-siteName').value = b.siteName || '';
+            document.getElementById('inp-coupleNames').value = b.coupleNames || '';
+            document.getElementById('inp-logoUrl').value = b.logoUrl || '';
+            document.getElementById('inp-location').value = b.location || '';
+            document.getElementById('inp-year').value = b.establishedYear || '';
             updateLogoPreview();
 
-            document.getElementById('inp-hero-eyebrow').value = s.hero.eyebrow;
-            document.getElementById('inp-hero-headline').value = s.hero.headline;
-            document.getElementById('inp-hero-sub').value = s.hero.subheadline;
-            document.getElementById('inp-hero-cta').value = s.hero.ctaText;
-            document.getElementById('inp-hero-bg').value = s.hero.bgImage;
+            document.getElementById('inp-hero-eyebrow').value = s.hero.eyebrow || '';
+            document.getElementById('inp-hero-headline').value = s.hero.headline || '';
+            document.getElementById('inp-hero-sub').value = s.hero.subheadline || '';
+            document.getElementById('inp-hero-cta').value = s.hero.ctaText || '';
+            document.getElementById('inp-hero-bg').value = s.hero.bgImage || '';
 
-            document.getElementById('inp-origin-title').value = s.origin.title;
-            document.getElementById('inp-origin-date').value = s.origin.date;
-            document.getElementById('inp-origin-story').value = s.origin.story;
-            document.getElementById('inp-origin-quote').value = s.origin.quote;
-            document.getElementById('inp-origin-img').value = s.origin.image;
+            document.getElementById('inp-origin-title').value = s.origin.title || '';
+            document.getElementById('inp-origin-date').value = s.origin.date || '';
+            document.getElementById('inp-origin-story').value = s.origin.story || '';
+            document.getElementById('inp-origin-quote').value = s.origin.quote || '';
+            document.getElementById('inp-origin-img').value = s.origin.image || '';
 
-            document.getElementById('inp-stat-date').value = s.telemetry.startDate;
-            document.getElementById('inp-stat-cities').value = s.telemetry.citiesExplored;
-            document.getElementById('inp-stat-coffee').value = s.telemetry.coffeeCups;
-            document.getElementById('inp-stat-calls').value = s.telemetry.midnightCalls;
+            document.getElementById('inp-stat-date').value = s.telemetry.startDate || '';
+            document.getElementById('inp-stat-cities').value = s.telemetry.citiesExplored || '';
+            document.getElementById('inp-stat-coffee').value = s.telemetry.coffeeCups || '';
+            document.getElementById('inp-stat-calls').value = s.telemetry.midnightCalls || '';
 
-            document.getElementById('inp-mag-heading').value = s.magazineSpotlight.heading;
-            document.getElementById('inp-mag-desc').value = s.magazineSpotlight.description;
+            document.getElementById('inp-mag-heading').value = s.magazineSpotlight.heading || '';
+            document.getElementById('inp-mag-desc').value = s.magazineSpotlight.description || '';
 
             renderBucketEditor();
 
-            document.getElementById('inp-pov1-name').value = s.perspectives.partnerOneName;
-            document.getElementById('inp-pov1-note').value = s.perspectives.partnerOneNote;
-            document.getElementById('inp-pov2-name').value = s.perspectives.partnerTwoName;
-            document.getElementById('inp-pov2-note').value = s.perspectives.partnerTwoNote;
+            document.getElementById('inp-pov1-name').value = s.perspectives.partnerOneName || '';
+            document.getElementById('inp-pov1-note').value = s.perspectives.partnerOneNote || '';
+            document.getElementById('inp-pov2-name').value = s.perspectives.partnerTwoName || '';
+            document.getElementById('inp-pov2-note').value = s.perspectives.partnerTwoNote || '';
 
             document.getElementById('admin-milestones-editor').innerHTML = s.milestones.map((m, i) => `
                 <div class="p-2.5 rounded-xl bg-[#121417] space-y-1.5">
-                    <input data-ms-date="${i}" value="${m.date}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
-                    <input data-ms-title="${i}" value="${m.title}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
-                    <input data-ms-desc="${i}" value="${m.desc}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-white/70" />
+                    <input data-ms-date="${i}" value="${(m.date || '').replace(/"/g, '&quot;')}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
+                    <input data-ms-title="${i}" value="${(m.title || '').replace(/"/g, '&quot;')}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
+                    <input data-ms-desc="${i}" value="${(m.desc || '').replace(/"/g, '&quot;')}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-white/70" />
                 </div>
             `).join('');
 
-            document.getElementById('inp-sound-title').value = s.soundtrack.albumTitle;
-            document.getElementById('inp-sound-note').value = s.soundtrack.curatorNote;
+            document.getElementById('inp-sound-title').value = s.soundtrack.albumTitle || '';
+            document.getElementById('inp-sound-note').value = s.soundtrack.curatorNote || '';
             document.getElementById('admin-tracks-editor').innerHTML = s.soundtrack.tracks.map((t, i) => `
                 <div class="grid grid-cols-12 gap-1.5">
-                    <input data-tr-title="${i}" value="${t.title}" class="col-span-5 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
-                    <input data-tr-artist="${i}" value="${t.artist}" class="col-span-4 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
-                    <input data-tr-dur="${i}" value="${t.duration}" class="col-span-3 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <input data-tr-title="${i}" value="${(t.title || '').replace(/"/g, '&quot;')}" class="col-span-5 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <input data-tr-artist="${i}" value="${(t.artist || '').replace(/"/g, '&quot;')}" class="col-span-4 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <input data-tr-dur="${i}" value="${(t.duration || '').replace(/"/g, '&quot;')}" class="col-span-3 h-9 px-2.5 rounded-lg bg-[#121417] border border-white/10 text-xs" />
                 </div>
             `).join('');
 
             document.getElementById('admin-notes-editor').innerHTML = s.loveNotes.map((n, i) => `
                 <div class="p-2.5 rounded-xl bg-[#121417] space-y-1.5">
-                    <input data-nt-tag="${i}" value="${n.tag}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
-                    <input data-nt-msg="${i}" value="${n.message}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
+                    <input data-nt-tag="${i}" value="${(n.tag || '').replace(/"/g, '&quot;')}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs text-blue-400" />
+                    <input data-nt-msg="${i}" value="${(n.message || '').replace(/"/g, '&quot;')}" class="w-full h-9 px-2.5 rounded-lg bg-[#1E2126] text-xs" />
                 </div>
             `).join('');
 
-            document.getElementById('inp-cap-head').value = s.capsule.heading;
-            document.getElementById('inp-cap-dest').value = s.capsule.nextDestination;
-            document.getElementById('inp-cap-msg').value = s.capsule.message;
+            document.getElementById('inp-cap-head').value = s.capsule.heading || '';
+            document.getElementById('inp-cap-dest').value = s.capsule.nextDestination || '';
+            document.getElementById('inp-cap-msg').value = s.capsule.message || '';
         }
 
         function renderBucketEditor() {
             document.getElementById('admin-bucket-editor').innerHTML = currentData.sections.bucketList.map((item, idx) => `
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="currentData.sections.bucketList[${idx}].completed = this.checked" class="w-4 h-4 accent-blue-500" />
-                    <input type="text" value="${item.task}" oninput="currentData.sections.bucketList[${idx}].task = this.value" class="flex-1 h-9 px-3 rounded-lg bg-[#121417] border border-white/10 text-xs" />
-                    <button type="button" onclick="currentData.sections.bucketList.splice(${idx}, 1); renderBucketEditor();" class="text-xs text-rose-400 px-2">✕</button>
+                    <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="updateBucketChecked(${idx}, this.checked)" class="w-4 h-4 accent-blue-500" />
+                    <input type="text" value="${(item.task || '').replace(/"/g, '&quot;')}" oninput="updateBucketTask(${idx}, this.value)" class="flex-1 h-9 px-3 rounded-lg bg-[#121417] border border-white/10 text-xs" />
+                    <button type="button" onclick="removeBucketItem(${idx})" class="text-xs text-rose-400 px-2">✕</button>
                 </div>
             `).join('');
         }
 
+        function updateBucketChecked(idx, checked) {
+            if (currentData && currentData.sections && currentData.sections.bucketList[idx]) {
+                currentData.sections.bucketList[idx].completed = checked;
+            }
+        }
+
+        function updateBucketTask(idx, val) {
+            if (currentData && currentData.sections && currentData.sections.bucketList[idx]) {
+                currentData.sections.bucketList[idx].task = val;
+            }
+        }
+
+        function removeBucketItem(idx) {
+            if (currentData && currentData.sections && Array.isArray(currentData.sections.bucketList)) {
+                currentData.sections.bucketList.splice(idx, 1);
+                renderBucketEditor();
+            }
+        }
+
         function addBucketItem() {
+            if (!currentData) currentData = normalizeSiteData(null);
             currentData.sections.bucketList.push({ id: Date.now(), task: "New plan", completed: false });
             renderBucketEditor();
         }
 
-        function saveAllChanges() {
-            const fresh = getOSDData();
+        async function saveAllChanges() {
+            const fresh = normalizeSiteData(currentData);
             fresh.brand.siteName = document.getElementById('inp-siteName').value;
             fresh.brand.coupleNames = document.getElementById('inp-coupleNames').value;
             fresh.brand.logoUrl = document.getElementById('inp-logoUrl').value;
@@ -474,14 +626,64 @@
                 message: document.getElementById('inp-cap-msg').value
             };
 
-            saveOSDData(fresh);
-            const toast = document.getElementById('toast');
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2000);
+            fresh.updatedAtMs = Date.now();
+
+            try {
+                await set(siteDataRef, fresh);
+                currentData = fresh;
+                setAdminDbStatus('Firebase Live • Saved');
+                showToast('Saved to Firebase!');
+            } catch (err) {
+                setAdminDbStatus(`Firebase save failed: ${err.message || 'Error'}`, true);
+                showToast('Save failed!');
+            }
         }
 
+        window.openSettingsMenu = openSettingsMenu;
+        window.closeSettingsMenu = closeSettingsMenu;
+        window.togglePasswordSubmenu = togglePasswordSubmenu;
+        window.handleToggleLock = handleToggleLock;
+        window.applyPasswordChanges = applyPasswordChanges;
+        window.updateLogoPreview = updateLogoPreview;
+        window.addBucketItem = addBucketItem;
+        window.updateBucketChecked = updateBucketChecked;
+        window.updateBucketTask = updateBucketTask;
+        window.removeBucketItem = removeBucketItem;
+        window.saveAllChanges = saveAllChanges;
+
+        onValue(
+            siteDataRef,
+            (snap) => {
+                const val = snap.val();
+                if (val) {
+                    loadAdminForm(val);
+                    setAdminDbStatus('Firebase Live • Home & Circular Logo');
+                } else {
+                    loadAdminForm(null);
+                    setAdminDbStatus('Firebase Live • Ready to Save');
+                }
+            },
+            (err) => {
+                setAdminDbStatus(`Firebase read error: ${err.message || 'Error'}`, true);
+            }
+        );
+
+        onValue(
+            authConfigRef,
+            (snap) => {
+                const val = snap.val();
+                if (val && typeof val === 'object') {
+                    firebaseAuthConfig = val;
+                    renderLockToggles();
+                }
+            },
+            (err) => {
+                setAdminDbStatus(`Firebase auth read error: ${err.message || 'Error'}`, true);
+            }
+        );
+
         window.addEventListener('DOMContentLoaded', () => {
-            loadAdminForm();
+            loadAdminForm(null);
             enforceRoleLock('admin', 'Admin Console');
         });
     </script>
