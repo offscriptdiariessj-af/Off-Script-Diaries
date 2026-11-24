@@ -43,7 +43,7 @@ const DEFAULT_DATA = {
         },
         magazineSpotlight: {
             heading: "Our E-Magazine",
-            description: "Photos & Google Drive videos with stories and dates."
+            description: "Photos & videos with stories and dates."
         },
         bucketList: [
             { id: 1, task: "Northern lights in Tromsø", completed: false },
