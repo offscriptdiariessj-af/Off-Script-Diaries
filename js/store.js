@@ -15,10 +15,10 @@ const DEFAULT_DATA = {
     brand: {
         siteName: "Off Script Diaries",
         tagline: "Zero rehearsals. Pure moments.",
-        coupleNames: "Aarav & Meera",
+        coupleNames: "Loading",
         logoUrl: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=400&q=80",
         establishedYear: "2024",
-        location: "Chennai • Bengaluru"
+        location: "Loading"
     },
     sections: {
         hero: {
@@ -37,9 +37,9 @@ const DEFAULT_DATA = {
         },
         telemetry: {
             startDate: "2023-10-14",
-            citiesExplored: "14",
-            coffeeCups: "642",
-            midnightCalls: "318"
+            citiesExplored: "Loading",
+            coffeeCups: "Loading",
+            midnightCalls: "Loading"
         },
         magazineSpotlight: {
             heading: "Our E-Magazine",
