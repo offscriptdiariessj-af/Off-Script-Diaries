@@ -252,16 +252,28 @@
     <script src="js/store.js"></script>
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
-        const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+        const DEFAULT_TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+        let togetherStartMs = DEFAULT_TOGETHER_START_MS;
         let currentActiveMode = 'home';
         let backExitArmed = false;
         let backExitTimer = null;
         let togetherTimer = null;
+        let rtdbSiteData = null;
+        let rtdbAuthConfig = null;
         let rtdbMagazineFolders = [];
+
+        function parseStartDateMs(rawDate) {
+            const clean = String(rawDate || '').trim();
+            const iso = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (iso) {
+                return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 0, 0, 0, 0).getTime();
+            }
+            return DEFAULT_TOGETHER_START_MS;
+        }
 
         function formatTogetherLive() {
             const now = new Date();
-            const diffMs = Math.max(0, now.getTime() - TOGETHER_START_MS);
+            const diffMs = Math.max(0, now.getTime() - togetherStartMs);
             const totalSeconds = Math.floor(diffMs / 1000);
             const days = Math.floor(totalSeconds / 86400);
             const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -422,6 +434,55 @@
             return parsed;
         }
 
+        function resolveMergedIndexData() {
+            const base = typeof getOSDData === 'function' ? JSON.parse(JSON.stringify(getOSDData())) : {};
+            if (!rtdbSiteData || typeof rtdbSiteData !== 'object') return base;
+
+            const src = rtdbSiteData;
+            base.brand = { ...(base.brand || {}), ...(src.brand || {}) };
+            const s = src.sections || {};
+
+            base.sections = base.sections || {};
+            base.sections.hero = { ...(base.sections.hero || {}), ...(s.hero || {}) };
+            base.sections.origin = { ...(base.sections.origin || {}), ...(s.origin || {}) };
+            base.sections.telemetry = { ...(base.sections.telemetry || {}), ...(s.telemetry || {}) };
+            base.sections.magazineSpotlight = { ...(base.sections.magazineSpotlight || {}), ...(s.magazineSpotlight || {}) };
+            base.sections.bucketList = Array.isArray(s.bucketList)
+                ? s.bucketList
+                : (s.bucketList && typeof s.bucketList === 'object' ? Object.values(s.bucketList) : (base.sections.bucketList || []));
+            base.sections.perspectives = { ...(base.sections.perspectives || {}), ...(s.perspectives || {}) };
+            base.sections.milestones = Array.isArray(s.milestones)
+                ? s.milestones
+                : (s.milestones && typeof s.milestones === 'object' ? Object.values(s.milestones) : (base.sections.milestones || []));
+
+            const snd = s.soundtrack || {};
+            base.sections.soundtrack = {
+                ...(base.sections.soundtrack || {}),
+                ...snd,
+                tracks: Array.isArray(snd.tracks)
+                    ? snd.tracks
+                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : ((base.sections.soundtrack && base.sections.soundtrack.tracks) || []))
+            };
+
+            base.sections.loveNotes = Array.isArray(s.loveNotes)
+                ? s.loveNotes
+                : (s.loveNotes && typeof s.loveNotes === 'object' ? Object.values(s.loveNotes) : (base.sections.loveNotes || []));
+
+            base.sections.capsule = { ...(base.sections.capsule || {}), ...(s.capsule || {}) };
+            return base;
+        }
+
+        function syncAuthConfigFromFirebase(cfg) {
+            if (!cfg || typeof cfg !== 'object') return;
+            rtdbAuthConfig = cfg;
+            try {
+                if (typeof AUTH_STORAGE_KEY !== 'undefined') {
+                    const existing = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || '{}');
+                    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...existing, ...cfg }));
+                }
+            } catch {}
+        }
+
         function renderMagazineRail() {
             const railEl = document.getElementById('home-magazine-rail');
             if (!railEl) return;
@@ -446,8 +507,10 @@
         }
 
         function renderIndexPage() {
-            const data = getOSDData();
+            const data = resolveMergedIndexData();
             const logoSrc = parseDriveMedia(data.brand.logoUrl, 'image');
+
+            togetherStartMs = parseStartDateMs(data.sections.telemetry && data.sections.telemetry.startDate);
 
             document.title = data.brand.siteName;
             document.getElementById('nav-logo').src = logoSrc;
@@ -582,6 +645,21 @@
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
         const foldersRef = ref(rtdb, "magazineFolders");
+        const siteDataRef = ref(rtdb, "siteContent");
+        const authConfigRef = ref(rtdb, "siteAuthConfig");
+
+        onValue(siteDataRef, (snap) => {
+            const val = snap.val();
+            rtdbSiteData = val && typeof val === "object" ? val : null;
+            renderIndexPage();
+        });
+
+        onValue(authConfigRef, (snap) => {
+            const val = snap.val();
+            if (val && typeof val === "object") {
+                syncAuthConfigFromFirebase(val);
+            }
+        });
 
         onValue(foldersRef, (snap) => {
             const raw = snap.val() || {};
