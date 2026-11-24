@@ -70,6 +70,9 @@
                 <button id="new-folder-btn" type="button" class="text-[10px] font-bold uppercase tracking-wider text-blue-300 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30">
                     + Folder
                 </button>
+                <button id="recently-deleted-btn" type="button" class="text-[10px] font-bold uppercase tracking-wider text-amber-300 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/30">
+                    Recently Deleted (<span id="recently-deleted-count">0</span>)
+                </button>
                 <a href="emagazine.html" class="text-[10px] font-bold uppercase tracking-wider text-white/80 px-2.5 py-1 rounded-full bg-white/10">Viewer</a>
                 <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 active:scale-95">
                     Lock
@@ -95,7 +98,7 @@
                 <h3 id="folder-modal-title" class="text-sm font-extrabold text-blue-400 uppercase tracking-wider">Edit Date Folder</h3>
                 <button id="close-folder-edit-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
             </div>
-            <div class="space-y-1">
+            <div id="edit-folder-date-group" class="space-y-1">
                 <div class="flex items-center justify-between">
                     <label class="text-[11px] text-white/60">Folder Date *</label>
                     <span id="edit-folder-date-preview" class="text-[11px] font-mono text-blue-300"></span>
@@ -162,10 +165,10 @@
             <button id="save-item-edit-btn" type="button" class="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Save Item</button>
         </div>
 
-        <!-- IN-APP DELETE FOLDER CONFIRMATION POPUP -->
+        <!-- IN-APP DELETE CONFIRMATION POPUP -->
         <div id="delete-confirm-form" class="hidden w-full max-w-sm rounded-2xl bg-[#1E2126] border border-rose-500/50 p-4 space-y-3 shadow-2xl">
             <div class="flex items-center justify-between">
-                <h3 class="text-sm font-extrabold text-rose-400 uppercase tracking-wider">Delete Folder?</h3>
+                <h3 id="delete-confirm-title" class="text-sm font-extrabold text-rose-400 uppercase tracking-wider">Delete Folder?</h3>
                 <button id="close-delete-confirm-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
             </div>
             <p id="delete-confirm-msg" class="text-xs text-white/80 leading-relaxed"></p>
@@ -174,6 +177,28 @@
                 <button id="cancel-delete-folder-btn" type="button" class="h-10 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition">Cancel</button>
                 <button id="confirm-delete-folder-btn" type="button" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition">Delete</button>
             </div>
+        </div>
+    </div>
+
+    <!-- RECENTLY DELETED MODAL -->
+    <div id="recently-deleted-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-md max-h-[82vh] rounded-2xl bg-[#1E2126] border border-amber-400/40 p-4 flex flex-col gap-3 shadow-2xl">
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
+                <div>
+                    <h3 class="text-sm font-extrabold text-amber-300 uppercase tracking-wider">Recently Deleted</h3>
+                    <p id="recently-deleted-subtitle" class="text-[11px] text-white/60">Restore items to their exact spot or delete permanently</p>
+                </div>
+                <button id="close-recently-deleted-btn" type="button" class="px-2 py-0.5 rounded-lg bg-white/10 text-xs font-bold">✕</button>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+                <button id="restore-all-deleted-btn" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-400/30 text-[11px] font-bold transition">
+                    Restore All
+                </button>
+                <button id="delete-all-recently-deleted-btn" type="button" class="px-3 py-1.5 rounded-xl bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border border-rose-400/30 text-[11px] font-bold transition">
+                    Delete All
+                </button>
+            </div>
+            <div id="recently-deleted-list" class="overflow-y-auto space-y-2.5 pr-1 flex-1"></div>
         </div>
     </div>
 
@@ -240,6 +265,7 @@
 
         const foldersRef = ref(rtdb, "magazineFolders");
         const itemsRef = ref(rtdb, "magazineItems");
+        const recentlyDeletedRef = ref(rtdb, "magazineRecentlyDeleted");
 
         const MAG_ACTIVE_FOLDER_KEY = "osd_mag_admin_active_folder_v1";
         const MAG_SCROLL_KEY = "osd_mag_admin_scroll_v1";
@@ -252,6 +278,15 @@
         const dbStatusText = document.getElementById("db-status-text");
         const dbStatusPill = document.getElementById("db-status-pill");
 
+        const recentlyDeletedBtn = document.getElementById("recently-deleted-btn");
+        const recentlyDeletedCountEl = document.getElementById("recently-deleted-count");
+        const recentlyDeletedModal = document.getElementById("recently-deleted-modal");
+        const recentlyDeletedSubtitle = document.getElementById("recently-deleted-subtitle");
+        const recentlyDeletedList = document.getElementById("recently-deleted-list");
+        const closeRecentlyDeletedBtn = document.getElementById("close-recently-deleted-btn");
+        const restoreAllDeletedBtn = document.getElementById("restore-all-deleted-btn");
+        const deleteAllRecentlyDeletedBtn = document.getElementById("delete-all-recently-deleted-btn");
+
         const editModal = document.getElementById("edit-modal");
         const editFolderForm = document.getElementById("edit-folder-form");
         const editItemForm = document.getElementById("edit-item-form");
@@ -259,6 +294,7 @@
 
         const folderModalTitle = document.getElementById("folder-modal-title");
         const folderFormError = document.getElementById("folder-form-error");
+        const editFolderDateGroup = document.getElementById("edit-folder-date-group");
         const editFolderDate = document.getElementById("edit-folder-date");
         const editFolderDatePreview = document.getElementById("edit-folder-date-preview");
         const editFolderTitle = document.getElementById("edit-folder-title");
@@ -276,6 +312,7 @@
         const editItemMedia = document.getElementById("edit-item-media");
         const editItemDesc = document.getElementById("edit-item-desc");
 
+        const deleteConfirmTitle = document.getElementById("delete-confirm-title");
         const deleteConfirmMsg = document.getElementById("delete-confirm-msg");
         const deleteFormError = document.getElementById("delete-form-error");
         const confirmDeleteFolderBtn = document.getElementById("confirm-delete-folder-btn");
@@ -293,6 +330,7 @@
 
         let rtdbFolders = {};
         let rtdbItems = [];
+        let rtdbRecentlyDeleted = [];
         let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
         let scaledItemId = null;
         let fullscreenFolderKey = null;
@@ -301,7 +339,10 @@
         let isCreatingFolder = false;
         let editingItemId = null;
         let addingToFolderDate = null;
+        let deleteActionMode = null; // "folder" | "single_item" | "all_folder_items" | "permanent_single" | "permanent_all"
         let pendingDeleteFolderKey = null;
+        let pendingDeleteItemId = null;
+        let pendingPermanentId = null;
         let scrollSaveTimer = null;
 
         function formatDateDDMMYYYY(rawDate = "") {
@@ -415,12 +456,83 @@
             } catch {}
         }
 
+        function closeRecentlyDeletedModal() {
+            recentlyDeletedModal.classList.add("hidden");
+        }
+
+        function updateRecentlyDeletedBadge() {
+            recentlyDeletedCountEl.textContent = String(rtdbRecentlyDeleted.length);
+        }
+
+        function renderRecentlyDeletedList() {
+            updateRecentlyDeletedBadge();
+            if (!rtdbRecentlyDeleted.length) {
+                recentlyDeletedSubtitle.textContent = "No recently deleted items";
+                restoreAllDeletedBtn.disabled = true;
+                deleteAllRecentlyDeletedBtn.disabled = true;
+                restoreAllDeletedBtn.className = "px-3 py-1.5 rounded-xl bg-white/5 text-white/35 border border-white/10 text-[11px] font-bold cursor-not-allowed";
+                deleteAllRecentlyDeletedBtn.className = "px-3 py-1.5 rounded-xl bg-white/5 text-white/35 border border-white/10 text-[11px] font-bold cursor-not-allowed";
+                recentlyDeletedList.innerHTML = `<div class="p-5 rounded-xl bg-[#121417]/80 text-center text-xs text-white/50">Recently Deleted is empty.</div>`;
+                return;
+            }
+
+            recentlyDeletedSubtitle.textContent = `${rtdbRecentlyDeleted.length} item(s) in Recently Deleted`;
+            restoreAllDeletedBtn.disabled = false;
+            deleteAllRecentlyDeletedBtn.disabled = false;
+            restoreAllDeletedBtn.className = "px-3 py-1.5 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-400/30 text-[11px] font-bold transition";
+            deleteAllRecentlyDeletedBtn.className = "px-3 py-1.5 rounded-xl bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border border-rose-400/30 text-[11px] font-bold transition";
+
+            recentlyDeletedList.innerHTML = rtdbRecentlyDeleted.map(entry => {
+                const item = entry.item || {};
+                const rawUrl = item.mediaUrl || "";
+                const media = resolveMediaSrc(rawUrl, item.mediaType);
+                const safeEntryId = escapeHtml(entry.trashId);
+                const safeTitle = escapeHtml(item.title || "Untitled");
+                const safeCategory = escapeHtml(item.category || "Memory");
+                const safeDate = escapeHtml(formatDateDDMMYYYY(entry.originalFolderKey || item.date || ""));
+                const safeDesc = escapeHtml(item.description || "");
+                const thumbHtml = item.mediaType === "video"
+                    ? `<div class="w-16 h-16 rounded-xl bg-black flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">▶ VIDEO</div>`
+                    : `<img src="${escapeHtml(media)}" data-raw-src="${escapeHtml(rawUrl)}" onerror="handleImgFallback(this, this.dataset.rawSrc)" alt="${safeTitle}" class="w-16 h-16 rounded-xl object-cover bg-black shrink-0" />`;
+
+                return `
+                    <div class="p-2.5 rounded-xl bg-[#121417]/90 border border-white/10 flex items-center gap-2.5">
+                        ${thumbHtml}
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-1 text-[10px] font-bold uppercase text-amber-300">
+                                <span class="truncate">${safeCategory}</span>
+                                <span class="text-white/50 font-mono shrink-0">${safeDate}</span>
+                            </div>
+                            <div class="text-xs font-bold text-white truncate mt-0.5">${safeTitle}</div>
+                            ${safeDesc ? `<div class="text-[11px] text-white/60 truncate mt-0.5">${safeDesc}</div>` : ""}
+                            <div class="flex items-center gap-1.5 mt-2">
+                                <button type="button" onclick="restoreDeletedItem('${safeEntryId}')" class="px-2.5 py-1 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold transition">
+                                    Restore
+                                </button>
+                                <button type="button" onclick="openPermanentDeleteItemModal('${safeEntryId}')" class="px-2.5 py-1 rounded-lg bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border border-rose-400/30 text-[10px] font-bold transition">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join("");
+        }
+
+        function openRecentlyDeletedModal() {
+            renderRecentlyDeletedList();
+            recentlyDeletedModal.classList.remove("hidden");
+        }
+
         function closeEditModal() {
             editingFolderKey = null;
             isCreatingFolder = false;
             editingItemId = null;
             addingToFolderDate = null;
+            deleteActionMode = null;
             pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
+            editFolderDateGroup.classList.remove("hidden");
             folderFormError.classList.add("hidden");
             itemFormError.classList.add("hidden");
             deleteFormError.classList.add("hidden");
@@ -435,10 +547,14 @@
             isCreatingFolder = true;
             editingItemId = null;
             addingToFolderDate = null;
+            deleteActionMode = null;
             pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
             folderFormError.classList.add("hidden");
 
             folderModalTitle.textContent = "Create Date Folder";
+            editFolderDateGroup.classList.remove("hidden");
             editFolderDate.readOnly = false;
             editFolderDate.disabled = false;
             editFolderDate.value = new Date().toISOString().slice(0, 10);
@@ -453,6 +569,7 @@
             editModal.classList.remove("hidden");
         }
 
+        // Folder Edit only edits folder details (title, cover picture, description) without touching items or folder date key
         function openEditFolderModal(event, folderKey) {
             event.stopPropagation();
             const meta = rtdbFolders[folderKey] || {};
@@ -460,12 +577,14 @@
             isCreatingFolder = false;
             editingItemId = null;
             addingToFolderDate = null;
+            deleteActionMode = null;
             pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
             folderFormError.classList.add("hidden");
 
-            folderModalTitle.textContent = "Edit Date Folder";
-            editFolderDate.readOnly = false;
-            editFolderDate.disabled = false;
+            folderModalTitle.textContent = `Edit Folder (${formatDateDDMMYYYY(folderKey)})`;
+            editFolderDateGroup.classList.add("hidden");
             editFolderDate.value = /^\d{4}-\d{2}-\d{2}$/.test(folderKey) ? folderKey : "";
             editFolderTitle.value = meta.title || "";
             editFolderCover.value = meta.coverUrl || "";
@@ -476,11 +595,38 @@
             deleteConfirmForm.classList.add("hidden");
             editFolderForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
+            editFolderTitle.focus();
         }
 
         async function saveFolderEdit() {
-            const oldKey = editingFolderKey;
-            const targetDate = (editFolderDate.value || oldKey || "").trim();
+            if (!isCreatingFolder) {
+                const targetKey = editingFolderKey;
+                if (!targetKey) return;
+                folderFormError.classList.add("hidden");
+
+                const existingMeta = rtdbFolders[targetKey] || {};
+                const payload = {
+                    date: existingMeta.date || targetKey,
+                    title: editFolderTitle.value.trim(),
+                    coverUrl: editFolderCover.value.trim(),
+                    description: editFolderDesc.value.trim(),
+                    updatedAtMs: Date.now()
+                };
+
+                try {
+                    await set(ref(rtdb, `magazineFolders/${targetKey}`), payload);
+                    closeEditModal();
+                    setDbStatus(`Updated folder ${formatDateDDMMYYYY(targetKey)}`, "ok");
+                } catch (err) {
+                    const msg = formatFirebaseError(err, "Failed to update folder.");
+                    folderFormError.textContent = msg;
+                    folderFormError.classList.remove("hidden");
+                    setDbStatus(msg, "error");
+                }
+                return;
+            }
+
+            const targetDate = (editFolderDate.value || "").trim();
             if (!targetDate) {
                 folderFormError.textContent = "Please select a date for the folder.";
                 folderFormError.classList.remove("hidden");
@@ -498,51 +644,175 @@
 
             try {
                 await set(ref(rtdb, `magazineFolders/${targetDate}`), payload);
-
-                if (!isCreatingFolder && oldKey && oldKey !== targetDate) {
-                    const matchingItems = rtdbItems.filter(it => (it.date || "").trim() === oldKey);
-                    for (const it of matchingItems) {
-                        await update(ref(rtdb, `magazineItems/${it.id}`), {
-                            date: targetDate,
-                            updatedAtMs: Date.now()
-                        });
-                    }
-                    if (rtdbFolders[oldKey]) {
-                        await remove(ref(rtdb, `magazineFolders/${oldKey}`));
-                    }
-                    if (activeFolderKey === oldKey) {
-                        activeFolderKey = targetDate;
-                        syncFolderStorage();
-                    }
-                }
-
                 closeEditModal();
-                setDbStatus(`Saved folder ${formatDateDDMMYYYY(targetDate)} to Realtime DB`, "ok");
+                setDbStatus(`Created folder ${formatDateDDMMYYYY(targetDate)} in Realtime DB`, "ok");
             } catch (err) {
-                const msg = formatFirebaseError(err, "Failed to save folder.");
+                const msg = formatFirebaseError(err, "Failed to create folder.");
                 folderFormError.textContent = msg;
                 folderFormError.classList.remove("hidden");
                 setDbStatus(msg, "error");
             }
         }
 
-        function openDeleteFolderModal(event, folderKey) {
-            event.stopPropagation();
-            const meta = rtdbFolders[folderKey] || {};
-            const itemCount = rtdbItems.filter(it => (it.date || "").trim() === folderKey).length;
-            const formattedDate = formatDateDDMMYYYY(folderKey);
-            const folderLabel = meta.title ? `${meta.title} (${formattedDate})` : formattedDate;
+        function getOrderedItemsInFolder(folderKey) {
+            const list = rtdbItems.filter(it => (it.date || "").trim() === folderKey);
+            list.sort((a, b) => b.createdAtMs - a.createdAtMs);
+            return list;
+        }
 
-            pendingDeleteFolderKey = folderKey;
-            editingFolderKey = null;
-            isCreatingFolder = false;
-            editingItemId = null;
-            addingToFolderDate = null;
+        async function moveItemToRecentlyDeleted(item, folderKey, indexInFolder = 0, totalInFolder = 1) {
+            const cleanFolderKey = (folderKey || item.date || "").trim();
+            const trashId = "trash_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+            const record = {
+                trashId,
+                item: {
+                    id: item.id,
+                    date: item.date || cleanFolderKey,
+                    mediaType: item.mediaType === "video" ? "video" : "image",
+                    title: item.title || "",
+                    category: item.category || "Memory",
+                    mediaUrl: item.mediaUrl || "",
+                    description: item.description || "",
+                    createdAtMs: Number(item.createdAtMs || 0),
+                    updatedAtMs: Number(item.updatedAtMs || Date.now())
+                },
+                originalFolderKey: cleanFolderKey,
+                originalIndex: Number(indexInFolder || 0),
+                originalCountInFolder: Number(totalInFolder || 1),
+                deletedAtMs: Date.now()
+            };
+
+            await set(ref(rtdb, `magazineRecentlyDeleted/${trashId}`), record);
+            await remove(ref(rtdb, `magazineItems/${item.id}`));
+        }
+
+        async function restoreDeletedItem(trashId) {
+            const entry = rtdbRecentlyDeleted.find(e => e.trashId === trashId);
+            if (!entry || !entry.item) return;
+
+            const targetFolderKey = (entry.originalFolderKey || entry.item.date || new Date().toISOString().slice(0, 10)).trim();
+            const existingFolderItems = getOrderedItemsInFolder(targetFolderKey);
+
+            // Preserve original position within the folder by adjusting createdAtMs relative to neighbors
+            let restoredCreatedAtMs = Number(entry.item.createdAtMs || Date.now());
+            if (existingFolderItems.length > 0) {
+                const desiredIdx = Math.max(0, Math.min(Number(entry.originalIndex || 0), existingFolderItems.length));
+                if (desiredIdx === 0) {
+                    restoredCreatedAtMs = Number(existingFolderItems[0].createdAtMs || Date.now()) + 1000;
+                } else if (desiredIdx >= existingFolderItems.length) {
+                    restoredCreatedAtMs = Number(existingFolderItems[existingFolderItems.length - 1].createdAtMs || Date.now()) - 1000;
+                } else {
+                    const aboveMs = Number(existingFolderItems[desiredIdx - 1].createdAtMs || Date.now());
+                    const belowMs = Number(existingFolderItems[desiredIdx].createdAtMs || Date.now());
+                    restoredCreatedAtMs = Math.floor((aboveMs + belowMs) / 2);
+                    if (restoredCreatedAtMs === aboveMs || restoredCreatedAtMs === belowMs) {
+                        restoredCreatedAtMs = aboveMs - 1;
+                    }
+                }
+            }
+
+            try {
+                if (targetFolderKey && !rtdbFolders[targetFolderKey]) {
+                    await set(ref(rtdb, `magazineFolders/${targetFolderKey}`), {
+                        date: targetFolderKey,
+                        title: formatDateDDMMYYYY(targetFolderKey),
+                        coverUrl: "",
+                        description: "",
+                        updatedAtMs: Date.now()
+                    });
+                }
+
+                const restoredItem = {
+                    id: entry.item.id,
+                    date: targetFolderKey,
+                    mediaType: entry.item.mediaType === "video" ? "video" : "image",
+                    title: entry.item.title || "",
+                    category: entry.item.category || "Memory",
+                    mediaUrl: entry.item.mediaUrl || "",
+                    description: entry.item.description || "",
+                    createdAtMs: restoredCreatedAtMs,
+                    updatedAtMs: Date.now()
+                };
+
+                await set(ref(rtdb, `magazineItems/${restoredItem.id}`), restoredItem);
+                await remove(ref(rtdb, `magazineRecentlyDeleted/${entry.trashId}`));
+                setDbStatus(`Restored "${restoredItem.title}" to ${formatDateDDMMYYYY(targetFolderKey)}`, "ok");
+            } catch (err) {
+                setDbStatus(formatFirebaseError(err, "Failed to restore item."), "error");
+            }
+        }
+
+        async function restoreAllDeletedItems() {
+            if (!rtdbRecentlyDeleted.length) return;
+            const entries = [...rtdbRecentlyDeleted].sort((a, b) => Number(a.deletedAtMs || 0) - Number(b.deletedAtMs || 0));
+            try {
+                for (const entry of entries) {
+                    if (!entry || !entry.item) continue;
+                    const targetFolderKey = (entry.originalFolderKey || entry.item.date || new Date().toISOString().slice(0, 10)).trim();
+                    const existingFolderItems = getOrderedItemsInFolder(targetFolderKey);
+
+                    let restoredCreatedAtMs = Number(entry.item.createdAtMs || Date.now());
+                    if (existingFolderItems.length > 0) {
+                        const desiredIdx = Math.max(0, Math.min(Number(entry.originalIndex || 0), existingFolderItems.length));
+                        if (desiredIdx === 0) {
+                            restoredCreatedAtMs = Number(existingFolderItems[0].createdAtMs || Date.now()) + 1000;
+                        } else if (desiredIdx >= existingFolderItems.length) {
+                            restoredCreatedAtMs = Number(existingFolderItems[existingFolderItems.length - 1].createdAtMs || Date.now()) - 1000;
+                        } else {
+                            const aboveMs = Number(existingFolderItems[desiredIdx - 1].createdAtMs || Date.now());
+                            const belowMs = Number(existingFolderItems[desiredIdx].createdAtMs || Date.now());
+                            restoredCreatedAtMs = Math.floor((aboveMs + belowMs) / 2);
+                            if (restoredCreatedAtMs === aboveMs || restoredCreatedAtMs === belowMs) {
+                                restoredCreatedAtMs = aboveMs - 1;
+                            }
+                        }
+                    }
+
+                    if (targetFolderKey && !rtdbFolders[targetFolderKey]) {
+                        await set(ref(rtdb, `magazineFolders/${targetFolderKey}`), {
+                            date: targetFolderKey,
+                            title: formatDateDDMMYYYY(targetFolderKey),
+                            coverUrl: "",
+                            description: "",
+                            updatedAtMs: Date.now()
+                        });
+                    }
+
+                    const restoredItem = {
+                        id: entry.item.id,
+                        date: targetFolderKey,
+                        mediaType: entry.item.mediaType === "video" ? "video" : "image",
+                        title: entry.item.title || "",
+                        category: entry.item.category || "Memory",
+                        mediaUrl: entry.item.mediaUrl || "",
+                        description: entry.item.description || "",
+                        createdAtMs: restoredCreatedAtMs,
+                        updatedAtMs: Date.now()
+                    };
+
+                    await set(ref(rtdb, `magazineItems/${restoredItem.id}`), restoredItem);
+                    await remove(ref(rtdb, `magazineRecentlyDeleted/${entry.trashId}`));
+                }
+                setDbStatus("Restored all items from Recently Deleted", "ok");
+            } catch (err) {
+                setDbStatus(formatFirebaseError(err, "Failed to restore all items."), "error");
+            }
+        }
+
+        function openPermanentDeleteItemModal(trashId) {
+            const entry = rtdbRecentlyDeleted.find(e => e.trashId === trashId);
+            if (!entry) return;
+            const itemTitle = (entry.item && entry.item.title) || "this item";
+
+            deleteActionMode = "permanent_single";
+            pendingPermanentId = entry.trashId;
+            pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
             deleteFormError.classList.add("hidden");
 
-            deleteConfirmMsg.textContent = itemCount > 0
-                ? `Delete folder "${folderLabel}" and its ${itemCount} item(s)? This cannot be undone.`
-                : `Delete folder "${folderLabel}"? This cannot be undone.`;
+            deleteConfirmTitle.textContent = "Permanently Delete?";
+            deleteConfirmMsg.textContent = `Permanently delete "${itemTitle}" from Recently Deleted? This cannot be undone.`;
+            confirmDeleteFolderBtn.textContent = "Delete Forever";
 
             editFolderForm.classList.add("hidden");
             editItemForm.classList.add("hidden");
@@ -550,37 +820,175 @@
             editModal.classList.remove("hidden");
         }
 
-        async function executeDeleteFolder() {
-            const keyToDelete = pendingDeleteFolderKey;
-            if (!keyToDelete) return;
+        function openPermanentDeleteAllModal() {
+            if (!rtdbRecentlyDeleted.length) return;
+
+            deleteActionMode = "permanent_all";
+            pendingPermanentId = null;
+            pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            deleteFormError.classList.add("hidden");
+
+            deleteConfirmTitle.textContent = "Delete All Permanently?";
+            deleteConfirmMsg.textContent = `Permanently delete all ${rtdbRecentlyDeleted.length} item(s) from Recently Deleted? This cannot be undone.`;
+            confirmDeleteFolderBtn.textContent = "Delete All";
+
+            editFolderForm.classList.add("hidden");
+            editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.remove("hidden");
+            editModal.classList.remove("hidden");
+        }
+
+        function openDeleteFolderModal(event, folderKey) {
+            event.stopPropagation();
+            const meta = rtdbFolders[folderKey] || {};
+            const folderItems = getOrderedItemsInFolder(folderKey);
+            const formattedDate = formatDateDDMMYYYY(folderKey);
+            const folderLabel = meta.title ? `${meta.title} (${formattedDate})` : formattedDate;
+
+            deleteActionMode = "folder";
+            pendingDeleteFolderKey = folderKey;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
+            editingFolderKey = null;
+            isCreatingFolder = false;
+            editingItemId = null;
+            addingToFolderDate = null;
+            deleteFormError.classList.add("hidden");
+
+            deleteConfirmTitle.textContent = "Delete Folder?";
+            deleteConfirmMsg.textContent = folderItems.length > 0
+                ? `Delete folder "${folderLabel}"? Its ${folderItems.length} item(s) will be moved to Recently Deleted.`
+                : `Delete folder "${folderLabel}"?`;
+            confirmDeleteFolderBtn.textContent = "Delete";
+
+            editFolderForm.classList.add("hidden");
+            editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.remove("hidden");
+            editModal.classList.remove("hidden");
+        }
+
+        function openDeleteSingleItemModal(event, itemId, folderKey) {
+            event.stopPropagation();
+            const item = rtdbItems.find(p => p.id === itemId);
+            if (!item) return;
+
+            deleteActionMode = "single_item";
+            pendingDeleteItemId = item.id;
+            pendingDeleteFolderKey = folderKey || (item.date || "").trim();
+            pendingPermanentId = null;
+            editingFolderKey = null;
+            isCreatingFolder = false;
+            editingItemId = null;
+            addingToFolderDate = null;
+            deleteFormError.classList.add("hidden");
+
+            deleteConfirmTitle.textContent = "Delete Post?";
+            deleteConfirmMsg.textContent = `Move "${item.title || "this post"}" to Recently Deleted? You can restore it anytime.`;
+            confirmDeleteFolderBtn.textContent = "Delete";
+
+            editFolderForm.classList.add("hidden");
+            editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.remove("hidden");
+            editModal.classList.remove("hidden");
+        }
+
+        function openDeleteAllFolderItemsModal(event, folderKey) {
+            event.stopPropagation();
+            const folderItems = getOrderedItemsInFolder(folderKey);
+            if (!folderItems.length) return;
+
+            deleteActionMode = "all_folder_items";
+            pendingDeleteFolderKey = folderKey;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
+            editingFolderKey = null;
+            isCreatingFolder = false;
+            editingItemId = null;
+            addingToFolderDate = null;
+            deleteFormError.classList.add("hidden");
+
+            deleteConfirmTitle.textContent = "Delete All Posts?";
+            deleteConfirmMsg.textContent = `Move all ${folderItems.length} item(s) in ${formatDateDDMMYYYY(folderKey)} to Recently Deleted?`;
+            confirmDeleteFolderBtn.textContent = "Delete All";
+
+            editFolderForm.classList.add("hidden");
+            editItemForm.classList.add("hidden");
+            deleteConfirmForm.classList.remove("hidden");
+            editModal.classList.remove("hidden");
+        }
+
+        async function executeDeleteAction() {
+            const mode = deleteActionMode;
+            if (!mode) return;
 
             confirmDeleteFolderBtn.disabled = true;
             deleteFormError.classList.add("hidden");
 
             try {
-                const folderItems = rtdbItems.filter(it => (it.date || "").trim() === keyToDelete);
-                for (const item of folderItems) {
-                    await remove(ref(rtdb, `magazineItems/${item.id}`));
-                }
-                if (rtdbFolders[keyToDelete]) {
-                    await remove(ref(rtdb, `magazineFolders/${keyToDelete}`));
-                }
-
-                if (activeFolderKey === keyToDelete) {
-                    activeFolderKey = null;
+                if (mode === "folder") {
+                    const keyToDelete = pendingDeleteFolderKey;
+                    const folderItems = getOrderedItemsInFolder(keyToDelete);
+                    for (let i = 0; i < folderItems.length; i++) {
+                        await moveItemToRecentlyDeleted(folderItems[i], keyToDelete, i, folderItems.length);
+                    }
+                    if (rtdbFolders[keyToDelete]) {
+                        await remove(ref(rtdb, `magazineFolders/${keyToDelete}`));
+                    }
+                    if (activeFolderKey === keyToDelete) {
+                        activeFolderKey = null;
+                        scaledItemId = null;
+                        fullscreenFolderKey = null;
+                        fullscreenItemId = null;
+                        syncFolderStorage();
+                        syncFullscreenUI();
+                    }
+                    setDbStatus(`Moved ${folderItems.length} item(s) to Recently Deleted & removed folder ${formatDateDDMMYYYY(keyToDelete)}`, "ok");
+                } else if (mode === "single_item") {
+                    const targetFolder = pendingDeleteFolderKey || "";
+                    const folderItems = getOrderedItemsInFolder(targetFolder);
+                    const idx = folderItems.findIndex(it => it.id === pendingDeleteItemId);
+                    const item = idx >= 0 ? folderItems[idx] : rtdbItems.find(it => it.id === pendingDeleteItemId);
+                    if (item) {
+                        await moveItemToRecentlyDeleted(item, targetFolder || (item.date || "").trim(), Math.max(0, idx), Math.max(1, folderItems.length));
+                        if (scaledItemId === item.id) scaledItemId = null;
+                        if (fullscreenItemId === item.id) {
+                            fullscreenItemId = null;
+                            fullscreenFolderKey = null;
+                            syncFullscreenUI();
+                        }
+                        setDbStatus(`Moved "${item.title}" to Recently Deleted`, "ok");
+                    }
+                } else if (mode === "all_folder_items") {
+                    const keyToDelete = pendingDeleteFolderKey;
+                    const folderItems = getOrderedItemsInFolder(keyToDelete);
+                    for (let i = 0; i < folderItems.length; i++) {
+                        await moveItemToRecentlyDeleted(folderItems[i], keyToDelete, i, folderItems.length);
+                    }
                     scaledItemId = null;
-                    fullscreenFolderKey = null;
-                    fullscreenItemId = null;
-                    syncFolderStorage();
-                    syncFullscreenUI();
+                    if (fullscreenFolderKey === keyToDelete) {
+                        fullscreenItemId = null;
+                        fullscreenFolderKey = null;
+                        syncFullscreenUI();
+                    }
+                    setDbStatus(`Moved all ${folderItems.length} item(s) to Recently Deleted`, "ok");
+                } else if (mode === "permanent_single") {
+                    if (pendingPermanentId) {
+                        await remove(ref(rtdb, `magazineRecentlyDeleted/${pendingPermanentId}`));
+                        setDbStatus("Permanently deleted item from Recently Deleted", "ok");
+                    }
+                } else if (mode === "permanent_all") {
+                    for (const entry of [...rtdbRecentlyDeleted]) {
+                        await remove(ref(rtdb, `magazineRecentlyDeleted/${entry.trashId}`));
+                    }
+                    setDbStatus("Permanently deleted all items from Recently Deleted", "ok");
                 }
 
                 confirmDeleteFolderBtn.disabled = false;
                 closeEditModal();
-                setDbStatus(`Deleted folder ${formatDateDDMMYYYY(keyToDelete)}`, "ok");
             } catch (err) {
                 confirmDeleteFolderBtn.disabled = false;
-                const msg = formatFirebaseError(err, "Failed to delete folder.");
+                const msg = formatFirebaseError(err, "Failed to complete delete action.");
                 deleteFormError.textContent = msg;
                 deleteFormError.classList.remove("hidden");
                 setDbStatus(msg, "error");
@@ -593,7 +1001,10 @@
             editingFolderKey = null;
             isCreatingFolder = false;
             addingToFolderDate = folderKey;
+            deleteActionMode = null;
             pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
 
             itemModalTitle.textContent = "Add Item to Folder";
             saveItemEditBtn.textContent = "Add Item";
@@ -623,10 +1034,13 @@
             editingFolderKey = null;
             isCreatingFolder = false;
             addingToFolderDate = null;
+            deleteActionMode = null;
             pendingDeleteFolderKey = null;
+            pendingDeleteItemId = null;
+            pendingPermanentId = null;
 
             itemModalTitle.textContent = "Edit Item";
-            saveItemEditBtn.textContent = "Save Item";
+            saveItemEditBtn.textContent = "Update Item";
             itemFormError.classList.add("hidden");
 
             editItemDate.value = item.date || "";
@@ -641,6 +1055,7 @@
             deleteConfirmForm.classList.add("hidden");
             editItemForm.classList.remove("hidden");
             editModal.classList.remove("hidden");
+            editItemTitle.focus();
         }
 
         async function saveItemEdit() {
@@ -885,6 +1300,11 @@
         window.addEventListener("popstate", () => {
             ensureBackAnchor();
 
+            if (!recentlyDeletedModal.classList.contains("hidden")) {
+                closeRecentlyDeletedModal();
+                return;
+            }
+
             if (!editModal.classList.contains("hidden")) {
                 closeEditModal();
                 return;
@@ -944,13 +1364,18 @@
         document.getElementById("fs-prev-btn").addEventListener("click", () => stepFullscreenItem(-1));
         document.getElementById("fs-next-btn").addEventListener("click", () => stepFullscreenItem(1));
 
+        recentlyDeletedBtn.addEventListener("click", openRecentlyDeletedModal);
+        closeRecentlyDeletedBtn.addEventListener("click", closeRecentlyDeletedModal);
+        restoreAllDeletedBtn.addEventListener("click", restoreAllDeletedItems);
+        deleteAllRecentlyDeletedBtn.addEventListener("click", openPermanentDeleteAllModal);
+
         document.getElementById("new-folder-btn").addEventListener("click", openNewFolderModal);
         document.getElementById("close-folder-edit-btn").addEventListener("click", closeEditModal);
         document.getElementById("close-item-edit-btn").addEventListener("click", closeEditModal);
         document.getElementById("close-delete-confirm-btn").addEventListener("click", closeEditModal);
         document.getElementById("cancel-delete-folder-btn").addEventListener("click", closeEditModal);
         document.getElementById("save-folder-edit-btn").addEventListener("click", saveFolderEdit);
-        confirmDeleteFolderBtn.addEventListener("click", executeDeleteFolder);
+        confirmDeleteFolderBtn.addEventListener("click", executeDeleteAction);
         saveItemEditBtn.addEventListener("click", saveItemEdit);
 
         editFolderDate.addEventListener("input", updateDatePreviews);
@@ -966,6 +1391,10 @@
 
         window.openEditFolderModal = openEditFolderModal;
         window.openDeleteFolderModal = openDeleteFolderModal;
+        window.openDeleteSingleItemModal = openDeleteSingleItemModal;
+        window.openDeleteAllFolderItemsModal = openDeleteAllFolderItemsModal;
+        window.openPermanentDeleteItemModal = openPermanentDeleteItemModal;
+        window.restoreDeletedItem = restoreDeletedItem;
         window.openAddItemModal = openAddItemModal;
         window.openEditItemModal = openEditItemModal;
         window.selectFolder = selectFolder;
@@ -1008,9 +1437,10 @@
                     <div class="p-3">
                         <div class="flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-blue-400">
                             <span>${safeCategory}</span>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5">
                                 <span class="text-white/45 font-normal">${mediaType}</span>
                                 <button type="button" onclick="openEditItemModal(event, '${safeId}')" class="px-2 py-0.5 rounded bg-blue-600/25 text-blue-300 border border-blue-400/30">Edit</button>
+                                <button type="button" onclick="openDeleteSingleItemModal(event, '${safeId}', '${safeFolder}')" class="px-2 py-0.5 rounded bg-rose-600/25 text-rose-300 border border-rose-400/30">Delete</button>
                             </div>
                         </div>
                         <h3 class="text-base font-extrabold text-white leading-snug mt-0.5">${safeTitle}</h3>
@@ -1040,7 +1470,10 @@
                     <div class="p-1.5 flex-1">
                         <div class="flex items-center justify-between gap-1 text-[9px] font-bold uppercase text-blue-400">
                             <span class="truncate">${safeCategory}</span>
-                            <button type="button" onclick="openEditItemModal(event, '${safeId}')" class="px-1.5 py-0.5 rounded bg-blue-600/25 text-blue-300 shrink-0">Edit</button>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" onclick="openEditItemModal(event, '${safeId}')" class="px-1.5 py-0.5 rounded bg-blue-600/25 text-blue-300">Edit</button>
+                                <button type="button" onclick="openDeleteSingleItemModal(event, '${safeId}', '${safeFolder}')" class="px-1.5 py-0.5 rounded bg-rose-600/25 text-rose-300">Delete</button>
+                            </div>
                         </div>
                         <div class="text-[10px] font-bold text-white leading-tight truncate mt-0.5">${safeTitle}</div>
                     </div>
@@ -1080,6 +1513,14 @@
                     </article>`;
             }
 
+            const deleteAllBar = `
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] uppercase tracking-wider font-semibold text-white/50">Items in Folder (${folder.items.length})</span>
+                    <button type="button" onclick="openDeleteAllFolderItemsModal(event, '${safeFolderKey}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border border-rose-400/35 transition">
+                        Delete All
+                    </button>
+                </div>`;
+
             const scaledItem = scaledItemId ? folder.items.find(i => i.id === scaledItemId) : null;
             const gridItems = scaledItem ? folder.items.filter(i => i.id !== scaledItem.id) : folder.items;
 
@@ -1094,6 +1535,7 @@
                         <span class="text-xs font-extrabold uppercase tracking-wider text-blue-400">${safeDate}</span>
                         ${folderActions}
                     </div>
+                    ${deleteAllBar}
                     ${scaledHtml}
                     ${gridHtml}
                 </article>`;
@@ -1201,7 +1643,8 @@
                     category: (data && data.category) || "Memory",
                     mediaUrl: (data && data.mediaUrl) || "",
                     description: (data && data.description) || "",
-                    createdAtMs: Number((data && data.createdAtMs) || 0)
+                    createdAtMs: Number((data && data.createdAtMs) || 0),
+                    updatedAtMs: Number((data && data.updatedAtMs) || 0)
                 }));
                 list.sort((a, b) => b.createdAtMs - a.createdAtMs);
                 rtdbItems = list;
@@ -1211,6 +1654,30 @@
             },
             (err) => {
                 setDbStatus(formatFirebaseError(err, "Realtime DB items read error"), "error");
+            }
+        );
+
+        onValue(
+            recentlyDeletedRef,
+            (snap) => {
+                const raw = snap.val() || {};
+                const list = Object.entries(raw).map(([key, data]) => ({
+                    trashId: (data && data.trashId) || key,
+                    item: (data && data.item) || {},
+                    originalFolderKey: (data && data.originalFolderKey) || "",
+                    originalIndex: Number((data && data.originalIndex) || 0),
+                    originalCountInFolder: Number((data && data.originalCountInFolder) || 1),
+                    deletedAtMs: Number((data && data.deletedAtMs) || 0)
+                }));
+                list.sort((a, b) => b.deletedAtMs - a.deletedAtMs);
+                rtdbRecentlyDeleted = list;
+                updateRecentlyDeletedBadge();
+                if (!recentlyDeletedModal.classList.contains("hidden")) {
+                    renderRecentlyDeletedList();
+                }
+            },
+            (err) => {
+                setDbStatus(formatFirebaseError(err, "Realtime DB recently deleted read error"), "error");
             }
         );
 
