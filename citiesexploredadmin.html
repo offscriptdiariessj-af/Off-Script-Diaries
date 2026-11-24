@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Cities Admin — Off Script Diaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #121417; color: #F8FAFC; }
+
+        @keyframes osdOrbitSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes osdOrbitReverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes osdCorePulse {
+            0%, 100% { transform: scale(0.94); opacity: 0.75; }
+            50% { transform: scale(1.06); opacity: 1; }
+        }
+        @keyframes osdShimmerSlide {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(260%); }
+        }
+        @keyframes osdFloatUp {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .osd-ring-outer {
+            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .osd-ring-inner {
+            animation: osdOrbitReverse 1.9s linear infinite;
+        }
+        .osd-core-glow {
+            animation: osdCorePulse 2.2s ease-in-out infinite;
+        }
+        .osd-shimmer-bar {
+            animation: osdShimmerSlide 1.55s ease-in-out infinite;
+        }
+        .osd-float {
+            animation: osdFloatUp 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased pb-20 overflow-hidden">
+
+    <!-- LOADING SCREEN (SHOWN UNTIL FIREBASE LOADS) -->
+    <div id="osd-admin-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
+            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
+                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
+                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
+                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
+                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
+                </div>
+            </div>
+
+            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
+            <h2 id="admin-preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p class="text-xs text-white/50 mt-1">Our story is loading</p>
+
+            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
+                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN SHELL (HIDDEN UNTIL FIREBASE LOADS) -->
+    <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
+
+        <!-- HEADER -->
+        <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
+            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <a href="citiesexplored.html" class="w-9 h-9 rounded-full bg-[#1E2126] border border-white/10 flex items-center justify-center text-xs text-white/80 hover:text-blue-400 shrink-0 transition" title="View Cities Page">←</a>
+                    <div class="truncate">
+                        <h1 class="text-sm font-bold text-white truncate">Cities Explored Admin 🇮🇳</h1>
+                        <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <a href="admin.html" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold">Admin</a>
+                    <button type="button" onclick="saveCitiesToFirebase()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">Save</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOAST -->
+        <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
+            Saved!
+        </div>
+
+        <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+
+            <!-- PAGE HEADER SETTINGS -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-white">Page Header</h2>
+                    <span class="text-xs font-extrabold text-blue-400">Total: <span id="cities-total-count">0</span></span>
+                </div>
+                <input id="inp-cities-heading" type="text" placeholder="Heading (e.g. Cities Explored)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-cities-desc" type="text" placeholder="Subtitle / Description" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            </section>
+
+            <!-- ADD NEW CITY FORM -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm font-bold text-white">Add City</h2>
+
+                <div class="flex items-center gap-3.5">
+                    <img id="new-city-round-preview" src="" alt="Round Cover Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400/60 bg-[#121417] shrink-0" />
+                    <div class="flex-1 space-y-2">
+                        <input id="new-city-name" type="text" placeholder="City name (manual, e.g. Jaipur)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="new-city-title" type="text" placeholder="Title (e.g. Pink City Sunset)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] text-blue-400 mb-1">Round Cover Picture Media Link</label>
+                    <input id="new-city-cover" type="text" oninput="updateNewCityCoverPreview()" placeholder="Google Drive link or image URL" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+
+                <div>
+                    <label class="block text-[11px] text-white/70 mb-1">Description</label>
+                    <textarea id="new-city-desc" rows="2" placeholder="Write description..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                </div>
+
+                <button type="button" onclick="addCityEntry()" class="w-full h-10 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-bold transition">
+                    + Add City
+                </button>
+            </section>
+
+            <!-- EXISTING CITIES EDITOR -->
+            <section class="space-y-3">
+                <h2 class="text-sm font-bold text-white px-1">Saved Cities</h2>
+                <div id="cities-editor-list" class="space-y-3"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/store.js"></script>
+    <script>
+        let rtdbSiteData = null;
+        let citiesItems = [];
+        let hasLoadedFromFirebase = false;
+        const statusEl = document.getElementById('admin-db-status');
+
+        function revealAdminAfterFirebaseLoad() {
+            if (hasLoadedFromFirebase) return;
+            hasLoadedFromFirebase = true;
+
+            const preloader = document.getElementById('osd-admin-preloader');
+            const shell = document.getElementById('osd-admin-shell');
+
+            document.body.classList.remove('overflow-hidden');
+            if (shell) {
+                shell.classList.remove('opacity-0', 'pointer-events-none');
+                shell.classList.add('opacity-100');
+            }
+            if (preloader) {
+                preloader.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => preloader.remove(), 520);
+            }
+        }
+
+        function setAdminStatus(text, isError = false) {
+            if (!statusEl) return;
+            statusEl.textContent = text;
+            statusEl.className = isError
+                ? 'text-[10px] text-rose-400 truncate'
+                : 'text-[10px] text-blue-400 truncate';
+        }
+
+        function showToast(msg = 'Saved to Firebase!') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
+        }
+
+        function extractDriveFileId(rawUrl = '') {
+            const url = String(rawUrl || '').trim();
+            if (!url) return '';
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
+            }
+            return '';
+        }
+
+        function resolveRoundCoverUrl(rawUrl) {
+            const cleaned = String(rawUrl || '').trim();
+            if (!cleaned) return '';
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === 'function') {
+                const storeResult = parseDriveMedia(cleaned, 'image');
+                if (storeResult && typeof storeResult === 'string') {
+                    parsed = storeResult.trim();
+                }
+            }
+            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+            if (driveId) {
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+            }
+            return parsed;
+        }
+
+        function escapeAttr(val = '') {
+            return String(val || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function normalizeCitiesList(rawList) {
+            if (!rawList) return [];
+            const arr = Array.isArray(rawList)
+                ? rawList
+                : (typeof rawList === 'object' ? Object.values(rawList) : []);
+            return arr
+                .map((item, idx) => {
+                    if (typeof item === 'string') {
+                        const name = item.trim();
+                        if (!name) return null;
+                        return { id: `city_${idx}`, name, title: '', description: '', coverUrl: '' };
+                    }
+                    if (!item || typeof item !== 'object') return null;
+                    const name = String(item.name || item.city || '').trim();
+                    const title = String(item.title || '').trim();
+                    const description = String(item.description || item.note || item.desc || '').trim();
+                    const coverUrl = String(item.coverUrl || item.image || item.photoUrl || '').trim();
+                    if (!name && !title && !description && !coverUrl) return null;
+                    return {
+                        id: String(item.id || `city_${idx}`),
+                        name,
+                        title,
+                        description,
+                        coverUrl
+                    };
+                })
+                .filter(Boolean);
+        }
+
+        function updateTotalCountDisplay() {
+            const el = document.getElementById('cities-total-count');
+            if (el) el.textContent = String(citiesItems.length);
+        }
+
+        function updateNewCityCoverPreview() {
+            const inputVal = document.getElementById('new-city-cover').value;
+            const imgEl = document.getElementById('new-city-round-preview');
+            imgEl.src = resolveRoundCoverUrl(inputVal);
+        }
+
+        function renderCitiesEditor() {
+            updateTotalCountDisplay();
+            const listEl = document.getElementById('cities-editor-list');
+            if (!listEl) return;
+
+            if (citiesItems.length === 0) {
+                listEl.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] border border-white/10 text-center text-xs text-white/50">No cities added yet.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = citiesItems.map((city, idx) => {
+                const roundSrc = resolveRoundCoverUrl(city.coverUrl);
+                return `
+                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img id="city-round-img-${idx}" src="${escapeAttr(roundSrc)}" alt="${escapeAttr(city.title || city.name || 'City')}" class="w-12 h-12 rounded-full object-cover aspect-square border border-blue-400/50 bg-[#121417] shrink-0" />
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 truncate">0${idx + 1} • ${escapeAttr(city.name || 'City')}</span>
+                        </div>
+                        <button type="button" onclick="removeCityEntry(${idx})" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 shrink-0">Remove</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" value="${escapeAttr(city.name)}" oninput="updateCityField(${idx}, 'name', this.value)" placeholder="City name" class="h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input type="text" value="${escapeAttr(city.title)}" oninput="updateCityField(${idx}, 'title', this.value)" placeholder="Title" class="h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    </div>
+
+                    <input type="text" value="${escapeAttr(city.coverUrl)}" oninput="updateCityCover(${idx}, this.value)" placeholder="Round cover picture media link" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+
+                    <textarea rows="2" oninput="updateCityField(${idx}, 'description', this.value)" placeholder="Description" class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs">${escapeAttr(city.description)}</textarea>
+                </div>`;
+            }).join('');
+        }
+
+        function updateCityField(idx, field, val) {
+            if (!citiesItems[idx]) return;
+            citiesItems[idx][field] = val;
+        }
+
+        function updateCityCover(idx, val) {
+            if (!citiesItems[idx]) return;
+            citiesItems[idx].coverUrl = val;
+            const imgEl = document.getElementById(`city-round-img-${idx}`);
+            if (imgEl) imgEl.src = resolveRoundCoverUrl(val);
+        }
+
+        function removeCityEntry(idx) {
+            citiesItems.splice(idx, 1);
+            renderCitiesEditor();
+        }
+
+        function addCityEntry() {
+            const nameEl = document.getElementById('new-city-name');
+            const titleEl = document.getElementById('new-city-title');
+            const coverEl = document.getElementById('new-city-cover');
+            const descEl = document.getElementById('new-city-desc');
+
+            const name = nameEl.value.trim();
+            const title = titleEl.value.trim();
+            const coverUrl = coverEl.value.trim();
+            const description = descEl.value.trim();
+
+            if (!name && !title && !description && !coverUrl) return;
+
+            citiesItems.push({
+                id: `city_${Date.now()}`,
+                name,
+                title,
+                description,
+                coverUrl
+            });
+
+            nameEl.value = '';
+            titleEl.value = '';
+            coverEl.value = '';
+            descEl.value = '';
+            updateNewCityCoverPreview();
+            renderCitiesEditor();
+        }
+
+        function hydrateFromSiteData(rawData) {
+            const src = rawData && typeof rawData === 'object' ? rawData : {};
+            const sections = src.sections && typeof src.sections === 'object' ? src.sections : {};
+            const telemetry = sections.telemetry && typeof sections.telemetry === 'object' ? sections.telemetry : {};
+            const explored = sections.explored && typeof sections.explored === 'object' ? sections.explored : {};
+
+            document.getElementById('inp-cities-heading').value = explored.citiesHeading || '';
+            document.getElementById('inp-cities-desc').value = explored.citiesDescription || '';
+
+            citiesItems = normalizeCitiesList(
+                explored.citiesList ||
+                sections.citiesExploredList ||
+                sections.citiesList ||
+                telemetry.citiesList
+            );
+
+            renderCitiesEditor();
+        }
+
+        window.updateNewCityCoverPreview = updateNewCityCoverPreview;
+        window.addCityEntry = addCityEntry;
+        window.removeCityEntry = removeCityEntry;
+        window.updateCityField = updateCityField;
+        window.updateCityCover = updateCityCover;
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
+            authDomain: "offscript-3cf92.firebaseapp.com",
+            databaseURL: "https://offscript-3cf92-default-rtdb.firebaseio.com",
+            projectId: "offscript-3cf92",
+            storageBucket: "offscript-3cf92.firebasestorage.app",
+            messagingSenderId: "887672343934",
+            appId: "1:887672343934:web:c457cea9a21b696b60f72f",
+            measurementId: "G-ZDWB2367X1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const rtdb = getDatabase(app, firebaseConfig.databaseURL);
+        const siteDataRef = ref(rtdb, "siteContent");
+
+        async function saveCitiesToFirebase() {
+            const base = rtdbSiteData && typeof rtdbSiteData === "object"
+                ? JSON.parse(JSON.stringify(rtdbSiteData))
+                : {};
+            if (!base.sections || typeof base.sections !== "object") base.sections = {};
+            if (!base.sections.explored || typeof base.sections.explored !== "object") base.sections.explored = {};
+            if (!base.sections.telemetry || typeof base.sections.telemetry !== "object") base.sections.telemetry = {};
+
+            const cleanedCities = citiesItems
+                .map((item, idx) => ({
+                    id: item.id || `city_${idx}`,
+                    name: String(item.name || "").trim(),
+                    title: String(item.title || "").trim(),
+                    description: String(item.description || "").trim(),
+                    coverUrl: String(item.coverUrl || "").trim()
+                }))
+                .filter(c => c.name || c.title || c.description || c.coverUrl);
+
+            base.sections.explored.citiesHeading = document.getElementById("inp-cities-heading").value.trim();
+            base.sections.explored.citiesDescription = document.getElementById("inp-cities-desc").value.trim();
+            base.sections.explored.citiesList = cleanedCities;
+            base.sections.telemetry.citiesExplored = String(cleanedCities.length);
+            base.updatedAtMs = Date.now();
+
+            try {
+                await set(siteDataRef, base);
+                rtdbSiteData = base;
+                citiesItems = cleanedCities;
+                renderCitiesEditor();
+                setAdminStatus("Firebase Live • Cities saved");
+                showToast("Cities saved to Firebase!");
+            } catch (err) {
+                setAdminStatus(`Firebase save error: ${err.message || "Failed"}`, true);
+                showToast("Save failed!");
+            }
+        }
+
+        window.saveCitiesToFirebase = saveCitiesToFirebase;
+
+        onValue(
+            siteDataRef,
+            (snap) => {
+                const val = snap.val();
+                rtdbSiteData = val && typeof val === "object" ? val : {};
+                revealAdminAfterFirebaseLoad();
+                hydrateFromSiteData(rtdbSiteData);
+                setAdminStatus("Firebase Live • Cities Explored");
+            },
+            (err) => {
+                const preStatus = document.getElementById("admin-preloader-status");
+                if (preStatus) preStatus.textContent = "Unable to load from Firebase";
+                setAdminStatus(`Firebase read error: ${err.message || "Error"}`, true);
+            }
+        );
+    </script>
+</body>
+</html>
