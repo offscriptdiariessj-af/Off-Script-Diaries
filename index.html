@@ -257,6 +257,7 @@
         let backExitArmed = false;
         let backExitTimer = null;
         let togetherTimer = null;
+        let rtdbMagazineFolders = [];
 
         function formatTogetherLive() {
             const now = new Date();
@@ -378,6 +379,72 @@
             exitSiteCompletely();
         });
 
+        function formatFolderDateDDMMYYYY(rawDate = '') {
+            const clean = String(rawDate || '').trim();
+            if (!clean) return '';
+            const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (isoMatch) {
+                return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+            }
+            return clean;
+        }
+
+        function extractDriveFileId(rawUrl = '') {
+            const url = String(rawUrl || '').trim();
+            if (!url) return '';
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
+            }
+            return '';
+        }
+
+        function resolveFolderCoverSrc(rawUrl) {
+            const cleaned = String(rawUrl || '').trim();
+            if (!cleaned) return '';
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === 'function') {
+                const storeResult = parseDriveMedia(cleaned, 'image');
+                if (storeResult && typeof storeResult === 'string') {
+                    parsed = storeResult.trim();
+                }
+            }
+            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+            if (driveId) {
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+            }
+            return parsed;
+        }
+
+        function renderMagazineRail() {
+            const railEl = document.getElementById('home-magazine-rail');
+            if (!railEl) return;
+            railEl.innerHTML = rtdbMagazineFolders.map(folder => {
+                const media = resolveFolderCoverSrc(folder.coverUrl);
+                const visual = media
+                    ? `<img src="${media}" alt="${folder.title || folder.dateDisplay}" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-[10px] text-white/40">No Cover</div>`;
+                return `
+                <a href="emagazine.html" class="snap-start shrink-0 w-64 rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden block">
+                    <div class="h-36 bg-black">${visual}</div>
+                    <div class="p-3.5">
+                        <div class="flex justify-between text-[10px] font-bold uppercase text-blue-400">
+                            <span>FOLDER</span>
+                            <span class="text-white/45">${folder.dateDisplay}</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-1 truncate">${folder.title || folder.dateDisplay}</h4>
+                        <p class="text-xs text-white/65 mt-1 line-clamp-2">${folder.description || ''}</p>
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
         function renderIndexPage() {
             const data = getOSDData();
             const logoSrc = parseDriveMedia(data.brand.logoUrl, 'image');
@@ -412,24 +479,7 @@
 
             document.getElementById('mag-heading').textContent = data.sections.magazineSpotlight.heading;
             document.getElementById('mag-desc').textContent = data.sections.magazineSpotlight.description;
-            document.getElementById('home-magazine-rail').innerHTML = data.posts.map(post => {
-                const media = parseDriveMedia(post.mediaUrl, post.mediaType);
-                const visual = post.mediaType === 'video'
-                    ? `<iframe src="${media}" class="w-full h-full border-0" allow="autoplay; fullscreen"></iframe>`
-                    : `<img src="${media}" alt="${post.title}" class="w-full h-full object-cover" />`;
-                return `
-                <a href="emagazine.html" class="snap-start shrink-0 w-64 rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden block">
-                    <div class="h-36 bg-black">${visual}</div>
-                    <div class="p-3.5">
-                        <div class="flex justify-between text-[10px] font-bold uppercase text-blue-400">
-                            <span>${post.category || 'DIARY'}</span>
-                            <span class="text-white/45">${post.date}</span>
-                        </div>
-                        <h4 class="text-sm font-bold text-white mt-1 truncate">${post.title}</h4>
-                        <p class="text-xs text-white/65 mt-1 line-clamp-2">${post.description}</p>
-                    </div>
-                </a>`;
-            }).join('');
+            renderMagazineRail();
 
             const bucketHtml = data.sections.bucketList.map(item => `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#121417]/70 border border-white/5 text-xs">
@@ -513,6 +563,45 @@
         window.addEventListener('hashchange', () => switchIndexMode(getSavedMode(), false));
         window.addEventListener('storage', renderIndexPage);
         window.addEventListener('osd_data_updated', renderIndexPage);
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
+            authDomain: "offscript-3cf92.firebaseapp.com",
+            databaseURL: "https://offscript-3cf92-default-rtdb.firebaseio.com",
+            projectId: "offscript-3cf92",
+            storageBucket: "offscript-3cf92.firebasestorage.app",
+            messagingSenderId: "887672343934",
+            appId: "1:887672343934:web:c457cea9a21b696b60f72f",
+            measurementId: "G-ZDWB2367X1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const rtdb = getDatabase(app, firebaseConfig.databaseURL);
+        const foldersRef = ref(rtdb, "magazineFolders");
+
+        onValue(foldersRef, (snap) => {
+            const raw = snap.val() || {};
+            const list = Object.entries(raw)
+                .map(([key, data]) => {
+                    const cleanKey = ((data && data.date) || key || "").trim();
+                    if (!cleanKey) return null;
+                    return {
+                        key: cleanKey,
+                        dateDisplay: formatFolderDateDDMMYYYY(cleanKey),
+                        title: ((data && data.title) || "").trim() || formatFolderDateDDMMYYYY(cleanKey),
+                        coverUrl: ((data && data.coverUrl) || "").trim(),
+                        description: ((data && data.description) || "").trim()
+                    };
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.key.localeCompare(a.key));
+            rtdbMagazineFolders = list;
+            renderMagazineRail();
+        });
     </script>
 </body>
 </html>
