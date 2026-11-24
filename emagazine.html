@@ -250,9 +250,9 @@
             }
         }
 
-        function ensureBackAnchor() {
+        function pushViewState(level) {
             try {
-                history.pushState({ osdMagGuard: true }, "", window.location.href);
+                history.pushState({ osdMagLevel: level }, "", window.location.href);
             } catch {}
         }
 
@@ -328,14 +328,16 @@
         }
 
         function selectFolder(folderKey) {
-            activeFolderKey = activeFolderKey === folderKey ? null : folderKey;
+            const opening = activeFolderKey !== folderKey;
+            activeFolderKey = opening ? folderKey : null;
             scaledItemId = null;
             fullscreenFolderKey = null;
             fullscreenItemId = null;
             syncFolderStorage();
             syncFullscreenUI();
             renderMagazine(searchInput.value);
-            if (activeFolderKey) {
+            if (opening) {
+                pushViewState("folder");
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
@@ -348,10 +350,12 @@
                 fullscreenItemId = itemId;
                 syncFolderStorage();
                 syncFullscreenUI();
+                pushViewState("fullscreen");
                 return;
             }
             scaledItemId = itemId;
             renderMagazine(searchInput.value);
+            pushViewState("scaled");
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
@@ -432,16 +436,16 @@
         }
 
         window.addEventListener("popstate", () => {
-            ensureBackAnchor();
-
             if (fullscreenItemId) {
                 exitFullscreenToFolder();
+                pushViewState("scaled");
                 return;
             }
 
             if (scaledItemId) {
                 scaledItemId = null;
                 renderMagazine(searchInput.value);
+                pushViewState("folder");
                 return;
             }
 
@@ -703,8 +707,10 @@
 
         window.addEventListener("DOMContentLoaded", () => {
             try {
-                history.replaceState({ osdMagBase: true }, "", window.location.href);
-                history.pushState({ osdMagGuard: true }, "", window.location.href);
+                history.replaceState({ osdMagLevel: "root" }, "", window.location.href);
+                if (activeFolderKey) {
+                    history.pushState({ osdMagLevel: "folder" }, "", window.location.href);
+                }
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || "0");
