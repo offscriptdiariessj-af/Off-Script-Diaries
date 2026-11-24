@@ -320,8 +320,6 @@
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
         const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
-
-        let togetherStartMs = DEFAULT_TOGETHER_START_MS;
         let currentActiveMode = 'home';
         let backExitArmed = false;
         let backExitTimer = null;
@@ -349,18 +347,9 @@
             }
         }
 
-        function parseStartDateMs(rawDate) {
-            const clean = String(rawDate || '').trim();
-            const iso = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (iso) {
-                return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 0, 0, 0, 0).getTime();
-            }
-            return DEFAULT_TOGETHER_START_MS;
-        }
-
         function formatTogetherLive() {
             const now = new Date();
-            const diffMs = Math.max(0, now.getTime() - togetherStartMs);
+            const diffMs = Math.max(0, now.getTime() - TOGETHER_START_MS);
             const totalSeconds = Math.floor(diffMs / 1000);
             const days = Math.floor(totalSeconds / 86400);
             const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -645,8 +634,6 @@
             const originImgSrc = data.sections.origin.image && typeof parseDriveMedia === 'function'
                 ? parseDriveMedia(data.sections.origin.image, 'image')
                 : (data.sections.origin.image || '');
-
-            togetherStartMs = parseStartDateMs(data.sections.telemetry && data.sections.telemetry.startDate);
 
             document.title = data.brand.siteName || 'Off Script Diaries';
             document.getElementById('nav-logo').src = logoSrc;
