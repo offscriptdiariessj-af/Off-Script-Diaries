@@ -5,219 +5,289 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes osdOrbitSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes osdOrbitReverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes osdCorePulse {
+            0%, 100% { transform: scale(0.94); opacity: 0.75; }
+            50% { transform: scale(1.06); opacity: 1; }
+        }
+        @keyframes osdShimmerSlide {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(260%); }
+        }
+        @keyframes osdFloatUp {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .osd-ring-outer {
+            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .osd-ring-inner {
+            animation: osdOrbitReverse 1.9s linear infinite;
+        }
+        .osd-core-glow {
+            animation: osdCorePulse 2.2s ease-in-out infinite;
+        }
+        .osd-shimmer-bar {
+            animation: osdShimmerSlide 1.55s ease-in-out infinite;
+        }
+        .osd-float {
+            animation: osdFloatUp 3s ease-in-out infinite;
+        }
+    </style>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-24">
+<body class="bg-[#121417] text-white font-sans antialiased pb-24 overflow-hidden">
 
-    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
-        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
-            <div class="min-w-0">
-                <h1 class="text-sm font-bold text-white truncate">Admin Console</h1>
-                <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
+    <!-- HIGH-CRAFT LOADING SCREEN (SHOWN UNTIL FIREBASE DATA LOADS) -->
+    <div id="osd-admin-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
+            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
+                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
+                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
+                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
+                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
+                </div>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-                <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
-                <button type="button" onclick="saveAllChanges()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
-                <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" aria-label="Lock Admin" title="Lock Admin" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                </button>
-                <button type="button" onclick="openSettingsMenu()" aria-label="Settings" title="Settings" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                </button>
+
+            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
+            <h2 id="admin-preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p class="text-xs text-white/50 mt-1">Our story is loading</p>
+
+            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
+                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- SETTINGS DRAWER / MENU (WITH PASSWORD MENU) -->
-    <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
-        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
-            <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <span class="text-sm font-bold text-white">Settings</span>
-                <button type="button" onclick="closeSettingsMenu()" class="text-xs text-white/60 hover:text-white px-2 py-1">Close ✕</button>
+    <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
+
+        <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
+            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <h1 class="text-sm font-bold text-white truncate">Admin Console</h1>
+                    <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
+                    <button type="button" onclick="saveAllChanges()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
+                    <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" aria-label="Lock Admin" title="Lock Admin" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </button>
+                    <button type="button" onclick="openSettingsMenu()" aria-label="Settings" title="Settings" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
+        </header>
 
-            <!-- Menu Item: Password -->
-            <button
-                type="button"
-                onclick="togglePasswordSubmenu()"
-                class="w-full p-3.5 rounded-2xl bg-[#121417] border border-blue-500/30 flex items-center justify-between text-left"
-            >
-                <div>
-                    <div class="text-xs font-bold text-blue-400">Password</div>
-                    <div class="text-[10px] text-white/55">Index & Magazine toggles + password change</div>
+        <!-- SETTINGS DRAWER / MENU (WITH PASSWORD MENU) -->
+        <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
+                <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                    <span class="text-sm font-bold text-white">Settings</span>
+                    <button type="button" onclick="closeSettingsMenu()" class="text-xs text-white/60 hover:text-white px-2 py-1">Close ✕</button>
                 </div>
-                <span id="password-menu-chevron" class="text-xs text-blue-400 font-bold">▾</span>
-            </button>
 
-            <!-- All Password Controls Inside Password Menu -->
-            <div id="password-submenu" class="p-3.5 rounded-2xl bg-[#121417] border border-white/10 space-y-3">
-                <!-- Index Password Toggle -->
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
+                <!-- Menu Item: Password -->
+                <button
+                    type="button"
+                    onclick="togglePasswordSubmenu()"
+                    class="w-full p-3.5 rounded-2xl bg-[#121417] border border-blue-500/30 flex items-center justify-between text-left"
+                >
                     <div>
-                        <div class="text-xs font-semibold text-white">Index Password</div>
-                        <div id="index-lock-label" class="text-[10px] text-blue-400">ON — Required for index</div>
+                        <div class="text-xs font-bold text-blue-400">Password</div>
+                        <div class="text-[10px] text-white/55">Index & Magazine toggles + password change</div>
                     </div>
-                    <button
-                        id="toggle-index-lock-btn"
-                        type="button"
-                        role="switch"
-                        aria-checked="true"
-                        onclick="handleToggleLock('index')"
-                        class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
-                    >
-                        <span id="toggle-index-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                    <span id="password-menu-chevron" class="text-xs text-blue-400 font-bold">▾</span>
+                </button>
+
+                <!-- All Password Controls Inside Password Menu -->
+                <div id="password-submenu" class="p-3.5 rounded-2xl bg-[#121417] border border-white/10 space-y-3">
+                    <!-- Index Password Toggle -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
+                        <div>
+                            <div class="text-xs font-semibold text-white">Index Password</div>
+                            <div id="index-lock-label" class="text-[10px] text-blue-400">ON — Required for index</div>
+                        </div>
+                        <button
+                            id="toggle-index-lock-btn"
+                            type="button"
+                            role="switch"
+                            aria-checked="true"
+                            onclick="handleToggleLock('index')"
+                            class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
+                        >
+                            <span id="toggle-index-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                        </button>
+                    </div>
+
+                    <!-- Magazine Password Toggle -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
+                        <div>
+                            <div class="text-xs font-semibold text-white">Magazine Password</div>
+                            <div id="magazine-lock-label" class="text-[10px] text-blue-400">ON — Required for magazine</div>
+                        </div>
+                        <button
+                            id="toggle-magazine-lock-btn"
+                            type="button"
+                            role="switch"
+                            aria-checked="true"
+                            onclick="handleToggleLock('magazine')"
+                            class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
+                        >
+                            <span id="toggle-magazine-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
+                        </button>
+                    </div>
+
+                    <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123). Company code is permanent.</p>
+
+                    <div>
+                        <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
+                        <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-blue-300 mb-1">New Index Password</label>
+                            <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
+                            <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                        Update Passwords
+                    </button>
+                    <p id="auth-feedback" class="text-xs hidden"></p>
+
+                    <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" class="w-full h-9 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/80 transition">
+                        Lock Admin Now
                     </button>
                 </div>
+            </div>
+        </div>
 
-                <!-- Magazine Password Toggle -->
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1E2126] border border-white/10">
-                    <div>
-                        <div class="text-xs font-semibold text-white">Magazine Password</div>
-                        <div id="magazine-lock-label" class="text-[10px] text-blue-400">ON — Required for magazine</div>
+        <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
+            Saved!
+        </div>
+
+        <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+
+            <!-- BRAND & CIRCULAR LOGO -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
+                <div class="flex items-center gap-4">
+                    <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
+                    <div class="flex-1 space-y-2">
+                        <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     </div>
-                    <button
-                        id="toggle-magazine-lock-btn"
-                        type="button"
-                        role="switch"
-                        aria-checked="true"
-                        onclick="handleToggleLock('magazine')"
-                        class="relative w-12 h-7 rounded-full bg-blue-600 transition-colors p-0.5 shrink-0"
-                    >
-                        <span id="toggle-magazine-lock-knob" class="block w-6 h-6 rounded-full bg-white shadow transform translate-x-5 transition-transform"></span>
-                    </button>
                 </div>
-
-                <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123). Company code is permanent.</p>
-
                 <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
-                    <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                    <label class="block text-[11px] text-blue-400 mb-1">Google Drive Image Link (Circular Logo)</label>
+                    <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </div>
-
                 <div class="grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block text-[11px] text-blue-300 mb-1">New Index Password</label>
-                        <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
-                        <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
-                    </div>
+                    <input id="inp-location" type="text" placeholder="Location" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-year" type="text" placeholder="Year" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </div>
+            </section>
 
-                <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Update Passwords
-                </button>
-                <p id="auth-feedback" class="text-xs hidden"></p>
-
-                <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" class="w-full h-9 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/80 transition">
-                    Lock Admin Now
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
-        Saved!
-    </div>
-
-    <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
-
-        <!-- BRAND & CIRCULAR LOGO -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-            <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
-            <div class="flex items-center gap-4">
-                <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
-                <div class="flex-1 space-y-2">
-                    <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            <!-- SECTION 1: HERO -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm font-bold text-white">Section 1 • Hero</h2>
+                <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <input id="inp-hero-cta" type="text" placeholder="Button Text" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-hero-bg" type="text" placeholder="Hero Image / Drive Link" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </div>
-            </div>
-            <div>
-                <label class="block text-[11px] text-blue-400 mb-1">Google Drive Image Link (Circular Logo)</label>
-                <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-            <div class="grid grid-cols-2 gap-2.5">
-                <input id="inp-location" type="text" placeholder="Location" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-year" type="text" placeholder="Year" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-        </section>
+            </section>
 
-        <!-- SECTION 1: HERO -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-            <h2 class="text-sm font-bold text-white">Section 1 • Hero</h2>
-            <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-            <div class="grid grid-cols-2 gap-2.5">
-                <input id="inp-hero-cta" type="text" placeholder="Button Text" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-hero-bg" type="text" placeholder="Hero Image / Drive Link" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-        </section>
+            <!-- SECTION 2: ORIGIN -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm font-bold text-white">Section 2 • Origin</h2>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+                <textarea id="inp-origin-story" rows="2" placeholder="Story" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            </section>
 
-        <!-- SECTION 2: ORIGIN -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-            <h2 class="text-sm font-bold text-white">Section 2 • Origin</h2>
-            <div class="grid grid-cols-2 gap-2.5">
-                <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-            <textarea id="inp-origin-story" rows="2" placeholder="Story" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-            <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-        </section>
+            <!-- SECTIONS 3 & 4 -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
+                <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
+                    <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
+                    <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <input id="inp-stat-cities" type="text" placeholder="Cities" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-stat-coffee" type="text" placeholder="Coffees" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+                <input id="inp-mag-heading" type="text" placeholder="Magazine Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <input id="inp-mag-desc" type="text" placeholder="Magazine Subtitle" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+            </section>
 
-        <!-- SECTIONS 3 & 4 -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-            <h2 class="text-sm font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
-            <div class="grid grid-cols-2 gap-2.5">
-                <input id="inp-stat-date" type="date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-stat-cities" type="text" placeholder="Cities" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-stat-coffee" type="text" placeholder="Coffees" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-            <input id="inp-mag-heading" type="text" placeholder="Magazine Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            <input id="inp-mag-desc" type="text" placeholder="Magazine Subtitle" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-        </section>
+            <!-- SECTIONS 5 & 6 -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
+                <div id="admin-bucket-editor" class="space-y-2"></div>
+                <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
+                <div class="space-y-2 pt-2 border-t border-white/10">
+                    <input id="inp-pov1-name" type="text" placeholder="Note 1 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <textarea id="inp-pov1-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                    <input id="inp-pov2-name" type="text" placeholder="Note 2 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <textarea id="inp-pov2-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                </div>
+            </section>
 
-        <!-- SECTIONS 5 & 6 -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-            <h2 class="text-sm font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
-            <div id="admin-bucket-editor" class="space-y-2"></div>
-            <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
-            <div class="space-y-2 pt-2 border-t border-white/10">
-                <input id="inp-pov1-name" type="text" placeholder="Note 1 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <textarea id="inp-pov1-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-                <input id="inp-pov2-name" type="text" placeholder="Note 2 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <textarea id="inp-pov2-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-            </div>
-        </section>
+            <!-- SECTIONS 7, 8, 9 & 10 -->
+            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
+                <div id="admin-milestones-editor" class="space-y-2"></div>
+                <div class="pt-2 border-t border-white/10 space-y-2">
+                    <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <div id="admin-tracks-editor" class="space-y-2"></div>
+                </div>
+                <div class="pt-2 border-t border-white/10 space-y-2">
+                    <div id="admin-notes-editor" class="space-y-2"></div>
+                </div>
+                <div class="pt-2 border-t border-white/10 space-y-2">
+                    <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-cap-dest" type="text" placeholder="Destination" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                </div>
+            </section>
 
-        <!-- SECTIONS 7, 8, 9 & 10 -->
-        <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-            <h2 class="text-sm font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
-            <div id="admin-milestones-editor" class="space-y-2"></div>
-            <div class="pt-2 border-t border-white/10 space-y-2">
-                <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <div id="admin-tracks-editor" class="space-y-2"></div>
-            </div>
-            <div class="pt-2 border-t border-white/10 space-y-2">
-                <div id="admin-notes-editor" class="space-y-2"></div>
-            </div>
-            <div class="pt-2 border-t border-white/10 space-y-2">
-                <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-cap-dest" type="text" placeholder="Destination" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </div>
-        </section>
+        </main>
 
-    </main>
+    </div>
 
     <script src="js/store.js"></script>
     <script type="module">
@@ -226,7 +296,6 @@
             getDatabase,
             ref,
             set,
-            update,
             onValue
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -244,13 +313,44 @@
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
 
+        // Fixed count start date: 18 June 2025 (18, 6, 2025) — locked, never stored or editable in Firebase
+        const FIXED_COUNT_START_YEAR = 2025;
+        const FIXED_COUNT_START_MONTH = 6;
+        const FIXED_COUNT_START_DAY = 18;
+        const FIXED_TOGETHER_START_MS = new Date(
+            FIXED_COUNT_START_YEAR,
+            FIXED_COUNT_START_MONTH - 1,
+            FIXED_COUNT_START_DAY,
+            0, 0, 0, 0
+        ).getTime();
+
         // Isolated nodes in Firebase RTDB so existing magazineFolders, magazineItems, magazineRecentlyDeleted are never touched
         const siteDataRef = ref(rtdb, "siteContent");
         const authConfigRef = ref(rtdb, "siteAuthConfig");
 
         let currentData = null;
         let firebaseAuthConfig = null;
+        let hasLoadedAdminFromFirebase = false;
+        let lockEnforcedOnce = false;
         const statusEl = document.getElementById('admin-db-status');
+
+        function revealAdminAfterFirebaseLoad() {
+            if (hasLoadedAdminFromFirebase) return;
+            hasLoadedAdminFromFirebase = true;
+
+            const preloader = document.getElementById('osd-admin-preloader');
+            const shell = document.getElementById('osd-admin-shell');
+
+            document.body.classList.remove('overflow-hidden');
+            if (shell) {
+                shell.classList.remove('opacity-0', 'pointer-events-none');
+                shell.classList.add('opacity-100');
+            }
+            if (preloader) {
+                preloader.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => preloader.remove(), 520);
+            }
+        }
 
         function setAdminDbStatus(text, isError = false) {
             if (!statusEl) return;
@@ -282,6 +382,8 @@
             base.sections.hero = { ...base.sections.hero, ...(s.hero || {}) };
             base.sections.origin = { ...base.sections.origin, ...(s.origin || {}) };
             base.sections.telemetry = { ...base.sections.telemetry, ...(s.telemetry || {}) };
+            delete base.sections.telemetry.startDate;
+
             base.sections.magazineSpotlight = { ...base.sections.magazineSpotlight, ...(s.magazineSpotlight || {}) };
             base.sections.bucketList = Array.isArray(s.bucketList)
                 ? s.bucketList
@@ -476,7 +578,6 @@
             document.getElementById('inp-origin-quote').value = s.origin.quote || '';
             document.getElementById('inp-origin-img').value = s.origin.image || '';
 
-            document.getElementById('inp-stat-date').value = s.telemetry.startDate || '';
             document.getElementById('inp-stat-cities').value = s.telemetry.citiesExplored || '';
             document.getElementById('inp-stat-coffee').value = s.telemetry.coffeeCups || '';
             document.getElementById('inp-stat-calls').value = s.telemetry.midnightCalls || '';
@@ -581,7 +682,6 @@
             };
 
             fresh.sections.telemetry = {
-                startDate: document.getElementById('inp-stat-date').value,
                 citiesExplored: document.getElementById('inp-stat-cities').value,
                 coffeeCups: document.getElementById('inp-stat-coffee').value,
                 midnightCalls: document.getElementById('inp-stat-calls').value
@@ -655,6 +755,7 @@
             siteDataRef,
             (snap) => {
                 const val = snap.val();
+                revealAdminAfterFirebaseLoad();
                 if (val) {
                     loadAdminForm(val);
                     setAdminDbStatus('Firebase Live • Home & Circular Logo');
@@ -662,8 +763,14 @@
                     loadAdminForm(null);
                     setAdminDbStatus('Firebase Live • Ready to Save');
                 }
+                if (!lockEnforcedOnce && typeof enforceRoleLock === 'function') {
+                    lockEnforcedOnce = true;
+                    enforceRoleLock('admin', 'Admin Console');
+                }
             },
             (err) => {
+                const preStatus = document.getElementById('admin-preloader-status');
+                if (preStatus) preStatus.textContent = 'Unable to load from Firebase';
                 setAdminDbStatus(`Firebase read error: ${err.message || 'Error'}`, true);
             }
         );
@@ -681,11 +788,6 @@
                 setAdminDbStatus(`Firebase auth read error: ${err.message || 'Error'}`, true);
             }
         );
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadAdminForm(null);
-            enforceRoleLock('admin', 'Admin Console');
-        });
     </script>
 </body>
 </html>
