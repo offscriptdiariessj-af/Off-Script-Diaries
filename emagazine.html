@@ -161,11 +161,13 @@
 
         let rtdbFolders = {};
         let rtdbItems = [];
-        let activeFolderKey = sessionStorage.getItem(MAG_ACTIVE_FOLDER_KEY) || null;
+        let activeFolderKey = null;
         let scaledItemId = null;
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
         let scrollSaveTimer = null;
+
+        sessionStorage.removeItem(MAG_ACTIVE_FOLDER_KEY);
 
         function formatDateDDMMYYYY(rawDate = "") {
             const clean = String(rawDate || "").trim();
@@ -664,6 +666,9 @@
 
         searchInput.addEventListener("input", e => renderMagazine(e.target.value));
         document.getElementById("nav-mag-refresh").addEventListener("click", () => {
+            activeFolderKey = null;
+            scaledItemId = null;
+            syncFolderStorage();
             renderMagazine(searchInput.value);
             window.scrollTo({ top: 0, behavior: "smooth" });
         });
@@ -708,9 +713,6 @@
         window.addEventListener("DOMContentLoaded", () => {
             try {
                 history.replaceState({ osdMagLevel: "root" }, "", window.location.href);
-                if (activeFolderKey) {
-                    history.pushState({ osdMagLevel: "folder" }, "", window.location.href);
-                }
             } catch {}
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || "0");
