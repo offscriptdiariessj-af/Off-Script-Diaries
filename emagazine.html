@@ -165,7 +165,7 @@
         let scaledItemId = null;
         let fullscreenFolderKey = null;
         let fullscreenItemId = null;
-        let folderGuardArmed = false;
+        let ignoreNextPopstate = false;
         let scrollSaveTimer = null;
 
         sessionStorage.removeItem(MAG_ACTIVE_FOLDER_KEY);
@@ -255,14 +255,14 @@
 
         function pushViewState(level) {
             try {
-                history.pushState({ osdMagLevel: level }, "", window.location.href);
+                history.pushState({ osdMagLevel: level, t: Date.now() }, "", window.location.href);
             } catch {}
         }
 
-        function armFolderGuardState() {
-            if (!activeFolderKey || folderGuardArmed) return;
-            folderGuardArmed = true;
-            pushViewState("folder-guard");
+        function replaceViewState(level) {
+            try {
+                history.replaceState({ osdMagLevel: level, t: Date.now() }, "", window.location.href);
+            } catch {}
         }
 
         function buildDateFolders(q = "") {
@@ -346,32 +346,36 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (opening) {
-                folderGuardArmed = true;
-                pushViewState("folder-guard");
+                pushViewState("folder");
                 window.scrollTo({ top: 0, behavior: "smooth" });
-            } else {
-                folderGuardArmed = false;
             }
         }
 
         function handleFolderItemTap(event, folderKey, itemId) {
             event.stopPropagation();
-            if (scaledItemId === itemId) {
+
+            if (!activeFolderKey) {
                 activeFolderKey = folderKey;
+                syncFolderStorage();
+                pushViewState("folder");
+            }
+
+            if (scaledItemId === itemId) {
                 fullscreenFolderKey = folderKey;
                 fullscreenItemId = itemId;
-                syncFolderStorage();
                 syncFullscreenUI();
-                folderGuardArmed = true;
-                pushViewState("folder-guard");
                 pushViewState("fullscreen");
                 return;
             }
+
+            const wasScaled = Boolean(scaledItemId);
             scaledItemId = itemId;
             renderMagazine(searchInput.value);
-            folderGuardArmed = true;
-            pushViewState("folder-guard");
-            pushViewState("scaled");
+            if (!wasScaled) {
+                pushViewState("scaled");
+            } else {
+                replaceViewState("scaled");
+            }
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
@@ -386,8 +390,18 @@
             syncFullscreenUI();
             renderMagazine(searchInput.value);
             if (activeFolderKey) {
-                folderGuardArmed = true;
                 window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        }
+
+        function closeFullscreenViaHistory() {
+            if (!fullscreenItemId) return;
+            ignoreNextPopstate = true;
+            exitFullscreenToFolder();
+            try {
+                history.back();
+            } catch {
+                ignoreNextPopstate = false;
             }
         }
 
@@ -452,24 +466,34 @@
             }
         }
 
-        window.addEventListener("popstate", () => {
+        window.addEventListener("popstate", (event) => {
+            if (ignoreNextPopstate) {
+                ignoreNextPopstate = false;
+                return;
+            }
+
             if (fullscreenItemId) {
                 exitFullscreenToFolder();
-                pushViewState("scaled");
+                const stateLevel = event.state && event.state.osdMagLevel;
+                if (stateLevel !== "scaled") {
+                    pushViewState("scaled");
+                }
                 return;
             }
 
             if (scaledItemId) {
                 scaledItemId = null;
                 renderMagazine(searchInput.value);
-                folderGuardArmed = true;
-                pushViewState("folder-guard");
+                const stateLevel = event.state && event.state.osdMagLevel;
+                if (activeFolderKey && stateLevel !== "folder") {
+                    pushViewState("folder");
+                }
+                window.scrollTo({ top: 0, behavior: "smooth" });
                 return;
             }
 
             if (activeFolderKey) {
                 activeFolderKey = null;
-                folderGuardArmed = false;
                 syncFolderStorage();
                 renderMagazine(searchInput.value);
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -478,8 +502,6 @@
 
             window.location.href = "index.html";
         });
-
-        document.addEventListener("pointerdown", armFolderGuardState, { passive: true });
 
         let touchStartX = 0;
         let touchDeltaX = 0;
@@ -509,7 +531,7 @@
             touchDeltaX = 0;
         });
 
-        document.getElementById("fs-close-btn").addEventListener("click", exitFullscreenToFolder);
+        document.getElementById("fs-close-btn").addEventListener("click", closeFullscreenViaHistory);
         document.getElementById("fs-prev-btn").addEventListener("click", () => stepFullscreenItem(-1));
         document.getElementById("fs-next-btn").addEventListener("click", () => stepFullscreenItem(1));
 
@@ -687,7 +709,6 @@
         document.getElementById("nav-mag-refresh").addEventListener("click", () => {
             activeFolderKey = null;
             scaledItemId = null;
-            folderGuardArmed = false;
             syncFolderStorage();
             renderMagazine(searchInput.value);
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -731,9 +752,7 @@
         });
 
         window.addEventListener("DOMContentLoaded", () => {
-            try {
-                history.replaceState({ osdMagLevel: "root" }, "", window.location.href);
-            } catch {}
+            replaceViewState("root");
             renderMagazine();
             const savedScroll = Number(sessionStorage.getItem(MAG_SCROLL_KEY) || "0");
             if (savedScroll > 0) {
