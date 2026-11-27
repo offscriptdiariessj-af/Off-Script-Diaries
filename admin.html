@@ -44,7 +44,7 @@
         }
     </style>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-24 overflow-hidden">
+<body class="bg-[#121417] text-white font-sans antialiased pb-24 lg:pb-12 overflow-hidden">
 
     <!-- HIGH-CRAFT LOADING SCREEN (SHOWN UNTIL FIREBASE DATA LOADS) -->
     <div id="osd-admin-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
@@ -74,21 +74,25 @@
     <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
-            <div class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-2">
+            <div class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <h1 class="text-sm lg:text-base font-bold text-white truncate">Admin Console</h1>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-sm lg:text-lg font-bold text-white truncate">Admin Console</h1>
+                        <span class="hidden lg:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-400/25">Desktop Studio</span>
+                    </div>
                     <p id="admin-db-status" class="text-[10px] lg:text-xs text-blue-400 truncate">Connecting Firebase...</p>
                 </div>
-                <div class="flex items-center gap-1.5 lg:gap-2 shrink-0">
-                    <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 lg:px-3.5 py-1.5 lg:py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold transition">Posts</a>
-                    <button type="button" onclick="saveAllChanges()" class="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">Save</button>
-                    <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" aria-label="Lock Admin" title="Lock Admin" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
+                <div class="flex items-center gap-1.5 lg:gap-2.5 shrink-0">
+                    <a href="index.html" class="hidden lg:inline-flex items-center px-3.5 py-2 rounded-xl bg-[#1E2126] hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/80 transition">View Site</a>
+                    <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 lg:px-4 py-1.5 lg:py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold transition">Posts</a>
+                    <button type="button" onclick="saveAllChanges()" class="px-3 lg:px-5 py-1.5 lg:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 transition">Save</button>
+                    <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" aria-label="Lock Admin" title="Lock Admin" class="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
                     </button>
-                    <button type="button" onclick="openSettingsMenu()" aria-label="Settings" title="Settings" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
+                    <button type="button" onclick="openSettingsMenu()" aria-label="Settings" title="Settings" class="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                             <circle cx="12" cy="12" r="3"/>
@@ -99,10 +103,10 @@
         </header>
 
         <!-- SETTINGS DRAWER / MENU (WITH PASSWORD MENU) -->
-        <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
-            <div class="w-full max-w-md lg:max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
+        <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="w-full max-w-md lg:max-w-xl rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 lg:p-6 max-h-[90vh] overflow-y-auto space-y-4">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                    <span class="text-sm font-bold text-white">Settings</span>
+                    <span class="text-sm lg:text-base font-bold text-white">Settings</span>
                     <button type="button" onclick="closeSettingsMenu()" class="text-xs text-white/60 hover:text-white px-2 py-1">Close ✕</button>
                 </div>
 
@@ -196,13 +200,13 @@
             Saved!
         </div>
 
-        <main class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 pt-4 lg:pt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 items-start">
+        <main class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 pt-4 lg:pt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
 
             <!-- BRAND & CIRCULAR LOGO -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm lg:text-base font-bold text-white">Brand & Circular Logo</h2>
                 <div class="flex items-center gap-4">
-                    <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
+                    <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 lg:w-20 lg:h-20 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
                     <div class="flex-1 space-y-2">
                         <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -219,8 +223,8 @@
             </section>
 
             <!-- SECTION 1: HERO -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                <h2 class="text-sm font-bold text-white">Section 1 • Hero</h2>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm lg:text-base font-bold text-white">Section 1 • Hero</h2>
                 <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
@@ -231,8 +235,8 @@
             </section>
 
             <!-- SECTION 2: ORIGIN -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                <h2 class="text-sm font-bold text-white">Section 2 • Origin</h2>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm lg:text-base font-bold text-white">Section 2 • Origin</h2>
                 <div class="grid grid-cols-2 gap-2.5">
                     <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -243,13 +247,13 @@
             </section>
 
             <!-- SECTIONS 3 & 4 -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                <h2 class="text-sm font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+                <h2 class="text-sm lg:text-base font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
                 <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
                     <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
                     <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
                 </div>
-                <div class="grid grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
                     <input id="inp-stat-cities" type="text" placeholder="Cities" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     <input id="inp-stat-coffee" type="text" placeholder="Coffees" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -263,8 +267,8 @@
             </section>
 
             <!-- SECTIONS 5 & 6 -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                <h2 class="text-sm font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm lg:text-base font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
                 <div id="admin-bucket-editor" class="space-y-2"></div>
                 <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
                 <div class="space-y-2 pt-2 border-t border-white/10">
@@ -276,21 +280,23 @@
             </section>
 
             <!-- SECTIONS 7, 8, 9 & 10 -->
-            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                <h2 class="text-sm font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
-                <div id="admin-milestones-editor" class="space-y-2"></div>
+            <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+                <h2 class="text-sm lg:text-base font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
+                <div id="admin-milestones-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
                 <div class="pt-2 border-t border-white/10 space-y-2">
                     <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     <div id="admin-tracks-editor" class="space-y-2"></div>
                 </div>
                 <div class="pt-2 border-t border-white/10 space-y-2">
-                    <div id="admin-notes-editor" class="space-y-2"></div>
+                    <div id="admin-notes-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
                 </div>
                 <div class="pt-2 border-t border-white/10 space-y-2">
                     <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-cap-dest" type="text" placeholder="Destination" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                        <input id="inp-cap-dest" type="text" placeholder="Destination" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    </div>
                 </div>
             </section>
 
