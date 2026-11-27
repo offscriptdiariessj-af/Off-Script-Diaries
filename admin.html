@@ -74,14 +74,14 @@
     <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
-            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+            <div class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <h1 class="text-sm font-bold text-white truncate">Admin Console</h1>
-                    <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
+                    <h1 class="text-sm lg:text-base font-bold text-white truncate">Admin Console</h1>
+                    <p id="admin-db-status" class="text-[10px] lg:text-xs text-blue-400 truncate">Connecting Firebase...</p>
                 </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Posts</a>
-                    <button type="button" onclick="saveAllChanges()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Save</button>
+                <div class="flex items-center gap-1.5 lg:gap-2 shrink-0">
+                    <a href="emagazineadmin.html?from=admin" onclick="sessionStorage.setItem('osd_admin_nav_bypass', '1')" class="px-2.5 lg:px-3.5 py-1.5 lg:py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold transition">Posts</a>
+                    <button type="button" onclick="saveAllChanges()" class="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">Save</button>
                     <button type="button" onclick="sessionStorage.removeItem('osd_admin_nav_bypass'); lockRoleSession('admin')" aria-label="Lock Admin" title="Lock Admin" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/80 hover:text-blue-400 transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
@@ -100,7 +100,7 @@
 
         <!-- SETTINGS DRAWER / MENU (WITH PASSWORD MENU) -->
         <div id="settings-drawer" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
-            <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
+            <div class="w-full max-w-md lg:max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 max-h-[90vh] overflow-y-auto space-y-4">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <span class="text-sm font-bold text-white">Settings</span>
                     <button type="button" onclick="closeSettingsMenu()" class="text-xs text-white/60 hover:text-white px-2 py-1">Close ✕</button>
@@ -196,10 +196,10 @@
             Saved!
         </div>
 
-        <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+        <main class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-6 pt-4 lg:pt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 items-start">
 
             <!-- BRAND & CIRCULAR LOGO -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
                 <h2 class="text-sm font-bold text-white">Brand & Circular Logo</h2>
                 <div class="flex items-center gap-4">
                     <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
@@ -219,7 +219,7 @@
             </section>
 
             <!-- SECTION 1: HERO -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
                 <h2 class="text-sm font-bold text-white">Section 1 • Hero</h2>
                 <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -231,7 +231,7 @@
             </section>
 
             <!-- SECTION 2: ORIGIN -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
                 <h2 class="text-sm font-bold text-white">Section 2 • Origin</h2>
                 <div class="grid grid-cols-2 gap-2.5">
                     <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -243,7 +243,7 @@
             </section>
 
             <!-- SECTIONS 3 & 4 -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
                 <h2 class="text-sm font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
                 <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
                     <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
@@ -263,7 +263,7 @@
             </section>
 
             <!-- SECTIONS 5 & 6 -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
                 <h2 class="text-sm font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
                 <div id="admin-bucket-editor" class="space-y-2"></div>
                 <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
@@ -276,7 +276,7 @@
             </section>
 
             <!-- SECTIONS 7, 8, 9 & 10 -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
+            <section class="p-4 lg:p-5 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
                 <h2 class="text-sm font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
                 <div id="admin-milestones-editor" class="space-y-2"></div>
                 <div class="pt-2 border-t border-white/10 space-y-2">
@@ -365,8 +365,8 @@
             if (!statusEl) return;
             statusEl.textContent = text;
             statusEl.className = isError
-                ? 'text-[10px] text-rose-400 truncate'
-                : 'text-[10px] text-blue-400 truncate';
+                ? 'text-[10px] lg:text-xs text-rose-400 truncate'
+                : 'text-[10px] lg:text-xs text-blue-400 truncate';
         }
 
         function showToast(msg = 'Saved to Firebase!') {
@@ -376,13 +376,64 @@
             setTimeout(() => toast.classList.add('hidden'), 2000);
         }
 
-        function cloneDefaults() {
-            const base = typeof getOSDData === 'function' ? getOSDData() : {};
-            return JSON.parse(JSON.stringify(base));
+        function createEmptySiteData() {
+            return {
+                brand: {
+                    siteName: '',
+                    coupleNames: '',
+                    logoUrl: '',
+                    location: '',
+                    establishedYear: ''
+                },
+                sections: {
+                    hero: {
+                        eyebrow: '',
+                        headline: '',
+                        subheadline: '',
+                        ctaText: '',
+                        bgImage: ''
+                    },
+                    origin: {
+                        title: '',
+                        date: '',
+                        story: '',
+                        quote: '',
+                        image: ''
+                    },
+                    telemetry: {
+                        citiesExplored: '',
+                        coffeeCups: '',
+                        midnightCalls: ''
+                    },
+                    magazineSpotlight: {
+                        heading: '',
+                        description: ''
+                    },
+                    bucketList: [],
+                    perspectives: {
+                        partnerOneName: '',
+                        partnerOneNote: '',
+                        partnerTwoName: '',
+                        partnerTwoNote: ''
+                    },
+                    milestones: [],
+                    soundtrack: {
+                        albumTitle: '',
+                        curatorNote: '',
+                        tracks: []
+                    },
+                    loveNotes: [],
+                    capsule: {
+                        heading: '',
+                        nextDestination: '',
+                        message: ''
+                    }
+                }
+            };
         }
 
         function normalizeSiteData(raw) {
-            const base = cloneDefaults();
+            const base = createEmptySiteData();
             const src = raw && typeof raw === 'object' ? raw : {};
 
             base.brand = { ...base.brand, ...(src.brand || {}) };
@@ -396,11 +447,11 @@
             base.sections.magazineSpotlight = { ...base.sections.magazineSpotlight, ...(s.magazineSpotlight || {}) };
             base.sections.bucketList = Array.isArray(s.bucketList)
                 ? s.bucketList
-                : (s.bucketList && typeof s.bucketList === 'object' ? Object.values(s.bucketList) : base.sections.bucketList);
+                : (s.bucketList && typeof s.bucketList === 'object' ? Object.values(s.bucketList) : []);
             base.sections.perspectives = { ...base.sections.perspectives, ...(s.perspectives || {}) };
             base.sections.milestones = Array.isArray(s.milestones)
                 ? s.milestones
-                : (s.milestones && typeof s.milestones === 'object' ? Object.values(s.milestones) : base.sections.milestones);
+                : (s.milestones && typeof s.milestones === 'object' ? Object.values(s.milestones) : []);
 
             const snd = s.soundtrack || {};
             base.sections.soundtrack = {
@@ -408,25 +459,41 @@
                 ...snd,
                 tracks: Array.isArray(snd.tracks)
                     ? snd.tracks
-                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : base.sections.soundtrack.tracks)
+                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : [])
             };
 
             base.sections.loveNotes = Array.isArray(s.loveNotes)
                 ? s.loveNotes
-                : (s.loveNotes && typeof s.loveNotes === 'object' ? Object.values(s.loveNotes) : base.sections.loveNotes);
+                : (s.loveNotes && typeof s.loveNotes === 'object' ? Object.values(s.loveNotes) : []);
 
             base.sections.capsule = { ...base.sections.capsule, ...(s.capsule || {}) };
             return base;
         }
 
         function getActiveAuthConfig() {
-            const localCfg = typeof getAuthConfig === 'function'
-                ? getAuthConfig()
-                : { indexLockEnabled: true, magazineLockEnabled: true, indexPassword: '123', magazinePassword: '123', adminPassword: '123' };
+            const defaults = {
+                indexLockEnabled: true,
+                magazineLockEnabled: true,
+                indexPassword: '123',
+                magazinePassword: '123',
+                adminPassword: '123'
+            };
             return {
-                ...localCfg,
+                ...defaults,
                 ...(firebaseAuthConfig || {})
             };
+        }
+
+        function syncAuthToLocalCacheOnly(cfg) {
+            if (typeof OSD_AUTH_KEY !== 'undefined') {
+                localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({
+                    indexPassword: String(cfg.indexPassword || '123'),
+                    magazinePassword: String(cfg.magazinePassword || '123'),
+                    adminPassword: String(cfg.adminPassword || '123'),
+                    indexLockEnabled: Boolean(cfg.indexLockEnabled),
+                    magazineLockEnabled: Boolean(cfg.magazineLockEnabled)
+                }));
+            }
         }
 
         function openSettingsMenu() {
@@ -499,6 +566,7 @@
             try {
                 await set(authConfigRef, nextCfg);
                 firebaseAuthConfig = nextCfg;
+                syncAuthToLocalCacheOnly(nextCfg);
                 renderLockToggles();
                 setAdminDbStatus('Firebase Live • Lock updated');
             } catch (err) {
@@ -551,15 +619,7 @@
             try {
                 await set(authConfigRef, nextCfg);
                 firebaseAuthConfig = nextCfg;
-                if (typeof OSD_AUTH_KEY !== 'undefined') {
-                    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({
-                        indexPassword: nextCfg.indexPassword,
-                        magazinePassword: nextCfg.magazinePassword,
-                        adminPassword: nextCfg.adminPassword,
-                        indexLockEnabled: Boolean(nextCfg.indexLockEnabled),
-                        magazineLockEnabled: Boolean(nextCfg.magazineLockEnabled)
-                    }));
-                }
+                syncAuthToLocalCacheOnly(nextCfg);
                 fb.className = 'text-xs font-medium text-emerald-400';
                 fb.textContent = 'Passwords saved to Firebase!';
                 document.getElementById('auth-current-key').value = '';
@@ -805,6 +865,7 @@
                 const val = snap.val();
                 if (val && typeof val === 'object') {
                     firebaseAuthConfig = val;
+                    syncAuthToLocalCacheOnly(val);
                     renderLockToggles();
                 }
             },
