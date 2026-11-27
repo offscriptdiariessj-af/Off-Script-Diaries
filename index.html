@@ -345,8 +345,8 @@
         ></video>
         <div id="osd-door-backdrop" class="absolute inset-0 bg-black/55 backdrop-blur-[2px] transition-opacity duration-500"></div>
 
-        <div id="osd-door-lock-wrap" class="relative z-10 w-full h-full flex items-center justify-center p-5">
-            <div id="osd-door-lock-card" class="w-full max-w-sm rounded-3xl bg-[#1E2126]/92 backdrop-blur-xl border border-white/15 p-6 shadow-2xl">
+        <div id="osd-door-lock-wrap" class="fixed inset-0 z-20 w-full h-full flex items-center justify-center p-5 pointer-events-auto">
+            <div id="osd-door-lock-card" class="w-full max-w-sm rounded-3xl bg-[#1E2126]/95 backdrop-blur-xl border border-white/15 p-6 shadow-2xl">
                 <span class="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 mb-3">
                     Index Lock
                 </span>
@@ -386,8 +386,10 @@
 
         function finishDoorOverlay() {
             const overlay = document.getElementById('osd-door-overlay');
+            const lockWrap = document.getElementById('osd-door-lock-wrap');
             const video = document.getElementById('osd-door-video');
             document.documentElement.style.overflow = '';
+            if (lockWrap) lockWrap.classList.add('hidden');
             if (!overlay) return;
             overlay.classList.remove('opacity-100');
             overlay.classList.add('opacity-0', 'pointer-events-none');
@@ -403,6 +405,7 @@
             const overlay = document.getElementById('osd-door-overlay');
             const video = document.getElementById('osd-door-video');
             const backdrop = document.getElementById('osd-door-backdrop');
+            const lockWrap = document.getElementById('osd-door-lock-wrap');
             const card = document.getElementById('osd-door-lock-card');
 
             if (!overlay || !video) {
@@ -410,6 +413,7 @@
                 return;
             }
 
+            if (lockWrap) lockWrap.classList.add('pointer-events-none');
             if (card) {
                 card.classList.add('osd-door-card-exit');
             }
@@ -443,6 +447,8 @@
 
             if (!cfg.indexLockEnabled || isUnlocked) {
                 const overlay = document.getElementById('osd-door-overlay');
+                const lockWrap = document.getElementById('osd-door-lock-wrap');
+                if (lockWrap) lockWrap.classList.add('hidden');
                 if (overlay) overlay.classList.add('hidden');
                 document.documentElement.style.overflow = '';
                 return;
@@ -454,17 +460,19 @@
             const overlay = document.getElementById('osd-door-overlay');
             const video = document.getElementById('osd-door-video');
             const backdrop = document.getElementById('osd-door-backdrop');
+            const lockWrap = document.getElementById('osd-door-lock-wrap');
             const card = document.getElementById('osd-door-lock-card');
             const form = document.getElementById('osd-door-lock-form');
             const input = document.getElementById('osd-door-lock-input');
             const errEl = document.getElementById('osd-door-lock-err');
 
-            if (!overlay || !form || !input) return;
+            if (!overlay || !lockWrap || !form || !input) return;
 
             document.documentElement.style.overflow = 'hidden';
             overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
             overlay.classList.add('opacity-100');
 
+            lockWrap.classList.remove('hidden', 'pointer-events-none');
             if (backdrop) backdrop.classList.remove('opacity-0');
             if (card) card.classList.remove('osd-door-card-exit');
             if (errEl) errEl.classList.add('hidden');
@@ -476,7 +484,7 @@
             }
 
             if (typeof attachPasswordEyeToggles === 'function') {
-                attachPasswordEyeToggles(overlay);
+                attachPasswordEyeToggles(lockWrap);
             }
 
             setTimeout(() => input.focus(), 50);
