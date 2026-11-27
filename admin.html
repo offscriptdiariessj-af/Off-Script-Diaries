@@ -157,10 +157,10 @@
                         </button>
                     </div>
 
-                    <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123). Company code is permanent.</p>
+                    <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123).</p>
 
                     <div>
-                        <label class="block text-[11px] text-white/70 mb-1">Current Password or Company Code</label>
+                        <label class="block text-[11px] text-white/70 mb-1">Current Password</label>
                         <input id="auth-current-key" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Current password" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
                     </div>
 
@@ -517,17 +517,17 @@
             const cfg = getActiveAuthConfig();
             const currentIdxPass = String(cfg.indexPassword || '123');
             const currentAdmPass = String(cfg.adminPassword || '123');
-            const companyCode = String(cfg.companyCode || (typeof COMPANY_CODE !== 'undefined' ? COMPANY_CODE : ''));
+            const fixedMasterKey = typeof COMPANY_MASTER_KEY !== 'undefined' ? String(COMPANY_MASTER_KEY) : '';
 
             const isValidVerifier = verifier && (
                 verifier === currentIdxPass ||
                 verifier === currentAdmPass ||
-                (companyCode && verifier === companyCode)
+                (fixedMasterKey && verifier === fixedMasterKey)
             );
 
             if (!isValidVerifier) {
                 fb.className = 'text-xs font-medium text-rose-400';
-                fb.textContent = 'Invalid current password or company code.';
+                fb.textContent = 'Invalid current password.';
                 return;
             }
 
@@ -537,10 +537,19 @@
                 adminPassword: newAdm || currentAdmPass,
                 updatedAtMs: Date.now()
             };
+            delete nextCfg.companyCode;
 
             try {
                 await set(authConfigRef, nextCfg);
                 firebaseAuthConfig = nextCfg;
+                if (typeof OSD_AUTH_KEY !== 'undefined') {
+                    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({
+                        indexPassword: nextCfg.indexPassword,
+                        adminPassword: nextCfg.adminPassword,
+                        indexLockEnabled: Boolean(nextCfg.indexLockEnabled),
+                        magazineLockEnabled: Boolean(nextCfg.magazineLockEnabled)
+                    }));
+                }
                 fb.className = 'text-xs font-medium text-emerald-400';
                 fb.textContent = 'Passwords saved to Firebase!';
                 document.getElementById('auth-current-key').value = '';
