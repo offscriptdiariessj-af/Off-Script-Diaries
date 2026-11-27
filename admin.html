@@ -44,7 +44,7 @@
         }
     </style>
 </head>
-<body class="bg-[#121417] text-white font-sans antialiased pb-24 lg:pb-12 overflow-hidden">
+<body class="bg-[#121417] text-white font-sans antialiased pb-24 lg:pb-8 overflow-hidden">
 
     <!-- HIGH-CRAFT LOADING SCREEN (SHOWN UNTIL FIREBASE DATA LOADS) -->
     <div id="osd-admin-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
@@ -71,10 +71,10 @@
         </div>
     </div>
 
-    <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
+    <div id="osd-admin-shell" class="opacity-0 pointer-events-none lg:min-h-screen lg:w-full transition-opacity duration-500">
 
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
-            <div class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-2">
+            <div class="max-w-md lg:max-w-none lg:w-full mx-auto px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-2">
                 <div class="min-w-0">
                     <div class="flex items-center gap-2.5">
                         <h1 class="text-sm lg:text-lg font-bold text-white truncate">Admin Console</h1>
@@ -200,7 +200,7 @@
             Saved!
         </div>
 
-        <main class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 pt-4 lg:pt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+        <main class="max-w-md lg:max-w-none lg:w-full mx-auto px-4 lg:px-8 pt-4 lg:pt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
 
             <!-- BRAND & CIRCULAR LOGO -->
             <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
@@ -465,7 +465,7 @@
                 ...snd,
                 tracks: Array.isArray(snd.tracks)
                     ? snd.tracks
-                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : [])
+                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : base.sections.soundtrack.tracks)
             };
 
             base.sections.loveNotes = Array.isArray(s.loveNotes)
