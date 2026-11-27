@@ -145,6 +145,7 @@ function getAuthConfig() {
         if (!raw) {
             const init = {
                 indexPassword: DEFAULT_PASSWORD,
+                magazinePassword: DEFAULT_PASSWORD,
                 adminPassword: DEFAULT_PASSWORD,
                 indexLockEnabled: true,
                 magazineLockEnabled: true
@@ -155,6 +156,7 @@ function getAuthConfig() {
         const parsed = JSON.parse(raw);
         return {
             indexPassword: parsed.indexPassword || DEFAULT_PASSWORD,
+            magazinePassword: parsed.magazinePassword || DEFAULT_PASSWORD,
             adminPassword: parsed.adminPassword || DEFAULT_PASSWORD,
             indexLockEnabled: typeof parsed.indexLockEnabled === 'boolean' ? parsed.indexLockEnabled : true,
             magazineLockEnabled: typeof parsed.magazineLockEnabled === 'boolean' ? parsed.magazineLockEnabled : true
@@ -162,6 +164,7 @@ function getAuthConfig() {
     } catch {
         return {
             indexPassword: DEFAULT_PASSWORD,
+            magazinePassword: DEFAULT_PASSWORD,
             adminPassword: DEFAULT_PASSWORD,
             indexLockEnabled: true,
             magazineLockEnabled: true
@@ -190,7 +193,7 @@ function verifyKeyForRole(inputKey, role = 'index') {
         return clean === cfg.adminPassword;
     }
     if (role === 'magazine') {
-        return clean === cfg.indexPassword || clean === cfg.adminPassword;
+        return clean === cfg.magazinePassword;
     }
     return clean === cfg.indexPassword;
 }
@@ -212,6 +215,8 @@ function updateRolePassword(role, newPass, verifierKey) {
     const cfg = getAuthConfig();
     if (role === 'admin') {
         cfg.adminPassword = cleanNew;
+    } else if (role === 'magazine') {
+        cfg.magazinePassword = cleanNew;
     } else {
         cfg.indexPassword = cleanNew;
     }
