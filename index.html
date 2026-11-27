@@ -30,6 +30,18 @@
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-4px); }
         }
+        @keyframes osdDoorCardExit {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0px);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.95);
+                filter: blur(6px);
+            }
+        }
 
         .osd-ring-outer {
             animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -45,6 +57,10 @@
         }
         .osd-float {
             animation: osdFloatUp 3s ease-in-out infinite;
+        }
+        .osd-door-card-exit {
+            animation: osdDoorCardExit 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -316,6 +332,45 @@
 
     </div>
 
+    <!-- DOOR.MP4 OVERLAY & PASSWORD BOX OVER INDEX -->
+    <div id="osd-door-overlay" class="hidden fixed inset-0 z-[9999] bg-[#121417] text-white transition-opacity duration-700 opacity-100 select-none">
+        <video
+            id="osd-door-video"
+            src="door.mp4"
+            playsinline
+            webkit-playsinline
+            preload="auto"
+            muted
+            class="w-full h-full object-cover"
+        ></video>
+        <div id="osd-door-backdrop" class="absolute inset-0 bg-black/55 backdrop-blur-[2px] transition-opacity duration-500"></div>
+
+        <div id="osd-door-lock-wrap" class="relative z-10 w-full h-full flex items-center justify-center p-5">
+            <div id="osd-door-lock-card" class="w-full max-w-sm rounded-3xl bg-[#1E2126]/92 backdrop-blur-xl border border-white/15 p-6 shadow-2xl">
+                <span class="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 mb-3">
+                    Index Lock
+                </span>
+                <h1 class="text-xl font-bold text-white">Off Script Diaries</h1>
+                <p class="text-xs text-white/60 mt-1 mb-5">Enter password for index access.</p>
+                <form id="osd-door-lock-form" class="space-y-3">
+                    <input
+                        id="osd-door-lock-input"
+                        type="password"
+                        data-eye-toggle="true"
+                        autocomplete="off"
+                        placeholder="Enter password"
+                        class="w-full h-12 px-4 rounded-xl bg-[#121417] border border-white/15 text-white text-sm focus:outline-none focus:border-blue-500"
+                        required
+                    />
+                    <p id="osd-door-lock-err" class="hidden text-xs text-rose-400">Incorrect password. Please try again.</p>
+                    <button type="submit" class="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition">
+                        Unlock
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="js/store.js"></script>
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
@@ -328,6 +383,118 @@
         let rtdbAuthConfig = null;
         let rtdbMagazineFolders = [];
         let hasLoadedSiteFromFirebase = false;
+
+        function finishDoorOverlay() {
+            const overlay = document.getElementById('osd-door-overlay');
+            const video = document.getElementById('osd-door-video');
+            document.documentElement.style.overflow = '';
+            if (!overlay) return;
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                if (video) {
+                    video.pause();
+                }
+                overlay.classList.add('hidden');
+            }, 720);
+        }
+
+        function playDoorOpeningSequence() {
+            const overlay = document.getElementById('osd-door-overlay');
+            const video = document.getElementById('osd-door-video');
+            const backdrop = document.getElementById('osd-door-backdrop');
+            const card = document.getElementById('osd-door-lock-card');
+
+            if (!overlay || !video) {
+                finishDoorOverlay();
+                return;
+            }
+
+            if (card) {
+                card.classList.add('osd-door-card-exit');
+            }
+            if (backdrop) {
+                backdrop.classList.add('opacity-0');
+            }
+
+            let finished = false;
+            const onEnded = () => {
+                if (finished) return;
+                finished = true;
+                video.removeEventListener('ended', onEnded);
+                finishDoorOverlay();
+            };
+
+            video.addEventListener('ended', onEnded);
+            video.currentTime = 0;
+
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {
+                    setTimeout(onEnded, 900);
+                });
+            }
+        }
+
+        function showIndexDoorGate() {
+            applyAntiCopyProtection();
+            const cfg = typeof getAuthConfig === 'function' ? getAuthConfig() : { indexLockEnabled: true };
+            const isUnlocked = typeof isRoleUnlocked === 'function' ? isRoleUnlocked('index') : false;
+
+            if (!cfg.indexLockEnabled || isUnlocked) {
+                const overlay = document.getElementById('osd-door-overlay');
+                if (overlay) overlay.classList.add('hidden');
+                document.documentElement.style.overflow = '';
+                return;
+            }
+
+            const existingGate = document.getElementById('osd-role-gate');
+            if (existingGate) existingGate.remove();
+
+            const overlay = document.getElementById('osd-door-overlay');
+            const video = document.getElementById('osd-door-video');
+            const backdrop = document.getElementById('osd-door-backdrop');
+            const card = document.getElementById('osd-door-lock-card');
+            const form = document.getElementById('osd-door-lock-form');
+            const input = document.getElementById('osd-door-lock-input');
+            const errEl = document.getElementById('osd-door-lock-err');
+
+            if (!overlay || !form || !input) return;
+
+            document.documentElement.style.overflow = 'hidden';
+            overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-100');
+
+            if (backdrop) backdrop.classList.remove('opacity-0');
+            if (card) card.classList.remove('osd-door-card-exit');
+            if (errEl) errEl.classList.add('hidden');
+            input.value = '';
+
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
+
+            if (typeof attachPasswordEyeToggles === 'function') {
+                attachPasswordEyeToggles(overlay);
+            }
+
+            setTimeout(() => input.focus(), 50);
+
+            if (!form.dataset.osdDoorBound) {
+                form.dataset.osdDoorBound = 'true';
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const secret = input.value;
+                    if (typeof unlockRoleSession === 'function' && unlockRoleSession(secret, 'index')) {
+                        if (errEl) errEl.classList.add('hidden');
+                        playDoorOpeningSequence();
+                    } else if (errEl) {
+                        errEl.classList.remove('hidden');
+                    }
+                });
+            }
+        }
 
         function revealAppAfterFirebaseLoad() {
             if (hasLoadedSiteFromFirebase) return;
@@ -591,9 +758,9 @@
             if (!cfg || typeof cfg !== 'object') return;
             rtdbAuthConfig = cfg;
             try {
-                if (typeof AUTH_STORAGE_KEY !== 'undefined') {
-                    const existing = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || '{}');
-                    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...existing, ...cfg }));
+                if (typeof OSD_AUTH_KEY !== 'undefined') {
+                    const existing = JSON.parse(localStorage.getItem(OSD_AUTH_KEY) || '{}');
+                    localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({ ...existing, ...cfg }));
                 }
             } catch {}
         }
@@ -776,9 +943,9 @@
                 rtdbSiteData = val && typeof val === "object" ? val : {};
                 revealAppAfterFirebaseLoad();
                 renderIndexPage();
-                if (!lockEnforcedOnce && typeof enforceRoleLock === "function") {
+                if (!lockEnforcedOnce) {
                     lockEnforcedOnce = true;
-                    enforceRoleLock("index", "Off Script Diaries");
+                    showIndexDoorGate();
                 }
             },
             (err) => {
