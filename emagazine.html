@@ -139,6 +139,7 @@
 
         const foldersRef = ref(rtdb, "magazineFolders");
         const itemsRef = ref(rtdb, "magazineItems");
+        const authConfigRef = ref(rtdb, "siteAuthConfig");
 
         const MAG_ACTIVE_FOLDER_KEY = "osd_mag_active_folder_v1";
         const MAG_SCROLL_KEY = "osd_mag_scroll_v1";
@@ -749,6 +750,25 @@
             rtdbItems = list;
             renderMagazine(searchInput.value);
             if (fullscreenItemId) syncFullscreenUI();
+        });
+
+        onValue(authConfigRef, (snap) => {
+            const val = snap.val();
+            if (val && typeof val === "object" && typeof OSD_AUTH_KEY !== "undefined" && typeof getAuthConfig === "function") {
+                const current = getAuthConfig();
+                const merged = {
+                    ...current,
+                    indexPassword: val.indexPassword || current.indexPassword,
+                    magazinePassword: val.magazinePassword || current.magazinePassword,
+                    adminPassword: val.adminPassword || current.adminPassword,
+                    indexLockEnabled: typeof val.indexLockEnabled === "boolean" ? val.indexLockEnabled : current.indexLockEnabled,
+                    magazineLockEnabled: typeof val.magazineLockEnabled === "boolean" ? val.magazineLockEnabled : current.magazineLockEnabled
+                };
+                localStorage.setItem(OSD_AUTH_KEY, JSON.stringify(merged));
+                if (typeof enforceRoleLock === "function") {
+                    enforceRoleLock("magazine", "Magazine");
+                }
+            }
         });
 
         window.addEventListener("DOMContentLoaded", () => {
