@@ -157,7 +157,7 @@
                         </button>
                     </div>
 
-                    <p class="text-[11px] text-white/60">Separate passwords for Index and Admin (default: 123).</p>
+                    <p class="text-[11px] text-white/60">Separate passwords for Index, Magazine, and Admin (default: 123).</p>
 
                     <div>
                         <label class="block text-[11px] text-white/70 mb-1">Current Password</label>
@@ -170,9 +170,14 @@
                             <input id="auth-new-index" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Index pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
                         </div>
                         <div>
-                            <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
-                            <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
+                            <label class="block text-[11px] text-sky-300 mb-1">New Magazine Password</label>
+                            <input id="auth-new-magazine" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Magazine pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] text-emerald-300 mb-1">New Admin Password</label>
+                        <input id="auth-new-admin" type="password" data-eye-toggle="true" autocomplete="off" placeholder="Admin pass" class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs" />
                     </div>
 
                     <button type="button" onclick="applyPasswordChanges()" class="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
@@ -417,7 +422,7 @@
         function getActiveAuthConfig() {
             const localCfg = typeof getAuthConfig === 'function'
                 ? getAuthConfig()
-                : { indexLockEnabled: true, magazineLockEnabled: true, indexPassword: '123', adminPassword: '123' };
+                : { indexLockEnabled: true, magazineLockEnabled: true, indexPassword: '123', magazinePassword: '123', adminPassword: '123' };
             return {
                 ...localCfg,
                 ...(firebaseAuthConfig || {})
@@ -504,23 +509,26 @@
         async function applyPasswordChanges() {
             const verifier = document.getElementById('auth-current-key').value.trim();
             const newIdx = document.getElementById('auth-new-index').value.trim();
+            const newMag = document.getElementById('auth-new-magazine').value.trim();
             const newAdm = document.getElementById('auth-new-admin').value.trim();
             const fb = document.getElementById('auth-feedback');
             fb.classList.remove('hidden');
 
-            if (!newIdx && !newAdm) {
+            if (!newIdx && !newMag && !newAdm) {
                 fb.className = 'text-xs text-rose-400';
-                fb.textContent = 'Enter a new Index password, a new Admin password, or both.';
+                fb.textContent = 'Enter a new Index password, Magazine password, or Admin password.';
                 return;
             }
 
             const cfg = getActiveAuthConfig();
             const currentIdxPass = String(cfg.indexPassword || '123');
+            const currentMagPass = String(cfg.magazinePassword || '123');
             const currentAdmPass = String(cfg.adminPassword || '123');
             const fixedMasterKey = typeof COMPANY_MASTER_KEY !== 'undefined' ? String(COMPANY_MASTER_KEY) : '';
 
             const isValidVerifier = verifier && (
                 verifier === currentIdxPass ||
+                verifier === currentMagPass ||
                 verifier === currentAdmPass ||
                 (fixedMasterKey && verifier === fixedMasterKey)
             );
@@ -534,6 +542,7 @@
             const nextCfg = {
                 ...cfg,
                 indexPassword: newIdx || currentIdxPass,
+                magazinePassword: newMag || currentMagPass,
                 adminPassword: newAdm || currentAdmPass,
                 updatedAtMs: Date.now()
             };
@@ -545,6 +554,7 @@
                 if (typeof OSD_AUTH_KEY !== 'undefined') {
                     localStorage.setItem(OSD_AUTH_KEY, JSON.stringify({
                         indexPassword: nextCfg.indexPassword,
+                        magazinePassword: nextCfg.magazinePassword,
                         adminPassword: nextCfg.adminPassword,
                         indexLockEnabled: Boolean(nextCfg.indexLockEnabled),
                         magazineLockEnabled: Boolean(nextCfg.magazineLockEnabled)
@@ -554,6 +564,7 @@
                 fb.textContent = 'Passwords saved to Firebase!';
                 document.getElementById('auth-current-key').value = '';
                 document.getElementById('auth-new-index').value = '';
+                document.getElementById('auth-new-magazine').value = '';
                 document.getElementById('auth-new-admin').value = '';
                 setAdminDbStatus('Firebase Live • Passwords updated');
             } catch (err) {
