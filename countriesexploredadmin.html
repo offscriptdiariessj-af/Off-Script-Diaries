@@ -152,14 +152,23 @@
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
             <!-- SEARCH BAR (FILTERS BY DATE, TITLE, COUNTRY NAME) -->
-            <div>
+            <div class="relative">
                 <input
                     id="search-input"
                     type="text"
                     oninput="handleSearchInput(this.value)"
                     placeholder="Search by date, title, or country name..."
-                    class="w-full h-11 px-4 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
+                    class="w-full h-11 pl-4 pr-10 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
                 />
+                <button
+                    id="search-clear-btn"
+                    type="button"
+                    onclick="clearSearchInput()"
+                    aria-label="Clear search"
+                    class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white/75 hover:text-white text-xs flex items-center justify-center transition"
+                >
+                    ✕
+                </button>
             </div>
 
             <!-- FOLDERS VIEW (LEVEL 1) -->
@@ -170,7 +179,7 @@
                     <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
                 </div>
                 <div id="global-search-items" class="hidden space-y-2"></div>
-                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Folders</div>
+                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Countries</div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
@@ -374,6 +383,7 @@
         let folders = [];
         let activeFolderId = null;
         let expandedItemId = null;
+        let cameFromGlobalSearch = false;
         let searchQuery = "";
         let selectedIds = new Set();
         let selectionKind = null;
@@ -416,6 +426,7 @@
             if (isHandlingPopState) return;
             const depth = getNavDepth();
             history.pushState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId }, "");
+            history.pushState({ osdDepth: depth + 1, folderId: activeFolderId, itemId: expandedItemId, sentinel: true }, "");
         }
 
         function scrollToItemCard(itemId) {
@@ -623,8 +634,24 @@
                 .replace(/"/g, "&quot;");
         }
 
+        function syncSearchClearButton() {
+            const input = document.getElementById("search-input");
+            const clearBtn = document.getElementById("search-clear-btn");
+            const hasVal = !!(searchQuery || (input && input.value.trim()));
+            if (clearBtn) clearBtn.classList.toggle("hidden", !hasVal);
+        }
+
         function handleSearchInput(val) {
             searchQuery = String(val || "").trim().toLowerCase();
+            syncSearchClearButton();
+            renderAll();
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById("search-input");
+            if (input) input.value = "";
+            searchQuery = "";
+            syncSearchClearButton();
             renderAll();
         }
 
@@ -702,6 +729,7 @@
                 if (!folder) {
                     activeFolderId = null;
                     expandedItemId = null;
+                    cameFromGlobalSearch = false;
                     updateHeaderUI();
                     return;
                 }
@@ -749,6 +777,7 @@
         function openItemFromGlobalSearch(folderId, itemId) {
             activeFolderId = folderId;
             expandedItemId = itemId;
+            cameFromGlobalSearch = true;
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1068,6 +1097,7 @@
         }
 
         function renderAll() {
+            syncSearchClearButton();
             updateHeaderUI();
             if (!activeFolderId) {
                 renderFolders();
@@ -1081,12 +1111,14 @@
             if (expandedItemId === itemId) {
                 const prevId = expandedItemId;
                 expandedItemId = null;
+                cameFromGlobalSearch = false;
                 renderAll();
                 syncHistoryState();
                 scrollToItemCard(prevId);
                 return;
             }
             expandedItemId = itemId;
+            cameFromGlobalSearch = false;
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1388,6 +1420,7 @@
                     if (type === "folder") {
                         activeFolderId = id;
                         expandedItemId = null;
+                        cameFromGlobalSearch = false;
                         renderAll();
                         pushNavState();
                     } else {
@@ -1405,6 +1438,12 @@
             if (expandedItemId) {
                 const prevExpandedId = expandedItemId;
                 expandedItemId = null;
+                if (cameFromGlobalSearch) {
+                    const input = document.getElementById("search-input");
+                    if (input) input.value = "";
+                    searchQuery = "";
+                    cameFromGlobalSearch = false;
+                }
                 renderAll();
                 scrollToItemCard(prevExpandedId);
                 return true;
@@ -1412,6 +1451,7 @@
             if (activeFolderId) {
                 activeFolderId = null;
                 expandedItemId = null;
+                cameFromGlobalSearch = false;
                 renderAll();
                 return true;
             }
@@ -1429,7 +1469,13 @@
         window.addEventListener("popstate", () => {
             isHandlingPopState = true;
             try {
-                if (!stepBackOneLevel()) {
+                if (stepBackOneLevel()) {
+                    if (activeFolderId || expandedItemId) {
+                        history.pushState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId, sentinel: true }, "");
+                    } else {
+                        syncHistoryState();
+                    }
+                } else {
                     window.location.href = "admin.html";
                 }
             } finally {
@@ -1663,6 +1709,7 @@
                         if (activeFolderId === id) {
                             activeFolderId = null;
                             expandedItemId = null;
+                            cameFromGlobalSearch = false;
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1681,7 +1728,10 @@
                         if (folder) {
                             folder.items = folder.items.filter(x => x.id !== id);
                         }
-                        if (expandedItemId === id) expandedItemId = null;
+                        if (expandedItemId === id) {
+                            expandedItemId = null;
+                            cameFromGlobalSearch = false;
+                        }
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
@@ -1714,6 +1764,7 @@
                         if (activeFolderId && removeSet.has(activeFolderId)) {
                             activeFolderId = null;
                             expandedItemId = null;
+                            cameFromGlobalSearch = false;
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1736,6 +1787,7 @@
                         }
                         if (expandedItemId && ids.includes(expandedItemId)) {
                             expandedItemId = null;
+                            cameFromGlobalSearch = false;
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1748,6 +1800,7 @@
         }
 
         window.handleSearchInput = handleSearchInput;
+        window.clearSearchInput = clearSearchInput;
         window.toggleModalDateRange = toggleModalDateRange;
         window.openItemFromGlobalSearch = openItemFromGlobalSearch;
         window.handleHeaderBack = handleHeaderBack;
