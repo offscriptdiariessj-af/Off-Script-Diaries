@@ -6,82 +6,142 @@
     <title>Cities Explored — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #121417;
-            color: #F8FAFC;
+        body { background-color: #121417; color: #F8FAFC; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes osdOrbitSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes osdOrbitReverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes osdCorePulse {
+            0%, 100% { transform: scale(0.94); opacity: 0.75; }
+            50% { transform: scale(1.06); opacity: 1; }
+        }
+        @keyframes osdShimmerSlide {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(260%); }
+        }
+        @keyframes osdFloatUp {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .osd-ring-outer {
+            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .osd-ring-inner {
+            animation: osdOrbitReverse 1.9s linear infinite;
+        }
+        .osd-core-glow {
+            animation: osdCorePulse 2.2s ease-in-out infinite;
+        }
+        .osd-shimmer-bar {
+            animation: osdShimmerSlide 1.55s ease-in-out infinite;
+        }
+        .osd-float {
+            animation: osdFloatUp 3s ease-in-out infinite;
         }
     </style>
 </head>
-<body class="font-sans antialiased pb-16">
+<body class="font-sans antialiased pb-24 overflow-hidden">
 
-    <!-- HEADER -->
-    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <button type="button" onclick="handleViewerBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
-                    ←
-                </button>
-                <div class="min-w-0">
-                    <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
-                    <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Loading...</p>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- VIEWER CONTENT -->
-    <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
-
-        <!-- FOLDERS VIEW -->
-        <div id="folders-view" class="space-y-4">
-            <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                <div class="text-2xl">🇮🇳</div>
-                <p class="text-sm font-bold text-white">No Cities Added Yet</p>
-                <p class="text-xs text-white/55">Check back soon for our explored cities.</p>
-            </div>
-            <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
+    <!-- INDEX-STYLE OFF SCRIPT DIARIES PRELOADER -->
+    <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
         </div>
 
-        <!-- CITIES INSIDE FOLDER VIEW -->
-        <div id="items-view" class="hidden space-y-4">
-            <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
-                <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
-                    <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
-                </div>
-                <div class="p-4">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">City Folder</span>
-                    <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
-                    <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
+        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
+            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
+                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
+                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
+                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
+                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
                 </div>
             </div>
 
-            <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                <div class="text-2xl">📍</div>
-                <p class="text-sm font-bold text-white">No Cities Here Yet</p>
-            </div>
+            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
+            <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳</p>
 
-            <div id="items-list" class="space-y-3"></div>
+            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
+                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
+            </div>
         </div>
+    </div>
 
-    </main>
+    <!-- APP SHELL -->
+    <div id="app-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
-    <!-- DETAIL VIEW MODAL -->
-    <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if(event.target===this) closeDetailModal()">
-        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div id="detail-img-wrap" class="hidden h-56 bg-black relative">
-                <img id="detail-img" src="" alt="" class="w-full h-full object-cover" />
-                <button type="button" onclick="closeDetailModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</button>
-            </div>
-            <div class="p-5 space-y-2">
-                <div class="flex items-center justify-between">
-                    <span id="detail-name" class="text-[11px] font-bold uppercase tracking-wider text-blue-400"></span>
-                    <button id="detail-close-noimg" type="button" onclick="closeDetailModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
+        <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
+            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <button type="button" onclick="handleBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                        ←
+                    </button>
+                    <div class="min-w-0">
+                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
+                        <p id="page-subtitle" class="text-[10px] text-blue-400 truncate"></p>
+                    </div>
                 </div>
-                <h3 id="detail-title" class="text-lg font-extrabold text-white"></h3>
-                <p id="detail-desc" class="text-xs text-white/75 leading-relaxed whitespace-pre-line pt-1"></p>
             </div>
-        </div>
+        </header>
+
+        <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+
+            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, CITY NAME) -->
+            <div>
+                <input
+                    id="search-input"
+                    type="text"
+                    oninput="handleSearchInput(this.value)"
+                    placeholder="Search by date, title, or city name..."
+                    class="w-full h-11 px-4 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
+                />
+            </div>
+
+            <!-- FOLDERS VIEW -->
+            <div id="folders-view" class="space-y-4">
+                <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                    <div class="text-2xl">🇮🇳</div>
+                    <p class="text-sm font-bold text-white">No City Folders Yet</p>
+                </div>
+                <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- ITEMS INSIDE FOLDER VIEW -->
+            <div id="items-view" class="hidden space-y-4">
+                <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
+                    <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
+                        <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">City Folder</span>
+                            <span id="folder-banner-date" class="text-[11px] text-white/50"></span>
+                        </div>
+                        <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
+                        <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
+                    </div>
+                </div>
+
+                <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                    <div class="text-2xl">📍</div>
+                    <p class="text-sm font-bold text-white">No Cities Found</p>
+                </div>
+
+                <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
+                <div id="items-list" class="grid grid-cols-3 gap-2.5"></div>
+            </div>
+
+        </main>
+
     </div>
 
     <script src="js/store.js"></script>
@@ -106,9 +166,24 @@
 
         let folders = [];
         let activeFolderId = null;
+        let expandedItemId = null;
+        let searchQuery = "";
+        let appReadyShown = false;
 
-        if (typeof applyAntiCopyProtection === "function") {
-            applyAntiCopyProtection();
+        function revealApp() {
+            if (appReadyShown) return;
+            appReadyShown = true;
+            const loader = document.getElementById("osd-preloader");
+            const shell = document.getElementById("app-shell");
+            document.body.classList.remove("overflow-hidden");
+            if (shell) {
+                shell.classList.remove("opacity-0", "pointer-events-none");
+                shell.classList.add("opacity-100");
+            }
+            if (loader) {
+                loader.classList.add("opacity-0", "pointer-events-none");
+                setTimeout(() => loader.remove(), 520);
+            }
         }
 
         function extractDriveFileId(rawUrl = "") {
@@ -142,12 +217,12 @@
             return parsed;
         }
 
-        function escapeHtml(str = "") {
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;");
+        function formatDisplayDate(rawDate = "") {
+            const clean = String(rawDate || "").trim();
+            if (!clean) return "";
+            const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            return clean;
         }
 
         function normalizeFolders(raw) {
@@ -162,9 +237,10 @@
                     const items = rawItems
                         .filter(Boolean)
                         .map((it, iIdx) => ({
-                            id: String(it.id || `city_${iIdx}`),
+                            id: String(it.id || `city_${Date.now()}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
+                            date: String(it.date || ""),
                             driveLink: String(it.driveLink || ""),
                             description: String(it.description || ""),
                             order: typeof it.order === "number" ? it.order : iIdx
@@ -172,8 +248,9 @@
                         .sort((a, b) => a.order - b.order);
 
                     return {
-                        id: String(f.id || `fld_${idx}`),
+                        id: String(f.id || `fld_${Date.now()}_${idx}`),
                         title: String(f.title || "Untitled Folder"),
+                        date: String(f.date || ""),
                         driveLink: String(f.driveLink || ""),
                         description: String(f.description || ""),
                         order: typeof f.order === "number" ? f.order : idx,
@@ -183,32 +260,111 @@
                 .sort((a, b) => a.order - b.order);
         }
 
-        function renderViewer() {
+        function escapeHtml(str = "") {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function handleSearchInput(val) {
+            searchQuery = String(val || "").trim().toLowerCase();
+            renderAll();
+        }
+
+        function matchesSearch(obj = {}) {
+            if (!searchQuery) return true;
+            const fields = [
+                obj.name,
+                obj.title,
+                obj.date,
+                formatDisplayDate(obj.date)
+            ];
+            return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
+        }
+
+        function openFolder(folderId) {
+            activeFolderId = folderId;
+            expandedItemId = null;
+            renderAll();
+        }
+
+        function toggleExpandItem(itemId) {
+            if (expandedItemId === itemId) {
+                expandedItemId = null;
+                renderAll();
+                return;
+            }
+            expandedItemId = itemId;
+            renderAll();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function handleBack() {
+            if (activeFolderId) {
+                activeFolderId = null;
+                expandedItemId = null;
+                renderAll();
+                return;
+            }
+            window.location.href = "index.html";
+        }
+
+        function buildExpandedItemCardHtml(it) {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const dispDate = formatDisplayDate(it.date);
+            return `
+            <div
+                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
+                class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden cursor-pointer shadow-xl"
+            >
+                ${imgSrc ? `
+                <div class="h-44 bg-black">
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover" />
+                </div>` : ""}
+                <div class="p-4 space-y-1.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                        ${dispDate ? `<span class="text-[10px] text-white/50">${escapeHtml(dispDate)}</span>` : ""}
+                    </div>
+                    <h3 class="text-base font-bold text-white">${escapeHtml(it.title || it.name)}</h3>
+                    ${it.description ? `<p class="text-xs text-white/70 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                </div>
+            </div>`;
+        }
+
+        function renderAll() {
             const titleEl = document.getElementById("page-title");
             const subEl = document.getElementById("page-subtitle");
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
 
-            const totalCount = folders.reduce((acc, f) => acc + f.items.length, 0);
+            const totalCities = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
             if (!activeFolderId) {
                 titleEl.textContent = "Cities Explored 🇮🇳";
-                subEl.textContent = `${totalCount} Cities across ${folders.length} Folders`;
+                subEl.textContent = `${totalCities} Cities`;
                 foldersView.classList.remove("hidden");
                 itemsView.classList.add("hidden");
 
                 const grid = document.getElementById("folders-grid");
                 const empty = document.getElementById("folders-empty");
-                empty.classList.toggle("hidden", folders.length > 0);
+                const filtered = folders.filter(matchesSearch);
+                empty.classList.toggle("hidden", filtered.length > 0);
 
-                grid.innerHTML = folders.map(f => {
+                grid.innerHTML = filtered.map(f => {
                     const cover = resolveMediaUrl(f.driveLink);
+                    const dispDate = formatDisplayDate(f.date);
                     const mediaHtml = cover
                         ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
                         : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
 
                     return `
-                    <div onclick="openViewerFolder('${escapeHtml(f.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer active:scale-[0.99] transition">
+                    <div
+                        onclick="openFolder('${escapeHtml(f.id)}')"
+                        class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden cursor-pointer hover:border-blue-400/40 transition"
+                    >
                         <div class="h-32 bg-black relative">
                             ${mediaHtml}
                             <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
@@ -216,6 +372,7 @@
                             </span>
                         </div>
                         <div class="p-3">
+                            ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
                             <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
                             <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
                         </div>
@@ -225,7 +382,8 @@
                 const folder = folders.find(f => f.id === activeFolderId);
                 if (!folder) {
                     activeFolderId = null;
-                    renderViewer();
+                    expandedItemId = null;
+                    renderAll();
                     return;
                 }
 
@@ -244,84 +402,64 @@
                     coverWrap.classList.add("hidden");
                 }
                 document.getElementById("folder-banner-title").textContent = folder.title;
+                const dateEl = document.getElementById("folder-banner-date");
+                const dispDate = formatDisplayDate(folder.date);
+                dateEl.textContent = dispDate;
+                dateEl.classList.toggle("hidden", !dispDate);
                 const descEl = document.getElementById("folder-banner-desc");
                 descEl.textContent = folder.description || "";
                 descEl.classList.toggle("hidden", !folder.description);
 
-                const list = document.getElementById("items-list");
+                const filteredItems = folder.items.filter(matchesSearch);
                 const empty = document.getElementById("items-empty");
-                empty.classList.toggle("hidden", folder.items.length > 0);
+                empty.classList.toggle("hidden", filteredItems.length > 0);
 
-                list.innerHTML = folder.items.map(it => {
-                    const imgSrc = resolveMediaUrl(it.driveLink);
-                    return `
-                    <div onclick="openDetailModal('${escapeHtml(it.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer active:scale-[0.99] transition">
-                        ${imgSrc ? `
-                        <div class="h-44 bg-black">
-                            <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover" />
-                        </div>` : ""}
-                        <div class="p-4">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
-                            <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
-                            ${it.description ? `<p class="text-xs text-white/65 mt-1 line-clamp-3 leading-relaxed">${escapeHtml(it.description)}</p>` : ""}
-                        </div>
-                    </div>`;
-                }).join("");
+                if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
+                    expandedItemId = null;
+                }
+
+                const pinnedWrap = document.getElementById("pinned-item-wrap");
+                const list = document.getElementById("items-list");
+                const expandedItem = expandedItemId
+                    ? filteredItems.find(x => x.id === expandedItemId)
+                    : null;
+
+                if (expandedItem) {
+                    pinnedWrap.classList.remove("hidden");
+                    pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem);
+                } else {
+                    pinnedWrap.classList.add("hidden");
+                    pinnedWrap.innerHTML = "";
+                }
+
+                const remainingItems = expandedItem
+                    ? filteredItems.filter(x => x.id !== expandedItem.id)
+                    : filteredItems;
+
+                list.className = expandedItem
+                    ? "grid grid-cols-2 gap-3"
+                    : "grid grid-cols-3 gap-2.5";
+
+                list.innerHTML = remainingItems.map(it => `
+                    <div
+                        onclick="toggleExpandItem('${escapeHtml(it.id)}')"
+                        class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 p-3 flex items-center justify-center text-center min-h-[76px] cursor-pointer transition"
+                    >
+                        <span class="text-xs font-bold text-white break-words leading-snug">${escapeHtml(it.name)}</span>
+                    </div>
+                `).join("");
             }
         }
 
-        function openViewerFolder(id) {
-            activeFolderId = id;
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            renderViewer();
-        }
-
-        function handleViewerBack() {
-            if (activeFolderId) {
-                activeFolderId = null;
-                renderViewer();
-                return;
-            }
-            window.location.href = "index.html";
-        }
-
-        function openDetailModal(itemId) {
-            const folder = folders.find(f => f.id === activeFolderId);
-            const it = folder ? folder.items.find(x => x.id === itemId) : null;
-            if (!it) return;
-
-            const imgSrc = resolveMediaUrl(it.driveLink);
-            const imgWrap = document.getElementById("detail-img-wrap");
-            const imgEl = document.getElementById("detail-img");
-            const closeNoImg = document.getElementById("detail-close-noimg");
-
-            if (imgSrc) {
-                imgEl.src = imgSrc;
-                imgWrap.classList.remove("hidden");
-                closeNoImg.classList.add("hidden");
-            } else {
-                imgWrap.classList.add("hidden");
-                closeNoImg.classList.remove("hidden");
-            }
-
-            document.getElementById("detail-name").textContent = it.name;
-            document.getElementById("detail-title").textContent = it.title || it.name;
-            document.getElementById("detail-desc").textContent = it.description || "";
-            document.getElementById("detail-modal").classList.remove("hidden");
-        }
-
-        function closeDetailModal() {
-            document.getElementById("detail-modal").classList.add("hidden");
-        }
-
-        window.openViewerFolder = openViewerFolder;
-        window.handleViewerBack = handleViewerBack;
-        window.openDetailModal = openDetailModal;
-        window.closeDetailModal = closeDetailModal;
+        window.handleSearchInput = handleSearchInput;
+        window.openFolder = openFolder;
+        window.toggleExpandItem = toggleExpandItem;
+        window.handleBack = handleBack;
 
         onValue(citiesRef, (snap) => {
             folders = normalizeFolders(snap.val());
-            renderViewer();
+            renderAll();
+            revealApp();
         });
     </script>
 </body>
