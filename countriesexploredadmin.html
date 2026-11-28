@@ -131,7 +131,7 @@
                                 <span>✎</span><span>Edit Continent</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); startItemSelectionMode();" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                                <span>☑</span><span>Select Countries</span>
+                                <span>☑</span><span>Select</span>
                             </button>
                             <div class="my-1 border-t border-white/10"></div>
                             <button type="button" onclick="closeFolderHeaderMenu(); requestDeleteActiveFolder();" class="w-full px-3.5 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
@@ -175,11 +175,11 @@
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">🌍</div>
-                    <p class="text-sm font-bold text-white">No Continents Yet</p>
+                    <p id="folders-empty-title" class="text-sm font-bold text-white">No Continents Yet</p>
                     <p class="text-xs text-white/55">Tap "+ New Continent" at the top to add your first continent.</p>
                 </div>
                 <div id="global-search-items" class="hidden space-y-2"></div>
-                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Continents</div>
+                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Continents</div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
@@ -201,7 +201,7 @@
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">📍</div>
-                    <p class="text-sm font-bold text-white">No Countries in This Continent</p>
+                    <p id="items-empty-title" class="text-sm font-bold text-white">No Countries in This Continent</p>
                     <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
                 </div>
 
@@ -264,7 +264,7 @@
         </div>
 
         <!-- CONTINENT CREATE / EDIT MODAL -->
-        <div id="folder-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="folder-modal" class="hidden fixed inset-0 z-[55] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New Continent</h3>
@@ -309,7 +309,7 @@
         </div>
 
         <!-- COUNTRY CREATE / EDIT MODAL -->
-        <div id="item-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="item-modal" class="hidden fixed inset-0 z-[55] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <h3 id="item-modal-heading" class="text-sm font-bold text-white">Add Country</h3>
@@ -393,6 +393,7 @@
         let lockEnforced = false;
         let appReadyShown = false;
         let isHandlingPopState = false;
+        let navStackDepth = 0;
 
         let holdTimer = null;
         let isDragging = false;
@@ -409,6 +410,15 @@
         let orderChangedDuringDrag = false;
         let suppressNextClick = false;
 
+        function pluralizeEntity(count, singular, plural) {
+            return Number(count) === 1 ? singular : plural;
+        }
+
+        function formatCountLabel(count, singular, plural) {
+            const n = Number(count) || 0;
+            return `${n} ${pluralizeEntity(n, singular, plural)}`;
+        }
+
         function getNavDepth() {
             let depth = 0;
             if (activeFolderId) depth += 1;
@@ -419,14 +429,15 @@
         function syncHistoryState() {
             if (isHandlingPopState) return;
             const depth = getNavDepth();
+            navStackDepth = Math.max(navStackDepth, depth);
             history.replaceState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId }, "");
         }
 
         function pushNavState() {
             if (isHandlingPopState) return;
             const depth = getNavDepth();
-            history.pushState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId }, "");
-            history.pushState({ osdDepth: depth + 1, folderId: activeFolderId, itemId: expandedItemId, sentinel: true }, "");
+            navStackDepth += 1;
+            history.pushState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId, step: navStackDepth }, "");
         }
 
         function scrollToItemCard(itemId) {
@@ -713,12 +724,18 @@
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
             const folderBanner = document.getElementById("folder-banner");
+            const foldersLabelEl = document.getElementById("folders-section-label");
 
+            const totalContinents = folders.length;
             const totalCountries = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
+            if (foldersLabelEl) {
+                foldersLabelEl.textContent = pluralizeEntity(totalContinents, "Continent", "Continents");
+            }
+
             if (!activeFolderId) {
-                titleEl.textContent = "Countries Explored 🌍";
-                subEl.textContent = `${folders.length} Continents • ${totalCountries} Countries`;
+                titleEl.textContent = `${pluralizeEntity(totalCountries, "Country", "Countries")} Explored 🌍`;
+                subEl.textContent = `${formatCountLabel(totalContinents, "Continent", "Continents")} • ${formatCountLabel(totalCountries, "Country", "Countries")}`;
                 newFolderBtn.classList.remove("hidden");
                 folderMenuWrap.classList.add("hidden");
                 fabBtn.classList.add("hidden");
@@ -733,8 +750,9 @@
                     updateHeaderUI();
                     return;
                 }
+                const cCount = folder.items ? folder.items.length : 0;
                 titleEl.textContent = folder.title;
-                subEl.textContent = `${folder.items.length} Countries inside`;
+                subEl.textContent = `${formatCountLabel(cCount, "Country", "Countries")} inside`;
                 newFolderBtn.classList.add("hidden");
                 folderMenuWrap.classList.remove("hidden");
                 fabBtn.classList.remove("hidden");
@@ -799,9 +817,10 @@
             }
 
             if (searchQuery && matchedItems.length > 0) {
+                const matchHeading = `Matching ${pluralizeEntity(matchedItems.length, "Country", "Countries")}`;
                 globalBox.classList.remove("hidden");
                 globalBox.innerHTML = `
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Countries</div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">${matchHeading}</div>
                     ${matchedItems.map(({ folder, item }) => {
                         const folderCover = resolveMediaUrl(folder.driveLink);
                         const itemThumb = resolveMediaUrl(item.driveLink);
@@ -853,6 +872,7 @@
                 const cover = resolveMediaUrl(f.driveLink);
                 const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
                 const dispDate = formatEntityDate(f);
+                const itemCount = f.items ? f.items.length : 0;
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
                     : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
@@ -866,7 +886,7 @@
                     <div class="h-32 bg-black relative rounded-t-2xl overflow-hidden">
                         ${mediaHtml}
                         <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
-                            ${f.items.length}
+                            ${formatCountLabel(itemCount, "Country", "Countries")}
                         </span>
                         <button
                             type="button"
@@ -957,7 +977,7 @@
                         suppressNextClick = true;
                         expandedItemId = nextItem.id;
                         renderAll();
-                        syncHistoryState();
+                        pushNavState();
                         window.scrollTo({ top: 0, behavior: "smooth" });
                     }
                 }
@@ -1185,7 +1205,10 @@
                 }
             } else {
                 editBtn.classList.add("hidden");
-                label.textContent = `${ids.length} ${selectionKind === "folder" ? "continents" : "countries"} selected`;
+                const noun = selectionKind === "folder"
+                    ? pluralizeEntity(ids.length, "continent", "continents")
+                    : pluralizeEntity(ids.length, "country", "countries");
+                label.textContent = `${ids.length} ${noun} selected`;
             }
 
             fab.classList.add("hidden");
@@ -1469,12 +1492,13 @@
             window.location.href = "admin.html";
         }
 
-        window.addEventListener("popstate", () => {
+        window.addEventListener("popstate", (event) => {
             isHandlingPopState = true;
             try {
                 if (stepBackOneLevel()) {
-                    if (activeFolderId || expandedItemId) {
-                        history.pushState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId, sentinel: true }, "");
+                    const state = event.state;
+                    if (state && typeof state.step === "number" && state.step > 1) {
+                        history.replaceState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId, step: state.step - 1 }, "");
                     } else {
                         syncHistoryState();
                     }
@@ -1487,7 +1511,8 @@
         });
 
         function openFolderModal(folderId = null) {
-            editingFolderId = folderId;
+            const targetId = folderId || activeFolderId || null;
+            editingFolderId = targetId;
             const heading = document.getElementById("folder-modal-heading");
             const titleInp = document.getElementById("fld-title");
             const dateInp = document.getElementById("fld-date");
@@ -1496,8 +1521,8 @@
             const driveInp = document.getElementById("fld-drive");
             const descInp = document.getElementById("fld-desc");
 
-            if (folderId) {
-                const f = folders.find(x => x.id === folderId);
+            if (targetId) {
+                const f = folders.find(x => x.id === targetId);
                 heading.textContent = "Edit Continent";
                 titleInp.value = f ? f.title : "";
                 dateInp.value = f ? (f.date || "") : "";
@@ -1516,7 +1541,9 @@
                 driveInp.value = "";
                 descInp.value = "";
             }
-            document.getElementById("folder-modal").classList.remove("hidden");
+            const modal = document.getElementById("folder-modal");
+            modal.classList.remove("hidden");
+            modal.scrollTop = 0;
         }
 
         function closeFolderModal() {
@@ -1704,9 +1731,11 @@
         function requestDeleteSingle(kind, id) {
             if (kind === "folder") {
                 const f = folders.find(x => x.id === id);
+                const cCount = f && f.items ? f.items.length : 0;
+                const cNoun = pluralizeEntity(cCount, "country", "countries");
                 openConfirmModal(
                     "Delete Continent?",
-                    `Delete "${f ? f.title : "this continent"}" and all countries inside it?`,
+                    `Delete "${f ? f.title : "this continent"}" and all ${cNoun} inside it?`,
                     async () => {
                         folders = folders.filter(x => x.id !== id);
                         if (activeFolderId === id) {
@@ -1756,11 +1785,11 @@
             const count = ids.length;
 
             if (selectionKind === "folder") {
+                const nounCap = pluralizeEntity(count, "Continent", "Continents");
+                const nounLow = pluralizeEntity(count, "continent", "continents");
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Continents?` : "Delete Continent?",
-                    count > 1
-                        ? `Delete ${count} selected continents and all countries inside them?`
-                        : "Delete the selected continent and all countries inside it?",
+                    `Delete ${count} ${nounCap}?`,
+                    `Delete ${count} selected ${nounLow} and all countries inside them?`,
                     async () => {
                         const removeSet = new Set(ids);
                         folders = folders.filter(x => !removeSet.has(x.id));
@@ -1773,15 +1802,15 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} continents deleted!` : "Continent deleted!");
+                        await persistToFirebase(`${count} ${nounLow} deleted!`);
                     }
                 );
             } else {
+                const nounCap = pluralizeEntity(count, "Country", "Countries");
+                const nounLow = pluralizeEntity(count, "country", "countries");
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Countries?` : "Delete Country?",
-                    count > 1
-                        ? `Delete ${count} selected countries from this continent?`
-                        : "Delete the selected country from this continent?",
+                    `Delete ${count} ${nounCap}?`,
+                    `Delete ${count} selected ${nounLow} from this continent?`,
                     async () => {
                         const folder = folders.find(x => x.id === activeFolderId);
                         if (folder) {
@@ -1796,7 +1825,7 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} countries deleted!` : "Country deleted!");
+                        await persistToFirebase(`${count} ${nounLow} deleted!`);
                     }
                 );
             }
