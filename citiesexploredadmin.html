@@ -380,6 +380,8 @@
         const citiesRef = ref(rtdb, "citiesData");
         const telemetryCitiesRef = ref(rtdb, "siteContent/sections/telemetry/citiesExplored");
 
+        const SESSION_STATE_KEY = "osd_cities_admin_view_state_v1";
+
         let folders = [];
         let activeFolderId = null;
         let expandedItemId = null;
@@ -392,6 +394,7 @@
         let pendingDeleteAction = null;
         let lockEnforced = false;
         let appReadyShown = false;
+        let hasRestoredSessionState = false;
         let isHandlingPopState = false;
         let navStackDepth = 0;
 
@@ -409,6 +412,48 @@
         let lastMovedTargetId = null;
         let orderChangedDuringDrag = false;
         let suppressNextClick = false;
+
+        function saveViewStateToSession() {
+            try {
+                sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify({
+                    activeFolderId,
+                    expandedItemId,
+                    cameFromGlobalSearch,
+                    searchQuery
+                }));
+            } catch (_) {}
+        }
+
+        function restoreViewStateFromSession() {
+            if (hasRestoredSessionState) return;
+            hasRestoredSessionState = true;
+            try {
+                const raw = sessionStorage.getItem(SESSION_STATE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                if (!saved || typeof saved !== "object") return;
+
+                if (typeof saved.searchQuery === "string" && saved.searchQuery) {
+                    searchQuery = saved.searchQuery;
+                    const input = document.getElementById("search-input");
+                    if (input) input.value = saved.searchQuery;
+                }
+
+                if (saved.activeFolderId) {
+                    const folder = folders.find(f => String(f.id) === String(saved.activeFolderId));
+                    if (folder) {
+                        activeFolderId = folder.id;
+                        if (saved.expandedItemId) {
+                            const item = (folder.items || []).find(it => String(it.id) === String(saved.expandedItemId));
+                            if (item) {
+                                expandedItemId = item.id;
+                                cameFromGlobalSearch = !!saved.cameFromGlobalSearch;
+                            }
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
 
         function pluralizeEntity(count, singular, plural) {
             return Number(count) === 1 ? singular : plural;
@@ -654,6 +699,7 @@
 
         function handleSearchInput(val) {
             searchQuery = String(val || "").trim().toLowerCase();
+            saveViewStateToSession();
             syncSearchClearButton();
             renderAll();
         }
@@ -662,6 +708,7 @@
             const input = document.getElementById("search-input");
             if (input) input.value = "";
             searchQuery = "";
+            saveViewStateToSession();
             syncSearchClearButton();
             renderAll();
         }
@@ -759,6 +806,7 @@
                     activeFolderId = null;
                     expandedItemId = null;
                     cameFromGlobalSearch = false;
+                    saveViewStateToSession();
                     updateHeaderUI();
                     return;
                 }
@@ -808,6 +856,7 @@
             activeFolderId = folderId;
             expandedItemId = itemId;
             cameFromGlobalSearch = true;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -988,6 +1037,7 @@
                     if (nextItem && nextItem.id !== itemId) {
                         suppressNextClick = true;
                         expandedItemId = nextItem.id;
+                        saveViewStateToSession();
                         renderAll();
                         pushNavState();
                         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1095,6 +1145,7 @@
 
             if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
                 expandedItemId = null;
+                saveViewStateToSession();
             }
 
             const expandedIdx = expandedItemId
@@ -1147,6 +1198,7 @@
                 const prevId = expandedItemId;
                 expandedItemId = null;
                 cameFromGlobalSearch = false;
+                saveViewStateToSession();
                 renderAll();
                 syncHistoryState();
                 scrollToItemCard(prevId);
@@ -1154,6 +1206,7 @@
             }
             expandedItemId = itemId;
             cameFromGlobalSearch = false;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1459,6 +1512,7 @@
                         activeFolderId = id;
                         expandedItemId = null;
                         cameFromGlobalSearch = false;
+                        saveViewStateToSession();
                         renderAll();
                         pushNavState();
                     } else {
@@ -1482,6 +1536,7 @@
                     searchQuery = "";
                     cameFromGlobalSearch = false;
                 }
+                saveViewStateToSession();
                 renderAll();
                 scrollToItemCard(prevExpandedId);
                 return true;
@@ -1490,6 +1545,7 @@
                 activeFolderId = null;
                 expandedItemId = null;
                 cameFromGlobalSearch = false;
+                saveViewStateToSession();
                 renderAll();
                 return true;
             }
@@ -1501,6 +1557,7 @@
                 syncHistoryState();
                 return;
             }
+            saveViewStateToSession();
             window.location.href = "admin.html";
         }
 
@@ -1761,6 +1818,7 @@
                             activeFolderId = null;
                             expandedItemId = null;
                             cameFromGlobalSearch = false;
+                            saveViewStateToSession();
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1782,6 +1840,7 @@
                         if (expandedItemId === id) {
                             expandedItemId = null;
                             cameFromGlobalSearch = false;
+                            saveViewStateToSession();
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1816,6 +1875,7 @@
                             activeFolderId = null;
                             expandedItemId = null;
                             cameFromGlobalSearch = false;
+                            saveViewStateToSession();
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1839,6 +1899,7 @@
                         if (expandedItemId && ids.includes(expandedItemId)) {
                             expandedItemId = null;
                             cameFromGlobalSearch = false;
+                            saveViewStateToSession();
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1878,6 +1939,7 @@
 
         onValue(citiesRef, async (snap) => {
             folders = normalizeFolders(snap.val());
+            restoreViewStateFromSession();
             if (!isDragging) {
                 renderAll();
             }
