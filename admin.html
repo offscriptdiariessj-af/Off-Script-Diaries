@@ -299,7 +299,7 @@
                             <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         </div>
 
-                        <!-- STORY BOXES WITH + BUTTON (EACH HAS HEADING & TALL DESCRIPTION) -->
+                        <!-- STORY BOXES WITH + BUTTON (EACH HAS HEADING/SUBHEADING TOGGLE & TALL DESCRIPTION) -->
                         <div class="space-y-3 pt-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-bold text-blue-400">Story Boxes</span>
@@ -660,6 +660,7 @@
                 .map((b, idx) => ({
                     id: b.id || `${Date.now()}_${idx}`,
                     heading: String(b.heading || ''),
+                    isSubHeading: Boolean(b.isSubHeading),
                     description: String(b.description || '')
                 }));
 
@@ -672,6 +673,7 @@
                 {
                     id: 'origin_box_1',
                     heading: '',
+                    isSubHeading: false,
                     description: legacyStory
                 }
             ];
@@ -725,15 +727,29 @@
             const container = document.getElementById('admin-origin-story-boxes');
             if (!container) return;
             const blocks = currentData.sections.origin.storyBlocks || [];
-            container.innerHTML = blocks.map((block, idx) => `
+            container.innerHTML = blocks.map((block, idx) => {
+                const isSub = Boolean(block.isSubHeading);
+                return `
                 <div class="p-3 rounded-2xl bg-[#121417] border border-white/10 space-y-2.5">
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-[11px] font-semibold text-white/60">Box ${idx + 1}</span>
-                        ${blocks.length > 1 ? `<button type="button" onclick="removeOriginStoryBox(${idx})" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-0.5">✕</button>` : ''}
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-semibold ${isSub ? 'text-blue-400' : 'text-white/75'}">${isSub ? 'Sub Heading' : 'Heading'}</span>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked="${isSub}"
+                                onclick="toggleOriginStoryBoxSubHeading(${idx})"
+                                class="relative w-11 h-6 rounded-full ${isSub ? 'bg-blue-600' : 'bg-white/15'} transition-colors p-0.5 shrink-0"
+                            >
+                                <span class="block w-5 h-5 rounded-full bg-white shadow transform ${isSub ? 'translate-x-5' : 'translate-x-0'} transition-transform"></span>
+                            </button>
+                            ${blocks.length > 1 ? `<button type="button" onclick="removeOriginStoryBox(${idx})" class="text-xs text-rose-400 hover:text-rose-300 px-1.5 py-0.5">✕</button>` : ''}
+                        </div>
                     </div>
                     <input
                         type="text"
-                        placeholder="Heading"
+                        placeholder="${isSub ? 'Sub Heading' : 'Heading'}"
                         value="${(block.heading || '').replace(/"/g, '&quot;')}"
                         oninput="updateOriginStoryBoxHeading(${idx}, this.value)"
                         class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs font-semibold text-white"
@@ -745,7 +761,8 @@
                         class="w-full min-h-[260px] p-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs leading-relaxed text-white"
                     >${(block.description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function addOriginStoryBox() {
@@ -753,9 +770,17 @@
             currentData.sections.origin.storyBlocks.push({
                 id: `${Date.now()}_${currentData.sections.origin.storyBlocks.length}`,
                 heading: '',
+                isSubHeading: false,
                 description: ''
             });
             renderOriginStoryBoxes();
+        }
+
+        function toggleOriginStoryBoxSubHeading(idx) {
+            if (currentData?.sections?.origin?.storyBlocks?.[idx]) {
+                currentData.sections.origin.storyBlocks[idx].isSubHeading = !Boolean(currentData.sections.origin.storyBlocks[idx].isSubHeading);
+                renderOriginStoryBoxes();
+            }
         }
 
         function updateOriginStoryBoxHeading(idx, val) {
@@ -1146,6 +1171,7 @@
         window.applyPasswordChanges = applyPasswordChanges;
         window.updateLogoPreview = updateLogoPreview;
         window.addOriginStoryBox = addOriginStoryBox;
+        window.toggleOriginStoryBoxSubHeading = toggleOriginStoryBoxSubHeading;
         window.updateOriginStoryBoxHeading = updateOriginStoryBoxHeading;
         window.updateOriginStoryBoxDescription = updateOriginStoryBoxDescription;
         window.removeOriginStoryBox = removeOriginStoryBox;
