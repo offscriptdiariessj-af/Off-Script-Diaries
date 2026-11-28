@@ -264,7 +264,7 @@
         </div>
 
         <!-- STATE CREATE / EDIT MODAL -->
-        <div id="folder-modal" class="hidden fixed inset-0 z-[55] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="folder-modal" class="hidden fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New State</h3>
@@ -689,7 +689,7 @@
         }
 
         function toggleFolderHeaderMenu(e) {
-            e.stopPropagation();
+            if (e && typeof e.stopPropagation === "function") e.stopPropagation();
             closeAllCardMenus();
             const menu = document.getElementById("folder-header-menu");
             if (menu) menu.classList.toggle("hidden");
@@ -700,7 +700,7 @@
         }
 
         function toggleCardMenu(e, kind, id) {
-            e.stopPropagation();
+            if (e && typeof e.stopPropagation === "function") e.stopPropagation();
             const target = document.getElementById(`card-menu-${kind}-${id}`);
             const wasOpen = target && !target.classList.contains("hidden");
             closeFolderHeaderMenu();
@@ -1511,7 +1511,15 @@
         });
 
         function openFolderModal(folderId = null) {
-            const targetId = folderId === "new" ? null : (folderId || activeFolderId || null);
+            closeFolderHeaderMenu();
+            closeAllCardMenus();
+
+            const resolvedId = folderId === "new"
+                ? null
+                : (folderId || activeFolderId || null);
+            const f = resolvedId ? folders.find(x => String(x.id) === String(resolvedId)) : null;
+            const targetId = f ? f.id : null;
+
             editingFolderId = targetId;
             const heading = document.getElementById("folder-modal-heading");
             const titleInp = document.getElementById("fld-title");
@@ -1521,16 +1529,15 @@
             const driveInp = document.getElementById("fld-drive");
             const descInp = document.getElementById("fld-desc");
 
-            if (targetId) {
-                const f = folders.find(x => x.id === targetId);
+            if (f) {
                 heading.textContent = "Edit State";
-                titleInp.value = f ? f.title : "";
-                dateInp.value = f ? (f.date || "") : "";
-                fromInp.value = f ? (f.dateFrom || "") : "";
-                toInp.value = f ? (f.dateTo || "") : "";
-                setModalDateRangeState("fld", f ? !!f.dateRangeEnabled : false);
-                driveInp.value = f ? f.driveLink : "";
-                descInp.value = f ? f.description : "";
+                titleInp.value = f.title || "";
+                dateInp.value = f.date || "";
+                fromInp.value = f.dateFrom || "";
+                toInp.value = f.dateTo || "";
+                setModalDateRangeState("fld", !!f.dateRangeEnabled);
+                driveInp.value = f.driveLink || "";
+                descInp.value = f.description || "";
             } else {
                 heading.textContent = "New State";
                 titleInp.value = "";
