@@ -383,6 +383,34 @@
         let rtdbAuthConfig = null;
         let rtdbMagazineFolders = [];
         let hasLoadedSiteFromFirebase = false;
+        let citiesInsideFoldersCount = 0;
+        let countriesInsideFoldersCount = 0;
+
+        function countItemsInsideFolders(raw) {
+            if (!raw || typeof raw !== 'object') return 0;
+            const folderList = Array.isArray(raw) ? raw : Object.values(raw);
+            let total = 0;
+            for (const folder of folderList) {
+                if (!folder || typeof folder !== 'object') continue;
+                const items = folder.items;
+                if (!items || typeof items !== 'object') continue;
+                if (Array.isArray(items)) {
+                    total += items.filter(Boolean).length;
+                } else {
+                    total += Object.values(items).filter(Boolean).length;
+                }
+            }
+            return total;
+        }
+
+        function updateExploredItemCounts() {
+            ['home', 'deck'].forEach(prefix => {
+                const citiesEl = document.getElementById(`${prefix}-stat-cities`);
+                const countriesEl = document.getElementById(`${prefix}-stat-coffee`);
+                if (citiesEl) citiesEl.textContent = String(citiesInsideFoldersCount);
+                if (countriesEl) countriesEl.textContent = String(countriesInsideFoldersCount);
+            });
+        }
 
         function finishDoorOverlay() {
             const overlay = document.getElementById('osd-door-overlay');
@@ -832,9 +860,8 @@
             document.getElementById('origin-quote').textContent = data.sections.origin.quote || '';
 
             updateTogetherCounter();
+            updateExploredItemCounts();
             ['home', 'deck'].forEach(prefix => {
-                document.getElementById(`${prefix}-stat-cities`).textContent = data.sections.telemetry.citiesExplored ?? '0';
-                document.getElementById(`${prefix}-stat-coffee`).textContent = data.sections.telemetry.coffeeCups ?? '0';
                 document.getElementById(`${prefix}-stat-calls`).textContent = data.sections.telemetry.midnightCalls ?? '0';
             });
 
@@ -941,8 +968,20 @@
         const foldersRef = ref(rtdb, "magazineFolders");
         const siteDataRef = ref(rtdb, "siteContent");
         const authConfigRef = ref(rtdb, "siteAuthConfig");
+        const citiesDataRef = ref(rtdb, "citiesData");
+        const countriesDataRef = ref(rtdb, "countriesData");
 
         let lockEnforcedOnce = false;
+
+        onValue(citiesDataRef, (snap) => {
+            citiesInsideFoldersCount = countItemsInsideFolders(snap.val());
+            updateExploredItemCounts();
+        });
+
+        onValue(countriesDataRef, (snap) => {
+            countriesInsideFoldersCount = countItemsInsideFolders(snap.val());
+            updateExploredItemCounts();
+        });
 
         onValue(
             siteDataRef,
