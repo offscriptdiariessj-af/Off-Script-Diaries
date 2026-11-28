@@ -378,7 +378,7 @@
         <article class="max-w-2xl mx-auto px-4 pt-6 space-y-6">
             <div class="rounded-3xl bg-gradient-to-br from-[#1E2126] via-[#191C21] to-[#121417] border border-white/10 p-5 space-y-4 shadow-2xl">
                 <div class="flex items-center justify-between gap-2 text-[11px]">
-                    <span class="font-bold uppercase tracking-widest text-blue-400">02 • Origin Chapter</span>
+                    <span class="font-bold uppercase tracking-widest text-blue-400">02 • Origin</span>
                     <span id="story-reader-date" class="text-white/55 font-medium"></span>
                 </div>
 
@@ -531,8 +531,8 @@
 
             const blocks = parseOriginStoryStructure(originData);
             const headingsList = blocks
-                .filter(b => !b.isSubHeading && b.heading)
                 .map(b => b.heading)
+                .filter(Boolean)
                 .slice(0, 4);
 
             if (headingsList.length > 0) {
@@ -593,7 +593,10 @@
             if (sectionsContainer) {
                 if (blocks.length > 0) {
                     sectionsContainer.innerHTML = blocks.map((b, idx) => {
-                        const showHeading = !b.isSubHeading && Boolean(b.heading);
+                        const headingClass = b.isSubHeading
+                            ? 'text-lg sm:text-xl font-bold text-sky-200 tracking-tight osd-story-subheading-stroke'
+                            : 'text-xl sm:text-2xl font-extrabold text-white tracking-tight osd-story-heading-stroke';
+
                         const paragraphsHtml = (b.description || '')
                             .split(/\n+/)
                             .map(p => p.trim())
@@ -605,10 +608,9 @@
                         <section class="osd-story-chapter-card rounded-3xl p-5 space-y-3">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-white/40">Part 0${idx + 1}</span>
-                                ${showHeading ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-blue-500/15 text-blue-300 border-blue-400/30">Chapter Heading</span>` : ''}
                             </div>
-                            ${showHeading ? `<h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight osd-story-heading-stroke">${escapeStoryHtml(b.heading)}</h2>` : ''}
-                            ${paragraphsHtml ? `<div class="space-y-3 ${showHeading ? 'pt-1 border-t border-white/10' : ''}">${paragraphsHtml}</div>` : ''}
+                            ${b.heading ? `<h2 class="${headingClass}">${escapeStoryHtml(b.heading)}</h2>` : ''}
+                            ${paragraphsHtml ? `<div class="space-y-3 ${b.heading ? 'pt-1 border-t border-white/10' : ''}">${paragraphsHtml}</div>` : ''}
                         </section>`;
                     }).join('');
                 } else {
