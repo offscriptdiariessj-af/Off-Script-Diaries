@@ -170,6 +170,7 @@
                     <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
                 </div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
+                <div id="global-search-items" class="hidden space-y-2"></div>
             </div>
 
             <!-- ITEMS INSIDE FOLDER VIEW (LEVEL 2) -->
@@ -181,8 +182,7 @@
                     </div>
                     <div class="p-4">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">City Folder</span>
-                            <span id="folder-banner-date" class="text-[11px] text-white/50"></span>
+                            <span id="folder-banner-date" class="text-[11px] text-blue-400"></span>
                         </div>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
                         <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
@@ -264,9 +264,25 @@
                     <label class="block text-[11px] text-white/70 mb-1">Title</label>
                     <input id="fld-title" type="text" placeholder="Folder title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
-                <div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-[11px] text-white/70">Date Range (From - To)</span>
+                    <button id="fld-range-toggle" type="button" onclick="toggleModalDateRange('fld')" class="w-11 h-6 rounded-full bg-white/15 relative transition">
+                        <span id="fld-range-knob" class="block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform"></span>
+                    </button>
+                </div>
+                <div id="fld-single-date-wrap">
                     <label class="block text-[11px] text-white/70 mb-1">Date</label>
                     <input id="fld-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div id="fld-range-date-wrap" class="hidden grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] text-white/70 mb-1">From</label>
+                        <input id="fld-date-from" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-white/70 mb-1">To</label>
+                        <input id="fld-date-to" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    </div>
                 </div>
                 <div>
                     <label class="block text-[11px] text-blue-400 mb-1">Google Drive Link (Thumbnail)</label>
@@ -297,9 +313,25 @@
                     <label class="block text-[11px] text-white/70 mb-1">Title</label>
                     <input id="itm-title" type="text" placeholder="Title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
-                <div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-[11px] text-white/70">Date Range (From - To)</span>
+                    <button id="itm-range-toggle" type="button" onclick="toggleModalDateRange('itm')" class="w-11 h-6 rounded-full bg-white/15 relative transition">
+                        <span id="itm-range-knob" class="block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform"></span>
+                    </button>
+                </div>
+                <div id="itm-single-date-wrap">
                     <label class="block text-[11px] text-white/70 mb-1">Date</label>
                     <input id="itm-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div id="itm-range-date-wrap" class="hidden grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] text-white/70 mb-1">From</label>
+                        <input id="itm-date-from" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-white/70 mb-1">To</label>
+                        <input id="itm-date-to" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    </div>
                 </div>
                 <div>
                     <label class="block text-[11px] text-blue-400 mb-1">Google drive link</label>
@@ -350,7 +382,6 @@
         let lockEnforced = false;
         let appReadyShown = false;
 
-        // Finger-anchored drag & overlap neighbor shift state
         let holdTimer = null;
         let isDragging = false;
         let dragType = null;
@@ -428,11 +459,220 @@
             return parsed;
         }
 
-        function formatDisplayDate(rawDate = "") {
+        function formatSingleDate(rawDate = "") {
             const clean = String(rawDate || "").trim();
             if (!clean) return "";
             const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (m) return `${m[3]}/${m[2]}/${m[1]}`; return clean; }  function normalizeFolders(raw) { if (!raw \vert{}\vert{} typeof raw !== "object") return []; const arr = Array.isArray(raw) ? raw : Object.values(raw); return arr .filter(Boolean) .map((f, idx) => { const rawItems = f.items && typeof f.items === "object" ? (Array.isArray(f.items) ? f.items : Object.values(f.items)) : []; const items = rawItems .filter(Boolean) .map((it, iIdx) => ({ id: String(it.id \vert{}\vert{} `city_${Date.now()}_${iIdx}`), name: String(it.name \vert{}\vert{} ""), title: String(it.title \vert{}\vert{} ""), date: String(it.date \vert{}\vert{} ""), driveLink: String(it.driveLink \vert{}\vert{} ""), description: String(it.description \vert{}\vert{} ""), order: typeof it.order === "number" ? it.order : iIdx })) .sort((a, b) => a.order - b.order);  return { id: String(f.id \vert{}\vert{} `fld_${Date.now()}_${idx}`), title: String(f.title \vert{}\vert{} "Untitled Folder"), date: String(f.date \vert{}\vert{} ""), driveLink: String(f.driveLink \vert{}\vert{} ""), description: String(f.description \vert{}\vert{} ""), order: typeof f.order === "number" ? f.order : idx, items }; }) .sort((a, b) => a.order - b.order); }  async function persistToFirebase(toastMsg = "Saved!") { const payload = {}; let totalCities = 0;  folders.forEach((f, fIdx) => { f.order = fIdx; const itemsObj = {}; (f.items \vert{}\vert{} []).forEach((it, iIdx) => { it.order = iIdx; totalCities += 1; itemsObj[it.id] = { id: it.id, name: it.name, title: it.title, date: it.date \vert{}\vert{} "", driveLink: it.driveLink, description: it.description, order: iIdx }; }); payload[f.id] = { id: f.id, title: f.title, date: f.date \vert{}\vert{} "", driveLink: f.driveLink, description: f.description, order: fIdx, items: itemsObj }; });  await set(citiesRef, payload); await set(telemetryCitiesRef, String(totalCities)); showToast(toastMsg); }  function escapeHtml(str = "") { return String(str) .replace(/&/g, "&amp;") .replace(/</g, "&lt;") .replace(/>/g, "&gt;") .replace(/"/g, "&quot;"); }  function handleSearchInput(val) { searchQuery = String(val \vert{}\vert{} "").trim().toLowerCase(); renderAll(); }  function matchesSearch(obj = {}) { if (!searchQuery) return true; const fields = [ obj.name, obj.title, obj.date, formatDisplayDate(obj.date) ]; return fields.some(v => String(v \vert{}\vert{} "").toLowerCase().includes(searchQuery)); }  function closeFolderHeaderMenu() { const menu = document.getElementById("folder-header-menu"); if (menu) menu.classList.add("hidden"); }  function toggleFolderHeaderMenu(e) { e.stopPropagation(); closeAllCardMenus(); const menu = document.getElementById("folder-header-menu"); if (menu) menu.classList.toggle("hidden"); }  function closeAllCardMenus() { document.querySelectorAll("[data-card-menu]").forEach(m => m.classList.add("hidden")); }  function toggleCardMenu(e, kind, id) { e.stopPropagation(); const target = document.getElementById(`card-menu-${kind}-${id}`); const wasOpen = target && !target.classList.contains("hidden"); closeFolderHeaderMenu(); closeAllCardMenus(); if (target && !wasOpen) { target.classList.remove("hidden"); } }  document.addEventListener("click", () => { closeFolderHeaderMenu(); closeAllCardMenus(); });  function updateHeaderUI() { const titleEl = document.getElementById("page-title"); const subEl = document.getElementById("page-subtitle"); const newFolderBtn = document.getElementById("btn-new-folder"); const folderMenuWrap = document.getElementById("folder-header-menu-wrap"); const fabBtn = document.getElementById("fab-add-item"); const foldersView = document.getElementById("folders-view"); const itemsView = document.getElementById("items-view");  const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);  if (!activeFolderId) { titleEl.textContent = "Cities Explored 🇮🇳"; subEl.textContent = `${folders.length} Folders • ${totalCount} Cities`; newFolderBtn.classList.remove("hidden"); folderMenuWrap.classList.add("hidden"); fabBtn.classList.add("hidden"); foldersView.classList.remove("hidden"); itemsView.classList.add("hidden"); } else { const folder = folders.find(f => f.id === activeFolderId); if (!folder) { activeFolderId = null; expandedItemId = null; updateHeaderUI(); return; } titleEl.textContent = folder.title; subEl.textContent = `${folder.items.length} Cities inside`;
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            return clean;
+        }
+
+        function formatEntityDate(obj = {}) {
+            if (obj.dateRangeEnabled) {
+                const f = formatSingleDate(obj.dateFrom);
+                const t = formatSingleDate(obj.dateTo);
+                if (f && t) return `${f} - ${t}`;
+                return f || t || formatSingleDate(obj.date);
+            }
+            return formatSingleDate(obj.date);
+        }
+
+        function setModalDateRangeState(prefix, enabled) {
+            const btn = document.getElementById(`${prefix}-range-toggle`);
+            const knob = document.getElementById(`${prefix}-range-knob`);
+            const singleWrap = document.getElementById(`${prefix}-single-date-wrap`);
+            const rangeWrap = document.getElementById(`${prefix}-range-date-wrap`);
+            if (btn) btn.dataset.enabled = enabled ? "true" : "false";
+            if (btn) btn.className = enabled
+                ? "w-11 h-6 rounded-full bg-blue-600 relative transition"
+                : "w-11 h-6 rounded-full bg-white/15 relative transition";
+            if (knob) knob.className = enabled
+                ? "block w-4 h-4 rounded-full bg-white translate-x-6 transition-transform"
+                : "block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform";
+            if (singleWrap) singleWrap.classList.toggle("hidden", !!enabled);
+            if (rangeWrap) rangeWrap.classList.toggle("hidden", !enabled);
+        }
+
+        function toggleModalDateRange(prefix) {
+            const btn = document.getElementById(`${prefix}-range-toggle`);
+            const next = btn && btn.dataset.enabled === "true" ? false : true;
+            setModalDateRangeState(prefix, next);
+        }
+
+        function normalizeFolders(raw) {
+            if (!raw || typeof raw !== "object") return [];
+            const arr = Array.isArray(raw) ? raw : Object.values(raw);
+            return arr
+                .filter(Boolean)
+                .map((f, idx) => {
+                    const rawItems = f.items && typeof f.items === "object"
+                        ? (Array.isArray(f.items) ? f.items : Object.values(f.items))
+                        : [];
+                    const items = rawItems
+                        .filter(Boolean)
+                        .map((it, iIdx) => ({
+                            id: String(it.id || `city_${Date.now()}_${iIdx}`),
+                            name: String(it.name || ""),
+                            title: String(it.title || ""),
+                            date: String(it.date || ""),
+                            dateFrom: String(it.dateFrom || ""),
+                            dateTo: String(it.dateTo || ""),
+                            dateRangeEnabled: !!it.dateRangeEnabled,
+                            driveLink: String(it.driveLink || ""),
+                            description: String(it.description || ""),
+                            order: typeof it.order === "number" ? it.order : iIdx
+                        }))
+                        .sort((a, b) => a.order - b.order);
+
+                    return {
+                        id: String(f.id || `fld_${Date.now()}_${idx}`),
+                        title: String(f.title || "Untitled Folder"),
+                        date: String(f.date || ""),
+                        dateFrom: String(f.dateFrom || ""),
+                        dateTo: String(f.dateTo || ""),
+                        dateRangeEnabled: !!f.dateRangeEnabled,
+                        driveLink: String(f.driveLink || ""),
+                        description: String(f.description || ""),
+                        order: typeof f.order === "number" ? f.order : idx,
+                        items
+                    };
+                })
+                .sort((a, b) => a.order - b.order);
+        }
+
+        async function persistToFirebase(toastMsg = "Saved!") {
+            const payload = {};
+            let totalCities = 0;
+
+            folders.forEach((f, fIdx) => {
+                f.order = fIdx;
+                const itemsObj = {};
+                (f.items || []).forEach((it, iIdx) => {
+                    it.order = iIdx;
+                    totalCities += 1;
+                    itemsObj[it.id] = {
+                        id: it.id,
+                        name: it.name,
+                        title: it.title,
+                        date: it.date || "",
+                        dateFrom: it.dateFrom || "",
+                        dateTo: it.dateTo || "",
+                        dateRangeEnabled: !!it.dateRangeEnabled,
+                        driveLink: it.driveLink,
+                        description: it.description,
+                        order: iIdx
+                    };
+                });
+                payload[f.id] = {
+                    id: f.id,
+                    title: f.title,
+                    date: f.date || "",
+                    dateFrom: f.dateFrom || "",
+                    dateTo: f.dateTo || "",
+                    dateRangeEnabled: !!f.dateRangeEnabled,
+                    driveLink: f.driveLink,
+                    description: f.description,
+                    order: fIdx,
+                    items: itemsObj
+                };
+            });
+
+            await set(citiesRef, payload);
+            await set(telemetryCitiesRef, String(totalCities));
+            showToast(toastMsg);
+        }
+
+        function escapeHtml(str = "") {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function handleSearchInput(val) {
+            searchQuery = String(val || "").trim().toLowerCase();
+            renderAll();
+        }
+
+        function matchesSearch(obj = {}) {
+            if (!searchQuery) return true;
+            const fields = [
+                obj.name,
+                obj.title,
+                obj.description,
+                obj.date,
+                obj.dateFrom,
+                obj.dateTo,
+                formatSingleDate(obj.date),
+                formatSingleDate(obj.dateFrom),
+                formatSingleDate(obj.dateTo),
+                formatEntityDate(obj)
+            ];
+            return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
+        }
+
+        function closeFolderHeaderMenu() {
+            const menu = document.getElementById("folder-header-menu");
+            if (menu) menu.classList.add("hidden");
+        }
+
+        function toggleFolderHeaderMenu(e) {
+            e.stopPropagation();
+            closeAllCardMenus();
+            const menu = document.getElementById("folder-header-menu");
+            if (menu) menu.classList.toggle("hidden");
+        }
+
+        function closeAllCardMenus() {
+            document.querySelectorAll("[data-card-menu]").forEach(m => m.classList.add("hidden"));
+        }
+
+        function toggleCardMenu(e, kind, id) {
+            e.stopPropagation();
+            const target = document.getElementById(`card-menu-${kind}-${id}`);
+            const wasOpen = target && !target.classList.contains("hidden");
+            closeFolderHeaderMenu();
+            closeAllCardMenus();
+            if (target && !wasOpen) {
+                target.classList.remove("hidden");
+            }
+        }
+
+        document.addEventListener("click", () => {
+            closeFolderHeaderMenu();
+            closeAllCardMenus();
+        });
+
+        function updateHeaderUI() {
+            const titleEl = document.getElementById("page-title");
+            const subEl = document.getElementById("page-subtitle");
+            const newFolderBtn = document.getElementById("btn-new-folder");
+            const folderMenuWrap = document.getElementById("folder-header-menu-wrap");
+            const fabBtn = document.getElementById("fab-add-item");
+            const foldersView = document.getElementById("folders-view");
+            const itemsView = document.getElementById("items-view");
+
+            const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+
+            if (!activeFolderId) {
+                titleEl.textContent = "Cities Explored 🇮🇳";
+                subEl.textContent = `${folders.length} Folders • ${totalCount} Cities`;
+                newFolderBtn.classList.remove("hidden");
+                folderMenuWrap.classList.add("hidden");
+                fabBtn.classList.add("hidden");
+                foldersView.classList.remove("hidden");
+                itemsView.classList.add("hidden");
+            } else {
+                const folder = folders.find(f => f.id === activeFolderId);
+                if (!folder) {
+                    activeFolderId = null;
+                    expandedItemId = null;
+                    updateHeaderUI();
+                    return;
+                }
+                titleEl.textContent = folder.title;
+                subEl.textContent = `${folder.items.length} Cities inside`;
                 newFolderBtn.classList.add("hidden");
                 folderMenuWrap.classList.remove("hidden");
                 fabBtn.classList.remove("hidden");
@@ -450,7 +690,7 @@
                 }
                 document.getElementById("folder-banner-title").textContent = folder.title;
                 const dateEl = document.getElementById("folder-banner-date");
-                const dispDate = formatDisplayDate(folder.date);
+                const dispDate = formatEntityDate(folder);
                 dateEl.textContent = dispDate;
                 dateEl.classList.toggle("hidden", !dispDate);
                 const descEl = document.getElementById("folder-banner-desc");
@@ -467,16 +707,32 @@
             </svg>`;
         }
 
+        function openItemFromGlobalSearch(folderId, itemId) {
+            activeFolderId = folderId;
+            expandedItemId = itemId;
+            renderAll();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
         function renderFolders() {
             const grid = document.getElementById("folders-grid");
             const empty = document.getElementById("folders-empty");
-            const filtered = folders.filter(matchesSearch);
-            empty.classList.toggle("hidden", filtered.length > 0);
+            const globalBox = document.getElementById("global-search-items");
 
-            grid.innerHTML = filtered.map(f => {
+            const matchedFolders = searchQuery
+                ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
+                : folders;
+
+            const matchedItems = searchQuery
+                ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
+                : [];
+
+            empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
+
+            grid.innerHTML = matchedFolders.map(f => {
                 const cover = resolveMediaUrl(f.driveLink);
                 const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
-                const dispDate = formatDisplayDate(f.date);
+                const dispDate = formatEntityDate(f);
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
                     : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
@@ -521,11 +777,32 @@
             }).join("");
 
             bindCardGestures(grid, "folder");
+
+            if (searchQuery && matchedItems.length > 0) {
+                globalBox.classList.remove("hidden");
+                globalBox.innerHTML = `
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Cities</div>
+                    ${matchedItems.map(({ folder, item }) => {
+                        const dispDate = formatEntityDate(item);
+                        return `
+                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-3 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-center justify-between gap-2 cursor-pointer transition">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                <div class="text-[10px] text-white/55 truncate">${escapeHtml(item.name)}${item.name && folder.title ? " • " : ""}${escapeHtml(folder.title)}</div>
+                            </div>
+                            ${dispDate ? `<span class="text-[10px] text-blue-400 shrink-0">${escapeHtml(dispDate)}</span>` : ""}
+                        </div>`;
+                    }).join("")}
+                `;
+            } else {
+                globalBox.classList.add("hidden");
+                globalBox.innerHTML = "";
+            }
         }
 
         function buildExpandedItemCardHtml(it, isSelected) {
             const imgSrc = resolveMediaUrl(it.driveLink);
-            const dispDate = formatDisplayDate(it.date);
+            const dispDate = formatEntityDate(it);
             return `
             <div
                 data-entity-type="item"
@@ -534,7 +811,7 @@
             >
                 ${imgSrc ? `
                 <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
-                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover pointer-events-none" />
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />
                     <button
                         type="button"
                         onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
@@ -558,9 +835,11 @@
                 <div class="p-4 flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>${dispDate ? `<span class="text-[10px] text-white/50">${escapeHtml(dispDate)}</span>` : ""}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                            ${dispDate ? `<span class="text-[10px] text-white/50">${escapeHtml(dispDate)}</span>` : ""}
                         </div>
-                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title \vert{}\vert{} it.name)}</h3>${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                        ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
                     </div>
                     ${!imgSrc ? `
                     <button
@@ -571,6 +850,26 @@
                     >
                         ${renderThreeDotsSvg()}
                     </button>` : ""}
+                </div>
+            </div>`;
+        }
+
+        function buildCompactItemCardHtml(it, isSelected, imgHeightClass = "h-20") {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const mediaHtml = imgSrc
+                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />`
+                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
+            return `
+            <div
+                data-entity-type="item"
+                data-entity-id="${escapeHtml(it.id)}"
+                class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-hidden transition-colors cursor-pointer"
+            >
+                <div class="${imgHeightClass} bg-black relative overflow-hidden">
+                    ${mediaHtml}
+                </div>
+                <div class="p-2 text-center">
+                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
                 </div>
             </div>`;
         }
@@ -612,16 +911,10 @@
                 ? "grid grid-cols-2 gap-3"
                 : "grid grid-cols-3 gap-2.5";
 
+            const compactHeight = expandedItem ? "h-24" : "h-20";
             list.innerHTML = remainingItems.map(it => {
                 const isSelected = selectionKind === "item" && selectedIds.has(it.id);
-                return `
-                <div
-                    data-entity-type="item"
-                    data-entity-id="${escapeHtml(it.id)}"
-                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} p-3 flex items-center justify-center text-center min-h-[76px] transition-colors cursor-pointer"
-                >
-                    <span class="text-xs font-bold text-white break-words leading-snug">${escapeHtml(it.name)}</span>
-                </div>`;
+                return buildCompactItemCardHtml(it, isSelected, compactHeight);
             }).join("");
 
             bindCardGestures(list, "item");
@@ -702,7 +995,43 @@
                 } else {
                     const folder = folders.find(x => x.id === activeFolderId);
                     const it = folder ? folder.items.find(x => x.id === ids[0]) : null;
-                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 City"; } } else { editBtn.classList.add("hidden"); label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "cities"} selected`; }  fab.classList.add("hidden"); bar.classList.remove("hidden"); }  function clearSelection() { selectedIds.clear(); selectionKind = null; renderAll(); }  function rectsOverlap(a, b, inset = 14) { return ( a.left + inset < b.right - inset && a.right - inset > b.left + inset && a.top + inset < b.bottom - inset && a.bottom - inset > b.top + inset ); }  function positionCardOnFinger(el, clientX, clientY) { const desiredLeft = clientX - pointerOffsetInCardX; const desiredTop = clientY - pointerOffsetInCardY; const dx = desiredLeft - cardInitialLeft; const dy = desiredTop - cardInitialTop; el.style.transition = "none"; el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`; }  function swapOnOverlap(container, type, activeId, clientX, clientY, mutateFn) { const cards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
+                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 City";
+                }
+            } else {
+                editBtn.classList.add("hidden");
+                label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "cities"} selected`;
+            }
+
+            fab.classList.add("hidden");
+            bar.classList.remove("hidden");
+        }
+
+        function clearSelection() {
+            selectedIds.clear();
+            selectionKind = null;
+            renderAll();
+        }
+
+        function rectsOverlap(a, b, inset = 14) {
+            return (
+                a.left + inset < b.right - inset &&
+                a.right - inset > b.left + inset &&
+                a.top + inset < b.bottom - inset &&
+                a.bottom - inset > b.top + inset
+            );
+        }
+
+        function positionCardOnFinger(el, clientX, clientY) {
+            const desiredLeft = clientX - pointerOffsetInCardX;
+            const desiredTop = clientY - pointerOffsetInCardY;
+            const dx = desiredLeft - cardInitialLeft;
+            const dy = desiredTop - cardInitialTop;
+            el.style.transition = "none";
+            el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        }
+
+        function swapOnOverlap(container, type, activeId, clientX, clientY, mutateFn) {
+            const cards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
             const beforeRects = new Map();
             cards.forEach(el => {
                 beforeRects.set(el.getAttribute("data-entity-id"), el.getBoundingClientRect());
@@ -713,7 +1042,41 @@
             if (type === "folder") renderFolders();
             else renderItems();
 
-            const afterCards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`)); let movedActiveEl = null;  afterCards.forEach(el => { const id = el.getAttribute("data-entity-id"); const prev = beforeRects.get(id); if (!prev) return; const next = el.getBoundingClientRect();  if (id === activeId) { movedActiveEl = el; cardInitialLeft = next.left; cardInitialTop = next.top; el.classList.add("card-dragging"); positionCardOnFinger(el, clientX, clientY); } else { const shiftX = prev.left - next.left; const shiftY = prev.top - next.top; if (shiftX !== 0 \vert{}\vert{} shiftY !== 0) { el.style.transition = "none"; el.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`; el.getBoundingClientRect(); el.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)"; el.style.transform = "translate3d(0, 0, 0)"; } } });  if (movedActiveEl) { dragCardEl = movedActiveEl; } }  function bindCardGestures(container, type) { const cards = container.querySelectorAll(`[data-entity-type="${type}"]`);
+            const afterCards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
+            let movedActiveEl = null;
+
+            afterCards.forEach(el => {
+                const id = el.getAttribute("data-entity-id");
+                const prev = beforeRects.get(id);
+                if (!prev) return;
+                const next = el.getBoundingClientRect();
+
+                if (id === activeId) {
+                    movedActiveEl = el;
+                    cardInitialLeft = next.left;
+                    cardInitialTop = next.top;
+                    el.classList.add("card-dragging");
+                    positionCardOnFinger(el, clientX, clientY);
+                } else {
+                    const shiftX = prev.left - next.left;
+                    const shiftY = prev.top - next.top;
+                    if (shiftX !== 0 || shiftY !== 0) {
+                        el.style.transition = "none";
+                        el.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`;
+                        el.getBoundingClientRect();
+                        el.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)";
+                        el.style.transform = "translate3d(0, 0, 0)";
+                    }
+                }
+            });
+
+            if (movedActiveEl) {
+                dragCardEl = movedActiveEl;
+            }
+        }
+
+        function bindCardGestures(container, type) {
+            const cards = container.querySelectorAll(`[data-entity-type="${type}"]`);
 
             const onWindowPointerMove = (e) => {
                 if (!isDragging || !dragCardEl) return;
@@ -722,9 +1085,252 @@
                 positionCardOnFinger(dragCardEl, e.clientX, e.clientY);
 
                 const draggedRect = dragCardEl.getBoundingClientRect();
-                const otherCards = Array.from(container.querySelectorAll(`[data-entity-type="${dragType}"]`)) .filter(el => el.getAttribute("data-entity-id") !== dragSourceId);  let overlappingTarget = null; for (const other of otherCards) { if (rectsOverlap(draggedRect, other.getBoundingClientRect())) { overlappingTarget = other; break; } }  if (!overlappingTarget) { lastMovedTargetId = null; return; }  const targetId = overlappingTarget.getAttribute("data-entity-id"); if (!targetId \vert{}\vert{} targetId === dragSourceId \vert{}\vert{} targetId === lastMovedTargetId) return;  if (dragType === "folder") { const fromIdx = folders.findIndex(x => x.id === dragSourceId); const toIdx = folders.findIndex(x => x.id === targetId); if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) { lastMovedTargetId = targetId; orderChangedDuringDrag = true; swapOnOverlap(container, "folder", dragSourceId, e.clientX, e.clientY, () => { const [moved] = folders.splice(fromIdx, 1); folders.splice(toIdx, 0, moved); }); } } else if (dragType === "item") { const folder = folders.find(x => x.id === activeFolderId); if (folder) { const fromIdx = folder.items.findIndex(x => x.id === dragSourceId); const toIdx = folder.items.findIndex(x => x.id === targetId); if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) { lastMovedTargetId = targetId; orderChangedDuringDrag = true; swapOnOverlap(container, "item", dragSourceId, e.clientX, e.clientY, () => { const [moved] = folder.items.splice(fromIdx, 1); folder.items.splice(toIdx, 0, moved); }); } } } };  const onWindowPointerUp = async () => { window.removeEventListener("pointermove", onWindowPointerMove); window.removeEventListener("pointerup", onWindowPointerUp); window.removeEventListener("pointercancel", onWindowPointerUp);  if (!isDragging) return;  const dType = dragType; const didReorder = orderChangedDuringDrag; const activeEl = dragCardEl;  isDragging = false; dragType = null; dragSourceId = null; dragCardEl = null; lastMovedTargetId = null; orderChangedDuringDrag = false;  if (activeEl) { activeEl.style.transition = "transform 170ms cubic-bezier(0.22, 1, 0.36, 1)"; activeEl.style.transform = "translate3d(0, 0, 0)"; await new Promise(resolve => setTimeout(resolve, 170)); }  renderAll();  if (didReorder) { await persistToFirebase(dType === "folder" ? "Folder order updated" : "City order updated"); } };  cards.forEach(card => { const id = card.getAttribute("data-entity-id");  card.addEventListener("pointerdown", (e) => { if (e.target.closest("button")) return; if (e.button !== 0 && e.pointerType === "mouse") return; pointerDownX = e.clientX; pointerDownY = e.clientY;  clearTimeout(holdTimer); holdTimer = setTimeout(() => { if (selectionKind && selectionKind !== type) { selectedIds.clear(); } selectionKind = type; selectedIds.add(id);  const rect = card.getBoundingClientRect(); cardInitialLeft = rect.left; cardInitialTop = rect.top; pointerOffsetInCardX = pointerDownX - rect.left; pointerOffsetInCardY = pointerDownY - rect.top;  isDragging = true; dragType = type; dragSourceId = id; dragCardEl = card; lastMovedTargetId = null; orderChangedDuringDrag = false; suppressNextClick = true;  card.classList.add("card-dragging"); positionCardOnFinger(card, pointerDownX, pointerDownY); updateSelectionBar();  if (navigator.vibrate) navigator.vibrate(25);  window.addEventListener("pointermove", onWindowPointerMove, { passive: false }); window.addEventListener("pointerup", onWindowPointerUp); window.addEventListener("pointercancel", onWindowPointerUp); }, 380); });  const cancelHoldBeforeDrag = () => { clearTimeout(holdTimer); };  card.addEventListener("pointermove", (e) => { if (!isDragging && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 10) { cancelHoldBeforeDrag(); } });  card.addEventListener("pointerup", () => { if (!isDragging) cancelHoldBeforeDrag(); });  card.addEventListener("pointercancel", () => { if (!isDragging) cancelHoldBeforeDrag(); });  card.addEventListener("click", (e) => { if (e.target.closest("button")) return; if (suppressNextClick) { suppressNextClick = false; return; } if (selectionKind === type && selectedIds.size > 0) { toggleEntitySelection(type, id); return; } if (type === "folder") { activeFolderId = id; expandedItemId = null; renderAll(); } else { toggleExpandItem(id); } }); }); }  function handleHeaderBack() { if (selectionKind && selectedIds.size > 0) { clearSelection(); return; } if (activeFolderId) { activeFolderId = null; expandedItemId = null; renderAll(); return; } window.location.href = "admin.html"; }  function openFolderModal(folderId = null) { editingFolderId = folderId; const heading = document.getElementById("folder-modal-heading"); const titleInp = document.getElementById("fld-title"); const dateInp = document.getElementById("fld-date"); const driveInp = document.getElementById("fld-drive"); const descInp = document.getElementById("fld-desc");  if (folderId) { const f = folders.find(x => x.id === folderId); heading.textContent = "Edit Folder"; titleInp.value = f ? f.title : ""; dateInp.value = f ? (f.date \vert{}\vert{} "") : ""; driveInp.value = f ? f.driveLink : ""; descInp.value = f ? f.description : ""; } else { heading.textContent = "New Folder"; titleInp.value = ""; dateInp.value = ""; driveInp.value = ""; descInp.value = ""; } document.getElementById("folder-modal").classList.remove("hidden"); }  function closeFolderModal() { document.getElementById("folder-modal").classList.add("hidden"); editingFolderId = null; }  async function saveFolderModal() { const title = document.getElementById("fld-title").value.trim(); const date = document.getElementById("fld-date").value.trim(); const driveLink = document.getElementById("fld-drive").value.trim(); const description = document.getElementById("fld-desc").value.trim();  if (!title) { showToast("Enter folder title"); return; }  if (editingFolderId) { const f = folders.find(x => x.id === editingFolderId); if (f) { f.title = title; f.date = date; f.driveLink = driveLink; f.description = description; } } else { folders.push({ id: `fld_${Date.now()}`,
+                const otherCards = Array.from(container.querySelectorAll(`[data-entity-type="${dragType}"]`))
+                    .filter(el => el.getAttribute("data-entity-id") !== dragSourceId);
+
+                let overlappingTarget = null;
+                for (const other of otherCards) {
+                    if (rectsOverlap(draggedRect, other.getBoundingClientRect())) {
+                        overlappingTarget = other;
+                        break;
+                    }
+                }
+
+                if (!overlappingTarget) {
+                    lastMovedTargetId = null;
+                    return;
+                }
+
+                const targetId = overlappingTarget.getAttribute("data-entity-id");
+                if (!targetId || targetId === dragSourceId || targetId === lastMovedTargetId) return;
+
+                if (dragType === "folder") {
+                    const fromIdx = folders.findIndex(x => x.id === dragSourceId);
+                    const toIdx = folders.findIndex(x => x.id === targetId);
+                    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                        lastMovedTargetId = targetId;
+                        orderChangedDuringDrag = true;
+                        swapOnOverlap(container, "folder", dragSourceId, e.clientX, e.clientY, () => {
+                            const [moved] = folders.splice(fromIdx, 1);
+                            folders.splice(toIdx, 0, moved);
+                        });
+                    }
+                } else if (dragType === "item") {
+                    const folder = folders.find(x => x.id === activeFolderId);
+                    if (folder) {
+                        const fromIdx = folder.items.findIndex(x => x.id === dragSourceId);
+                        const toIdx = folder.items.findIndex(x => x.id === targetId);
+                        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                            lastMovedTargetId = targetId;
+                            orderChangedDuringDrag = true;
+                            swapOnOverlap(container, "item", dragSourceId, e.clientX, e.clientY, () => {
+                                const [moved] = folder.items.splice(fromIdx, 1);
+                                folder.items.splice(toIdx, 0, moved);
+                            });
+                        }
+                    }
+                }
+            };
+
+            const onWindowPointerUp = async () => {
+                window.removeEventListener("pointermove", onWindowPointerMove);
+                window.removeEventListener("pointerup", onWindowPointerUp);
+                window.removeEventListener("pointercancel", onWindowPointerUp);
+
+                if (!isDragging) return;
+
+                const dType = dragType;
+                const didReorder = orderChangedDuringDrag;
+                const activeEl = dragCardEl;
+
+                isDragging = false;
+                dragType = null;
+                dragSourceId = null;
+                dragCardEl = null;
+                lastMovedTargetId = null;
+                orderChangedDuringDrag = false;
+
+                if (activeEl) {
+                    activeEl.style.transition = "transform 170ms cubic-bezier(0.22, 1, 0.36, 1)";
+                    activeEl.style.transform = "translate3d(0, 0, 0)";
+                    await new Promise(resolve => setTimeout(resolve, 170));
+                }
+
+                renderAll();
+
+                if (didReorder) {
+                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "City order updated");
+                }
+            };
+
+            cards.forEach(card => {
+                const id = card.getAttribute("data-entity-id");
+
+                card.addEventListener("pointerdown", (e) => {
+                    if (e.target.closest("button")) return;
+                    if (e.button !== 0 && e.pointerType === "mouse") return;
+                    pointerDownX = e.clientX;
+                    pointerDownY = e.clientY;
+
+                    clearTimeout(holdTimer);
+                    holdTimer = setTimeout(() => {
+                        if (selectionKind && selectionKind !== type) {
+                            selectedIds.clear();
+                        }
+                        selectionKind = type;
+                        selectedIds.add(id);
+
+                        const rect = card.getBoundingClientRect();
+                        cardInitialLeft = rect.left;
+                        cardInitialTop = rect.top;
+                        pointerOffsetInCardX = pointerDownX - rect.left;
+                        pointerOffsetInCardY = pointerDownY - rect.top;
+
+                        isDragging = true;
+                        dragType = type;
+                        dragSourceId = id;
+                        dragCardEl = card;
+                        lastMovedTargetId = null;
+                        orderChangedDuringDrag = false;
+                        suppressNextClick = true;
+
+                        card.classList.add("card-dragging");
+                        positionCardOnFinger(card, pointerDownX, pointerDownY);
+                        updateSelectionBar();
+
+                        if (navigator.vibrate) navigator.vibrate(25);
+
+                        window.addEventListener("pointermove", onWindowPointerMove, { passive: false });
+                        window.addEventListener("pointerup", onWindowPointerUp);
+                        window.addEventListener("pointercancel", onWindowPointerUp);
+                    }, 380);
+                });
+
+                const cancelHoldBeforeDrag = () => {
+                    clearTimeout(holdTimer);
+                };
+
+                card.addEventListener("pointermove", (e) => {
+                    if (!isDragging && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 10) {
+                        cancelHoldBeforeDrag();
+                    }
+                });
+
+                card.addEventListener("pointerup", () => {
+                    if (!isDragging) cancelHoldBeforeDrag();
+                });
+
+                card.addEventListener("pointercancel", () => {
+                    if (!isDragging) cancelHoldBeforeDrag();
+                });
+
+                card.addEventListener("click", (e) => {
+                    if (e.target.closest("button")) return;
+                    if (suppressNextClick) {
+                        suppressNextClick = false;
+                        return;
+                    }
+                    if (selectionKind === type && selectedIds.size > 0) {
+                        toggleEntitySelection(type, id);
+                        return;
+                    }
+                    if (type === "folder") {
+                        activeFolderId = id;
+                        expandedItemId = null;
+                        renderAll();
+                    } else {
+                        toggleExpandItem(id);
+                    }
+                });
+            });
+        }
+
+        function handleHeaderBack() {
+            if (selectionKind && selectedIds.size > 0) {
+                clearSelection();
+                return;
+            }
+            if (activeFolderId) {
+                activeFolderId = null;
+                expandedItemId = null;
+                renderAll();
+                return;
+            }
+            window.location.href = "admin.html";
+        }
+
+        function openFolderModal(folderId = null) {
+            editingFolderId = folderId;
+            const heading = document.getElementById("folder-modal-heading");
+            const titleInp = document.getElementById("fld-title");
+            const dateInp = document.getElementById("fld-date");
+            const fromInp = document.getElementById("fld-date-from");
+            const toInp = document.getElementById("fld-date-to");
+            const driveInp = document.getElementById("fld-drive");
+            const descInp = document.getElementById("fld-desc");
+
+            if (folderId) {
+                const f = folders.find(x => x.id === folderId);
+                heading.textContent = "Edit Folder";
+                titleInp.value = f ? f.title : "";
+                dateInp.value = f ? (f.date || "") : "";
+                fromInp.value = f ? (f.dateFrom || "") : "";
+                toInp.value = f ? (f.dateTo || "") : "";
+                setModalDateRangeState("fld", f ? !!f.dateRangeEnabled : false);
+                driveInp.value = f ? f.driveLink : "";
+                descInp.value = f ? f.description : "";
+            } else {
+                heading.textContent = "New Folder";
+                titleInp.value = "";
+                dateInp.value = "";
+                fromInp.value = "";
+                toInp.value = "";
+                setModalDateRangeState("fld", false);
+                driveInp.value = "";
+                descInp.value = "";
+            }
+            document.getElementById("folder-modal").classList.remove("hidden");
+        }
+
+        function closeFolderModal() {
+            document.getElementById("folder-modal").classList.add("hidden");
+            editingFolderId = null;
+        }
+
+        async function saveFolderModal() {
+            const title = document.getElementById("fld-title").value.trim();
+            const rangeBtn = document.getElementById("fld-range-toggle");
+            const dateRangeEnabled = !!(rangeBtn && rangeBtn.dataset.enabled === "true");
+            const date = document.getElementById("fld-date").value.trim();
+            const dateFrom = document.getElementById("fld-date-from").value.trim();
+            const dateTo = document.getElementById("fld-date-to").value.trim();
+            const driveLink = document.getElementById("fld-drive").value.trim();
+            const description = document.getElementById("fld-desc").value.trim();
+
+            if (!title) {
+                showToast("Enter folder title");
+                return;
+            }
+
+            if (editingFolderId) {
+                const f = folders.find(x => x.id === editingFolderId);
+                if (f) {
+                    f.title = title;
+                    f.date = date;
+                    f.dateFrom = dateFrom;
+                    f.dateTo = dateTo;
+                    f.dateRangeEnabled = dateRangeEnabled;
+                    f.driveLink = driveLink;
+                    f.description = description;
+                }
+            } else {
+                folders.push({
+                    id: `fld_${Date.now()}`,
                     title,
                     date,
+                    dateFrom,
+                    dateTo,
+                    dateRangeEnabled,
                     driveLink,
                     description,
                     order: folders.length,
@@ -745,6 +1351,8 @@
             const nameInp = document.getElementById("itm-name");
             const titleInp = document.getElementById("itm-title");
             const dateInp = document.getElementById("itm-date");
+            const fromInp = document.getElementById("itm-date-from");
+            const toInp = document.getElementById("itm-date-to");
             const driveInp = document.getElementById("itm-drive");
             const descInp = document.getElementById("itm-desc");
 
@@ -755,6 +1363,9 @@
                 nameInp.value = it ? it.name : "";
                 titleInp.value = it ? it.title : "";
                 dateInp.value = it ? (it.date || "") : "";
+                fromInp.value = it ? (it.dateFrom || "") : "";
+                toInp.value = it ? (it.dateTo || "") : "";
+                setModalDateRangeState("itm", it ? !!it.dateRangeEnabled : false);
                 driveInp.value = it ? it.driveLink : "";
                 descInp.value = it ? it.description : "";
             } else {
@@ -762,6 +1373,9 @@
                 nameInp.value = "";
                 titleInp.value = "";
                 dateInp.value = "";
+                fromInp.value = "";
+                toInp.value = "";
+                setModalDateRangeState("itm", false);
                 driveInp.value = "";
                 descInp.value = "";
             }
@@ -776,7 +1390,11 @@
         async function saveItemModal() {
             const name = document.getElementById("itm-name").value.trim();
             const title = document.getElementById("itm-title").value.trim();
+            const rangeBtn = document.getElementById("itm-range-toggle");
+            const dateRangeEnabled = !!(rangeBtn && rangeBtn.dataset.enabled === "true");
             const date = document.getElementById("itm-date").value.trim();
+            const dateFrom = document.getElementById("itm-date-from").value.trim();
+            const dateTo = document.getElementById("itm-date-to").value.trim();
             const driveLink = document.getElementById("itm-drive").value.trim();
             const description = document.getElementById("itm-desc").value.trim();
 
@@ -794,12 +1412,73 @@
                     it.name = name;
                     it.title = title;
                     it.date = date;
+                    it.dateFrom = dateFrom;
+                    it.dateTo = dateTo;
+                    it.dateRangeEnabled = dateRangeEnabled;
                     it.driveLink = driveLink;
                     it.description = description;
                 }
             } else {
                 folder.items.push({
-                    id: `city_${Date.now()}`, name, title, date, driveLink, description, order: folder.items.length }); }  closeItemModal(); selectedIds.clear(); selectionKind = null; renderAll(); await persistToFirebase("City saved!"); }  function editSelectedEntity() { if (!selectionKind \vert{}\vert{} selectedIds.size !== 1) return; const id = Array.from(selectedIds)[0]; selectedIds.clear(); selectionKind = null; updateSelectionBar(); if (id) { const isFolder = folders.some(f => f.id === id) && !activeFolderId; if (isFolder) openFolderModal(id); else openItemModal(id); } }  function openConfirmModal(title, message, actionFn) { pendingDeleteAction = actionFn; document.getElementById("confirm-title").textContent = title; document.getElementById("confirm-message").textContent = message; document.getElementById("confirm-modal").classList.remove("hidden"); }  function closeConfirmModal() { pendingDeleteAction = null; document.getElementById("confirm-modal").classList.add("hidden"); }  async function executeConfirmedAction() { const fn = pendingDeleteAction; closeConfirmModal(); if (typeof fn === "function") { await fn(); } }  function requestDeleteSingle(kind, id) { if (kind === "folder") { const f = folders.find(x => x.id === id); openConfirmModal( "Delete Folder?", `Delete "${f ? f.title : "this folder"}" and all cities inside it?`,
+                    id: `city_${Date.now()}`,
+                    name,
+                    title,
+                    date,
+                    dateFrom,
+                    dateTo,
+                    dateRangeEnabled,
+                    driveLink,
+                    description,
+                    order: folder.items.length
+                });
+            }
+
+            closeItemModal();
+            selectedIds.clear();
+            selectionKind = null;
+            renderAll();
+            await persistToFirebase("City saved!");
+        }
+
+        function editSelectedEntity() {
+            if (!selectionKind || selectedIds.size !== 1) return;
+            const id = Array.from(selectedIds)[0];
+            selectedIds.clear();
+            selectionKind = null;
+            updateSelectionBar();
+            if (id) {
+                const isFolder = folders.some(f => f.id === id) && !activeFolderId;
+                if (isFolder) openFolderModal(id);
+                else openItemModal(id);
+            }
+        }
+
+        function openConfirmModal(title, message, actionFn) {
+            pendingDeleteAction = actionFn;
+            document.getElementById("confirm-title").textContent = title;
+            document.getElementById("confirm-message").textContent = message;
+            document.getElementById("confirm-modal").classList.remove("hidden");
+        }
+
+        function closeConfirmModal() {
+            pendingDeleteAction = null;
+            document.getElementById("confirm-modal").classList.add("hidden");
+        }
+
+        async function executeConfirmedAction() {
+            const fn = pendingDeleteAction;
+            closeConfirmModal();
+            if (typeof fn === "function") {
+                await fn();
+            }
+        }
+
+        function requestDeleteSingle(kind, id) {
+            if (kind === "folder") {
+                const f = folders.find(x => x.id === id);
+                openConfirmModal(
+                    "Delete Folder?",
+                    `Delete "${f ? f.title : "this folder"}" and all cities inside it?`,
                     async () => {
                         folders = folders.filter(x => x.id !== id);
                         if (activeFolderId === id) {
@@ -844,7 +1523,9 @@
 
             if (selectionKind === "folder") {
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Folders?` : "Delete Folder?", count > 1 ? `Delete ${count} selected folders and all cities inside them?`
+                    count > 1 ? `Delete ${count} Folders?` : "Delete Folder?",
+                    count > 1
+                        ? `Delete ${count} selected folders and all cities inside them?`
                         : "Delete the selected folder and all cities inside it?",
                     async () => {
                         const removeSet = new Set(ids);
@@ -861,7 +1542,9 @@
                 );
             } else {
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Cities?` : "Delete City?", count > 1 ? `Delete ${count} selected cities from this folder?`
+                    count > 1 ? `Delete ${count} Cities?` : "Delete City?",
+                    count > 1
+                        ? `Delete ${count} selected cities from this folder?`
                         : "Delete the selected city from this folder?",
                     async () => {
                         const folder = folders.find(x => x.id === activeFolderId);
@@ -882,6 +1565,8 @@
         }
 
         window.handleSearchInput = handleSearchInput;
+        window.toggleModalDateRange = toggleModalDateRange;
+        window.openItemFromGlobalSearch = openItemFromGlobalSearch;
         window.handleHeaderBack = handleHeaderBack;
         window.toggleFolderHeaderMenu = toggleFolderHeaderMenu;
         window.closeFolderHeaderMenu = closeFolderHeaderMenu;
