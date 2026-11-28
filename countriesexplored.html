@@ -6,259 +6,85 @@
     <title>Countries Explored — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121417; color: #F8FAFC; }
-
-        @keyframes osdOrbitSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        @keyframes osdOrbitReverse {
-            0% { transform: rotate(360deg); }
-            100% { transform: rotate(0deg); }
-        }
-        @keyframes osdCorePulse {
-            0%, 100% { transform: scale(0.94); opacity: 0.75; }
-            50% { transform: scale(1.06); opacity: 1; }
-        }
-        @keyframes osdShimmerSlide {
-            0% { transform: translateX(-110%); }
-            100% { transform: translateX(260%); }
-        }
-        @keyframes osdFloatUp {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-        }
-
-        .osd-ring-outer {
-            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-        .osd-ring-inner {
-            animation: osdOrbitReverse 1.9s linear infinite;
-        }
-        .osd-core-glow {
-            animation: osdCorePulse 2.2s ease-in-out infinite;
-        }
-        .osd-shimmer-bar {
-            animation: osdShimmerSlide 1.55s ease-in-out infinite;
-        }
-        .osd-float {
-            animation: osdFloatUp 3s ease-in-out infinite;
+        body {
+            background-color: #121417;
+            color: #F8FAFC;
         }
     </style>
 </head>
-<body class="font-sans antialiased pb-12 overflow-hidden">
+<body class="font-sans antialiased pb-16">
 
-    <!-- LOADING SCREEN (SHOWN UNTIL FIREBASE LOADS) -->
-    <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
-        <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
-        </div>
-
-        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
-            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
-                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
-                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
-                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
-                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
+    <!-- HEADER -->
+    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button type="button" onclick="handleViewerBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                    ←
+                </button>
+                <div class="min-w-0">
+                    <h1 id="page-title" class="text-sm font-bold text-white truncate">Countries Explored 🌍</h1>
+                    <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Loading...</p>
                 </div>
-            </div>
-
-            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
-            <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Our story is loading</p>
-
-            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
-                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- MAIN SHELL (HIDDEN UNTIL FIREBASE LOADS) -->
-    <div id="osd-app-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
+    <!-- VIEWER CONTENT -->
+    <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-        <!-- TOP HEADER -->
-        <header class="sticky top-0 z-40 bg-[#121417]/90 backdrop-blur-md border-b border-white/10">
-            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <a href="index.html" class="w-9 h-9 rounded-full bg-[#1E2126] border border-white/10 flex items-center justify-center text-xs text-white/80 hover:text-blue-400 shrink-0 transition" title="Back to Home">←</a>
-                    <div class="truncate">
-                        <h1 class="text-base font-bold text-white truncate leading-tight">Countries Explored 🌍</h1>
-                        <p id="header-subtitle" class="text-[11px] text-blue-400 truncate">Off Script Diaries</p>
-                    </div>
+        <!-- FOLDERS VIEW -->
+        <div id="folders-view" class="space-y-4">
+            <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                <div class="text-2xl">🌍</div>
+                <p class="text-sm font-bold text-white">No Countries Added Yet</p>
+                <p class="text-xs text-white/55">Check back soon for our explored countries.</p>
+            </div>
+            <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
+        </div>
+
+        <!-- COUNTRIES INSIDE FOLDER VIEW -->
+        <div id="items-view" class="hidden space-y-4">
+            <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
+                <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
+                    <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                 </div>
-                <div class="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-extrabold shrink-0">
-                    <span id="countries-count-badge">0</span>
+                <div class="p-4">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country Folder</span>
+                    <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
+                    <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
                 </div>
             </div>
-        </header>
 
-        <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
-
-            <!-- SUMMARY BANNER -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 flex items-center justify-between">
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">World Trail</span>
-                    <h2 id="page-heading" class="text-lg font-extrabold text-white mt-0.5">Countries Explored</h2>
-                    <p id="page-desc" class="text-xs text-white/60 mt-0.5"></p>
-                </div>
-                <div class="text-right shrink-0 pl-3">
-                    <div id="countries-total-stat" class="text-2xl font-extrabold text-blue-400">0</div>
-                    <div class="text-[10px] text-white/50">Countries</div>
-                </div>
-            </section>
-
-            <!-- COUNTRIES LIST FROM FIREBASE -->
-            <section id="countries-list" class="space-y-3"></section>
-
-            <!-- EMPTY STATE -->
-            <div id="countries-empty" class="hidden p-6 rounded-2xl bg-[#1E2126] border border-white/10 text-center space-y-1">
-                <p class="text-sm font-bold text-white">No countries added yet</p>
-                <p class="text-xs text-white/55">Countries added in Firebase will appear here.</p>
+            <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                <div class="text-2xl">✈️</div>
+                <p class="text-sm font-bold text-white">No Countries Here Yet</p>
             </div>
 
-        </main>
+            <div id="items-list" class="space-y-3"></div>
+        </div>
 
+    </main>
+
+    <!-- DETAIL VIEW MODAL -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if(event.target===this) closeDetailModal()">
+        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div id="detail-img-wrap" class="hidden h-56 bg-black relative">
+                <img id="detail-img" src="" alt="" class="w-full h-full object-cover" />
+                <button type="button" onclick="closeDetailModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</button>
+            </div>
+            <div class="p-5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span id="detail-name" class="text-[11px] font-bold uppercase tracking-wider text-blue-400"></span>
+                    <button id="detail-close-noimg" type="button" onclick="closeDetailModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
+                </div>
+                <h3 id="detail-title" class="text-lg font-extrabold text-white"></h3>
+                <p id="detail-desc" class="text-xs text-white/75 leading-relaxed whitespace-pre-line pt-1"></p>
+            </div>
+        </div>
     </div>
 
     <script src="js/store.js"></script>
-    <script>
-        let rtdbSiteData = null;
-        let hasLoadedFromFirebase = false;
-
-        function revealAppAfterFirebaseLoad() {
-            if (hasLoadedFromFirebase) return;
-            hasLoadedFromFirebase = true;
-
-            const preloader = document.getElementById('osd-preloader');
-            const shell = document.getElementById('osd-app-shell');
-
-            document.body.classList.remove('overflow-hidden');
-            if (shell) {
-                shell.classList.remove('opacity-0', 'pointer-events-none');
-                shell.classList.add('opacity-100');
-            }
-            if (preloader) {
-                preloader.classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => preloader.remove(), 520);
-            }
-        }
-
-        function extractDriveFileId(rawUrl = '') {
-            const url = String(rawUrl || '').trim();
-            if (!url) return '';
-            const patterns = [
-                /\/file\/d\/([a-zA-Z0-9_-]+)/,
-                /\/d\/([a-zA-Z0-9_-]+)/,
-                /[?&]id=([a-zA-Z0-9_-]+)/,
-                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
-            ];
-            for (const re of patterns) {
-                const match = url.match(re);
-                if (match && match[1]) return match[1];
-            }
-            return '';
-        }
-
-        function resolveMediaUrl(rawUrl) {
-            const cleaned = String(rawUrl || '').trim();
-            if (!cleaned) return '';
-            let parsed = cleaned;
-            if (typeof parseDriveMedia === 'function') {
-                const storeResult = parseDriveMedia(cleaned, 'image');
-                if (storeResult && typeof storeResult === 'string') {
-                    parsed = storeResult.trim();
-                }
-            }
-            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
-            if (driveId) {
-                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
-            }
-            return parsed;
-        }
-
-        function normalizeCountries(rawCountries) {
-            if (!rawCountries) return [];
-            const list = Array.isArray(rawCountries)
-                ? rawCountries
-                : (typeof rawCountries === 'object' ? Object.values(rawCountries) : []);
-            return list
-                .map((item, idx) => {
-                    if (typeof item === 'string') {
-                        const name = item.trim();
-                        if (!name) return null;
-                        return { id: String(idx), name, flag: '', date: '', note: '', image: '' };
-                    }
-                    if (!item || typeof item !== 'object') return null;
-                    const name = String(item.name || item.country || item.title || '').trim();
-                    const flag = String(item.flag || item.emoji || '').trim();
-                    const date = String(item.date || item.visitedDate || '').trim();
-                    const note = String(item.note || item.desc || item.description || '').trim();
-                    const image = String(item.image || item.photoUrl || item.coverUrl || '').trim();
-                    if (!name && !flag && !note && !image) return null;
-                    return { id: String(item.id || idx), name, flag, date, note, image };
-                })
-                .filter(Boolean);
-        }
-
-        function renderCountriesPage() {
-            if (!hasLoadedFromFirebase) return;
-
-            const src = rtdbSiteData && typeof rtdbSiteData === 'object' ? rtdbSiteData : {};
-            const brand = src.brand && typeof src.brand === 'object' ? src.brand : {};
-            const sections = src.sections && typeof src.sections === 'object' ? src.sections : {};
-            const telemetry = sections.telemetry && typeof sections.telemetry === 'object' ? sections.telemetry : {};
-            const explored = sections.explored && typeof sections.explored === 'object' ? sections.explored : {};
-
-            const countries = normalizeCountries(
-                explored.countriesList ||
-                sections.countriesExploredList ||
-                sections.countriesList ||
-                telemetry.countriesList
-            );
-
-            const countValue = countries.length > 0
-                ? String(countries.length)
-                : String(telemetry.coffeeCups ?? '0');
-
-            document.title = `Countries Explored — ${brand.siteName || 'Off Script Diaries'}`;
-            document.getElementById('header-subtitle').textContent = brand.siteName || 'Off Script Diaries';
-            document.getElementById('page-heading').textContent = explored.countriesHeading || 'Countries Explored';
-            document.getElementById('page-desc').textContent = explored.countriesDescription || '';
-            document.getElementById('countries-count-badge').textContent = countValue;
-            document.getElementById('countries-total-stat').textContent = countValue;
-
-            const listEl = document.getElementById('countries-list');
-            const emptyEl = document.getElementById('countries-empty');
-
-            if (countries.length === 0) {
-                listEl.innerHTML = '';
-                emptyEl.classList.remove('hidden');
-                return;
-            }
-
-            emptyEl.classList.add('hidden');
-            listEl.innerHTML = countries.map((country, i) => {
-                const imgSrc = resolveMediaUrl(country.image);
-                const imgHtml = imgSrc
-                    ? `<img src="${imgSrc}" alt="${country.name || 'Country'}" class="w-full h-40 object-cover rounded-xl bg-[#121417] mb-3" />`
-                    : '';
-                const titleText = [country.flag, country.name || 'Unnamed Country'].filter(Boolean).join(' ');
-
-                return `
-                <article class="p-4 rounded-2xl bg-[#1E2126] border border-white/10">
-                    ${imgHtml}
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">0${i + 1} • Country</span>
-                            <h3 class="text-base font-bold text-white truncate">${titleText}</h3>
-                            ${country.date ? `<p class="text-[11px] text-white/50 mt-0.5">${country.date}</p>` : ''}
-                        </div>
-                    </div>
-                    ${country.note ? `<p class="text-xs text-white/75 mt-2.5 leading-relaxed">${country.note}</p>` : ''}
-                </article>`;
-            }).join('');
-        }
-    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -276,22 +102,227 @@
 
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
-        const siteDataRef = ref(rtdb, "siteContent");
+        const countriesRef = ref(rtdb, "countriesData");
 
-        onValue(
-            siteDataRef,
-            (snap) => {
-                const val = snap.val();
-                rtdbSiteData = val && typeof val === "object" ? val : {};
-                revealAppAfterFirebaseLoad();
-                renderCountriesPage();
-            },
-            (err) => {
-                const statusEl = document.getElementById("preloader-status");
-                if (statusEl) statusEl.textContent = "Unable to load from Firebase";
-                console.error("Firebase siteContent read error:", err);
+        let folders = [];
+        let activeFolderId = null;
+
+        if (typeof applyAntiCopyProtection === "function") {
+            applyAntiCopyProtection();
+        }
+
+        function extractDriveFileId(rawUrl = "") {
+            const url = String(rawUrl || "").trim();
+            if (!url) return "";
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
             }
-        );
+            return "";
+        }
+
+        function resolveMediaUrl(rawUrl) {
+            const cleaned = String(rawUrl || "").trim();
+            if (!cleaned) return "";
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === "function") {
+                const res = parseDriveMedia(cleaned, "image");
+                if (res && typeof res === "string") parsed = res.trim();
+            }
+            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+            if (driveId) {
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+            }
+            return parsed;
+        }
+
+        function escapeHtml(str = "") {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function normalizeFolders(raw) {
+            if (!raw || typeof raw !== "object") return [];
+            const arr = Array.isArray(raw) ? raw : Object.values(raw);
+            return arr
+                .filter(Boolean)
+                .map((f, idx) => {
+                    const rawItems = f.items && typeof f.items === "object"
+                        ? (Array.isArray(f.items) ? f.items : Object.values(f.items))
+                        : [];
+                    const items = rawItems
+                        .filter(Boolean)
+                        .map((it, iIdx) => ({
+                            id: String(it.id || `country_${iIdx}`),
+                            name: String(it.name || ""),
+                            title: String(it.title || ""),
+                            driveLink: String(it.driveLink || ""),
+                            description: String(it.description || ""),
+                            order: typeof it.order === "number" ? it.order : iIdx
+                        }))
+                        .sort((a, b) => a.order - b.order);
+
+                    return {
+                        id: String(f.id || `fld_${idx}`),
+                        title: String(f.title || "Untitled Folder"),
+                        driveLink: String(f.driveLink || ""),
+                        description: String(f.description || ""),
+                        order: typeof f.order === "number" ? f.order : idx,
+                        items
+                    };
+                })
+                .sort((a, b) => a.order - b.order);
+        }
+
+        function renderViewer() {
+            const titleEl = document.getElementById("page-title");
+            const subEl = document.getElementById("page-subtitle");
+            const foldersView = document.getElementById("folders-view");
+            const itemsView = document.getElementById("items-view");
+
+            const totalCount = folders.reduce((acc, f) => acc + f.items.length, 0);
+
+            if (!activeFolderId) {
+                titleEl.textContent = "Countries Explored 🌍";
+                subEl.textContent = `${totalCount} Countries across ${folders.length} Folders`;
+                foldersView.classList.remove("hidden");
+                itemsView.classList.add("hidden");
+
+                const grid = document.getElementById("folders-grid");
+                const empty = document.getElementById("folders-empty");
+                empty.classList.toggle("hidden", folders.length > 0);
+
+                grid.innerHTML = folders.map(f => {
+                    const cover = resolveMediaUrl(f.driveLink);
+                    const mediaHtml = cover
+                        ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
+                        : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
+
+                    return `
+                    <div onclick="openViewerFolder('${escapeHtml(f.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer active:scale-[0.99] transition">
+                        <div class="h-32 bg-black relative">
+                            ${mediaHtml}
+                            <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
+                                ${f.items.length}
+                            </span>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
+                            <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
+                        </div>
+                    </div>`;
+                }).join("");
+            } else {
+                const folder = folders.find(f => f.id === activeFolderId);
+                if (!folder) {
+                    activeFolderId = null;
+                    renderViewer();
+                    return;
+                }
+
+                titleEl.textContent = folder.title;
+                subEl.textContent = `${folder.items.length} Countries`;
+                foldersView.classList.add("hidden");
+                itemsView.classList.remove("hidden");
+
+                const coverSrc = resolveMediaUrl(folder.driveLink);
+                const coverWrap = document.getElementById("folder-banner-cover-wrap");
+                const coverImg = document.getElementById("folder-banner-cover");
+                if (coverSrc) {
+                    coverImg.src = coverSrc;
+                    coverWrap.classList.remove("hidden");
+                } else {
+                    coverWrap.classList.add("hidden");
+                }
+                document.getElementById("folder-banner-title").textContent = folder.title;
+                const descEl = document.getElementById("folder-banner-desc");
+                descEl.textContent = folder.description || "";
+                descEl.classList.toggle("hidden", !folder.description);
+
+                const list = document.getElementById("items-list");
+                const empty = document.getElementById("items-empty");
+                empty.classList.toggle("hidden", folder.items.length > 0);
+
+                list.innerHTML = folder.items.map(it => {
+                    const imgSrc = resolveMediaUrl(it.driveLink);
+                    return `
+                    <div onclick="openDetailModal('${escapeHtml(it.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer active:scale-[0.99] transition">
+                        ${imgSrc ? `
+                        <div class="h-44 bg-black">
+                            <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover" />
+                        </div>` : ""}
+                        <div class="p-4">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                            <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                            ${it.description ? `<p class="text-xs text-white/65 mt-1 line-clamp-3 leading-relaxed">${escapeHtml(it.description)}</p>` : ""}
+                        </div>
+                    </div>`;
+                }).join("");
+            }
+        }
+
+        function openViewerFolder(id) {
+            activeFolderId = id;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            renderViewer();
+        }
+
+        function handleViewerBack() {
+            if (activeFolderId) {
+                activeFolderId = null;
+                renderViewer();
+                return;
+            }
+            window.location.href = "index.html";
+        }
+
+        function openDetailModal(itemId) {
+            const folder = folders.find(f => f.id === activeFolderId);
+            const it = folder ? folder.items.find(x => x.id === itemId) : null;
+            if (!it) return;
+
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const imgWrap = document.getElementById("detail-img-wrap");
+            const imgEl = document.getElementById("detail-img");
+            const closeNoImg = document.getElementById("detail-close-noimg");
+
+            if (imgSrc) {
+                imgEl.src = imgSrc;
+                imgWrap.classList.remove("hidden");
+                closeNoImg.classList.add("hidden");
+            } else {
+                imgWrap.classList.add("hidden");
+                closeNoImg.classList.remove("hidden");
+            }
+
+            document.getElementById("detail-name").textContent = it.name;
+            document.getElementById("detail-title").textContent = it.title || it.name;
+            document.getElementById("detail-desc").textContent = it.description || "";
+            document.getElementById("detail-modal").classList.remove("hidden");
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detail-modal").classList.add("hidden");
+        }
+
+        window.openViewerFolder = openViewerFolder;
+        window.handleViewerBack = handleViewerBack;
+        window.openDetailModal = openDetailModal;
+        window.closeDetailModal = closeDetailModal;
+
+        onValue(countriesRef, (snap) => {
+            folders = normalizeFolders(snap.val());
+            renderViewer();
+        });
     </script>
 </body>
 </html>
