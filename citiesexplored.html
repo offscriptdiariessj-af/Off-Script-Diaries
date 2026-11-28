@@ -9,6 +9,13 @@
         body {
             background-color: #121417;
             color: #F8FAFC;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -34,20 +41,31 @@
             50% { transform: translateY(-4px); }
         }
 
-        .osd-ring-outer { animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .osd-ring-inner { animation: osdOrbitReverse 1.9s linear infinite; }
-        .osd-core-glow { animation: osdCorePulse 2.2s ease-in-out infinite; }
-        .osd-shimmer-bar { animation: osdShimmerSlide 1.55s ease-in-out infinite; }
-        .osd-float { animation: osdFloatUp 3s ease-in-out infinite; }
+        .osd-ring-outer {
+            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .osd-ring-inner {
+            animation: osdOrbitReverse 1.9s linear infinite;
+        }
+        .osd-core-glow {
+            animation: osdCorePulse 2.2s ease-in-out infinite;
+        }
+        .osd-shimmer-bar {
+            animation: osdShimmerSlide 1.55s ease-in-out infinite;
+        }
+        .osd-float {
+            animation: osdFloatUp 3s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="font-sans antialiased pb-24 overflow-hidden">
 
-    <!-- PRELOADER -->
+    <!-- INDEX-STYLE OFF SCRIPT DIARIES PRELOADER -->
     <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
         </div>
+
         <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
             <div class="relative w-24 h-24 flex items-center justify-center mb-6">
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
@@ -56,34 +74,39 @@
                     <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
                 </div>
             </div>
+
             <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
             <h2 class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳 • Loading stories</p>
+            <p class="text-xs text-white/50 mt-1">Cities Explored 🏙️ • Loading records</p>
+
             <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
                 <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
             </div>
         </div>
     </div>
 
-    <!-- APP SHELL -->
+    <!-- APP SHELL (REVEALED ONCE READY) -->
     <div id="app-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
         <!-- HEADER -->
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
             <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <button type="button" onclick="handleHeaderBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                    <button type="button" onclick="handleHeaderBack()" aria-label="Back" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
                         ←
                     </button>
                     <div class="min-w-0">
-                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
-                        <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Off Script Diaries</p>
+                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🏙️</h1>
+                        <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Synced</p>
                     </div>
                 </div>
+                <span id="header-badge" class="px-2.5 py-1 rounded-full bg-[#1E2126] border border-white/10 text-[10px] font-bold text-blue-300 shrink-0">
+                    Viewer
+                </span>
             </div>
         </header>
 
-        <!-- MAIN -->
+        <!-- MAIN CONTAINER -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
             <!-- SEARCH BAR -->
@@ -106,19 +129,19 @@
                 </button>
             </div>
 
-            <!-- LEVEL 1: STATES -->
+            <!-- STATES VIEW (LEVEL 1) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                    <div class="text-2xl">🇮🇳</div>
-                    <p class="text-sm font-bold text-white">No Cities Published Yet</p>
-                    <p class="text-xs text-white/55">Check back soon for new city diaries.</p>
+                    <div class="text-2xl">🏙️</div>
+                    <p id="folders-empty-title" class="text-sm font-bold text-white">No States Found</p>
+                    <p id="folders-empty-desc" class="text-xs text-white/55">Check back soon for new travel logs.</p>
                 </div>
-                <div id="global-search-items" class="hidden space-y-2"></div>
+                <div id="global-search-items" class="hidden space-y-2.5"></div>
                 <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">States</div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
-            <!-- LEVEL 2: CITIES INSIDE STATE -->
+            <!-- CITIES INSIDE STATE VIEW (LEVEL 2) -->
             <div id="items-view" class="hidden space-y-4">
                 <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
                     <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
@@ -126,16 +149,18 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                     </div>
                     <div class="p-4">
-                        <span id="folder-banner-date" class="text-[11px] text-blue-400 block"></span>
+                        <div class="flex items-center justify-between gap-2">
+                            <span id="folder-banner-date" class="text-[11px] text-blue-400"></span>
+                        </div>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
-                        <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
+                        <p id="folder-banner-desc" class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line"></p>
                     </div>
                 </div>
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">📍</div>
                     <p class="text-sm font-bold text-white">No Cities in This State</p>
-                    <p class="text-xs text-white/55">No entries available yet.</p>
+                    <p class="text-xs text-white/55">No matching city entries here yet.</p>
                 </div>
 
                 <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
@@ -165,15 +190,60 @@
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
         const citiesRef = ref(rtdb, "citiesData");
 
+        const SESSION_STATE_KEY = "osd_cities_viewer_state_v1";
+
         let folders = [];
         let activeFolderId = null;
         let expandedItemId = null;
         let cameFromGlobalSearch = false;
         let searchQuery = "";
         let appReadyShown = false;
+        let hasRestoredSessionState = false;
         let isHandlingPopState = false;
         let navStackDepth = 0;
         let suppressNextClick = false;
+
+        function saveViewStateToSession() {
+            try {
+                sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify({
+                    activeFolderId,
+                    expandedItemId,
+                    cameFromGlobalSearch,
+                    searchQuery
+                }));
+            } catch (_) {}
+        }
+
+        function restoreViewStateFromSession() {
+            if (hasRestoredSessionState) return;
+            hasRestoredSessionState = true;
+            try {
+                const raw = sessionStorage.getItem(SESSION_STATE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                if (!saved || typeof saved !== "object") return;
+
+                if (typeof saved.searchQuery === "string" && saved.searchQuery) {
+                    searchQuery = saved.searchQuery;
+                    const input = document.getElementById("search-input");
+                    if (input) input.value = saved.searchQuery;
+                }
+
+                if (saved.activeFolderId) {
+                    const folder = folders.find(f => String(f.id) === String(saved.activeFolderId));
+                    if (folder) {
+                        activeFolderId = folder.id;
+                        if (saved.expandedItemId) {
+                            const item = (folder.items || []).find(it => String(it.id) === String(saved.expandedItemId));
+                            if (item) {
+                                expandedItemId = item.id;
+                                cameFromGlobalSearch = !!saved.cameFromGlobalSearch;
+                            }
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
 
         function pluralizeEntity(count, singular, plural) {
             return Number(count) === 1 ? singular : plural;
@@ -208,12 +278,14 @@
         function scrollToItemCard(itemId) {
             if (!itemId) return;
             requestAnimationFrame(() => {
-                const target = document.querySelector(`#items-list [data-entity-id="${CSS.escape(itemId)}"]`);
-                if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+                const target = document.querySelector(`#items-list [data-item-id="${CSS.escape(itemId)}"]`);
+                if (target) {
+                    target.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
             });
         }
 
-        function revealAppWhenReady() {
+        async function revealAppWhenReady() {
             if (appReadyShown) return;
             appReadyShown = true;
             syncHistoryState();
@@ -256,7 +328,9 @@
                 if (res && typeof res === "string") parsed = res.trim();
             }
             const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
-            if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+            if (driveId) {
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+            }
             return parsed;
         }
 
@@ -290,7 +364,7 @@
                     const items = rawItems
                         .filter(Boolean)
                         .map((it, iIdx) => ({
-                            id: String(it.id || `cty_${idx}_${iIdx}`),
+                            id: String(it.id || `cty_${Date.now()}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
                             date: String(it.date || ""),
@@ -304,7 +378,7 @@
                         .sort((a, b) => a.order - b.order);
 
                     return {
-                        id: String(f.id || `stt_${idx}`),
+                        id: String(f.id || `stt_${Date.now()}_${idx}`),
                         title: String(f.title || "Untitled State"),
                         date: String(f.date || ""),
                         dateFrom: String(f.dateFrom || ""),
@@ -336,6 +410,7 @@
 
         function handleSearchInput(val) {
             searchQuery = String(val || "").trim().toLowerCase();
+            saveViewStateToSession();
             syncSearchClearButton();
             renderAll();
         }
@@ -344,6 +419,7 @@
             const input = document.getElementById("search-input");
             if (input) input.value = "";
             searchQuery = "";
+            saveViewStateToSession();
             syncSearchClearButton();
             renderAll();
         }
@@ -351,8 +427,15 @@
         function matchesSearch(obj = {}) {
             if (!searchQuery) return true;
             const fields = [
-                obj.name, obj.title, obj.description, obj.date, obj.dateFrom, obj.dateTo,
-                formatSingleDate(obj.date), formatSingleDate(obj.dateFrom), formatSingleDate(obj.dateTo),
+                obj.name,
+                obj.title,
+                obj.description,
+                obj.date,
+                obj.dateFrom,
+                obj.dateTo,
+                formatSingleDate(obj.date),
+                formatSingleDate(obj.dateFrom),
+                formatSingleDate(obj.dateTo),
                 formatEntityDate(obj)
             ];
             return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
@@ -361,6 +444,7 @@
         function updateHeaderUI() {
             const titleEl = document.getElementById("page-title");
             const subEl = document.getElementById("page-subtitle");
+            const badgeEl = document.getElementById("header-badge");
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
             const folderBanner = document.getElementById("folder-banner");
@@ -374,8 +458,9 @@
             }
 
             if (!activeFolderId) {
-                titleEl.textContent = `${pluralizeEntity(totalCities, "City", "Cities")} Explored 🇮🇳`;
+                titleEl.textContent = `${pluralizeEntity(totalCities, "City", "Cities")} Explored 🏙️`;
                 subEl.textContent = `${formatCountLabel(totalStates, "State", "States")} • ${formatCountLabel(totalCities, "City", "Cities")}`;
+                if (badgeEl) badgeEl.textContent = formatCountLabel(totalCities, "City", "Cities");
                 foldersView.classList.remove("hidden");
                 itemsView.classList.add("hidden");
             } else {
@@ -384,12 +469,14 @@
                     activeFolderId = null;
                     expandedItemId = null;
                     cameFromGlobalSearch = false;
+                    saveViewStateToSession();
                     updateHeaderUI();
                     return;
                 }
                 const cCount = folder.items ? folder.items.length : 0;
                 titleEl.textContent = folder.title;
                 subEl.textContent = `${formatCountLabel(cCount, "City", "Cities")} inside`;
+                if (badgeEl) badgeEl.textContent = formatCountLabel(cCount, "City", "Cities");
                 foldersView.classList.add("hidden");
                 itemsView.classList.remove("hidden");
 
@@ -422,14 +509,17 @@
             activeFolderId = folderId;
             expandedItemId = null;
             cameFromGlobalSearch = false;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function openItemFromGlobalSearch(folderId, itemId) {
             activeFolderId = folderId;
             expandedItemId = itemId;
             cameFromGlobalSearch = true;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -438,16 +528,32 @@
         function renderFolders() {
             const grid = document.getElementById("folders-grid");
             const empty = document.getElementById("folders-empty");
+            const emptyTitle = document.getElementById("folders-empty-title");
+            const emptyDesc = document.getElementById("folders-empty-desc");
             const globalBox = document.getElementById("global-search-items");
             const foldersSectionLabel = document.getElementById("folders-section-label");
+
+            const visibleFolders = searchQuery
+                ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
+                : folders;
 
             const matchedItems = searchQuery
                 ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
                 : [];
 
-            empty.classList.toggle("hidden", folders.length > 0 || matchedItems.length > 0);
+            empty.classList.toggle("hidden", visibleFolders.length > 0 || matchedItems.length > 0);
+            if (emptyTitle && emptyDesc) {
+                if (searchQuery) {
+                    emptyTitle.textContent = "No Matching Results";
+                    emptyDesc.textContent = `Nothing matched "${searchQuery}".`;
+                } else {
+                    emptyTitle.textContent = "No States Found";
+                    emptyDesc.textContent = "Check back soon for new travel logs.";
+                }
+            }
+
             if (foldersSectionLabel) {
-                foldersSectionLabel.classList.toggle("hidden", !searchQuery || folders.length === 0);
+                foldersSectionLabel.classList.toggle("hidden", !searchQuery || visibleFolders.length === 0);
             }
 
             if (searchQuery && matchedItems.length > 0) {
@@ -462,17 +568,15 @@
                         const cityLabel = item.name || item.title || "—";
                         return `
                         <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
-                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG STATE NAME BOX -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🇮🇳</span>`}
+                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🏙️</span>`}
                                 </div>
                                 <div class="px-3 py-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0 flex items-center">
                                     <div class="text-sm font-extrabold text-white truncate">${escapeHtml(folder.title)}</div>
                                 </div>
                             </div>
 
-                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED CITY -> INFO BELOW -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
@@ -502,16 +606,19 @@
                 globalBox.innerHTML = "";
             }
 
-            grid.innerHTML = folders.map(f => {
+            grid.innerHTML = visibleFolders.map(f => {
                 const cover = resolveMediaUrl(f.driveLink);
                 const dispDate = formatEntityDate(f);
                 const itemCount = f.items ? f.items.length : 0;
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
-                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🏙️</div>`;
 
                 return `
-                <div onclick="openFolder('${escapeHtml(f.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer">
+                <div
+                    onclick="openFolder('${escapeHtml(f.id)}')"
+                    class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer"
+                >
                     <div class="h-32 bg-black relative overflow-hidden">
                         ${mediaHtml}
                         <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
@@ -532,11 +639,20 @@
             const currentIdx = visibleItems.findIndex(x => x.id === itemId);
             if (currentIdx === -1) return;
 
-            let startX = 0, startY = 0, deltaX = 0, tracking = false, lockedHorizontal = false;
+            let startX = 0;
+            let startY = 0;
+            let deltaX = 0;
+            let tracking = false;
+            let lockedHorizontal = false;
 
             cardEl.addEventListener("pointerdown", (e) => {
+                if (e.target.closest("button")) return;
                 if (e.button !== 0 && e.pointerType === "mouse") return;
-                startX = e.clientX; startY = e.clientY; deltaX = 0; tracking = true; lockedHorizontal = false;
+                startX = e.clientX;
+                startY = e.clientY;
+                deltaX = 0;
+                tracking = true;
+                lockedHorizontal = false;
                 cardEl.style.transition = "none";
             });
 
@@ -545,8 +661,12 @@
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 if (!lockedHorizontal) {
-                    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.35) lockedHorizontal = true;
-                    else if (Math.abs(dy) > 12) { tracking = false; return; }
+                    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.35) {
+                        lockedHorizontal = true;
+                    } else if (Math.abs(dy) > 12) {
+                        tracking = false;
+                        return;
+                    }
                 }
                 if (lockedHorizontal) {
                     deltaX = dx;
@@ -562,6 +682,7 @@
                 cardEl.style.transition = "transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease";
                 cardEl.style.transform = "translate3d(0, 0, 0)";
                 cardEl.style.opacity = "1";
+
                 if (lockedHorizontal && Math.abs(deltaX) > 62) {
                     const nextIdx = deltaX < 0
                         ? (currentIdx + 1) % visibleItems.length
@@ -570,12 +691,14 @@
                     if (nextItem && nextItem.id !== itemId) {
                         suppressNextClick = true;
                         expandedItemId = nextItem.id;
+                        saveViewStateToSession();
                         renderAll();
                         pushNavState();
                         window.scrollTo({ top: 0, behavior: "smooth" });
                     }
                 }
-                deltaX = 0; lockedHorizontal = false;
+                deltaX = 0;
+                lockedHorizontal = false;
             };
 
             cardEl.addEventListener("pointerup", finishSwipe);
@@ -585,41 +708,56 @@
         function buildExpandedItemCardHtml(it, indexLabel = "") {
             const imgSrc = resolveMediaUrl(it.driveLink);
             const dispDate = formatEntityDate(it);
-            const cityName = it.name || it.title || "";
+            const cityName = it.name || it.title || "Untitled City";
+            const noteLine = it.name && it.title && it.title !== it.name ? it.title : "";
+
             return `
-            <div data-entity-id="${escapeHtml(it.id)}" style="touch-action: pan-y;" class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden shadow-xl">
-                ${imgSrc ? `<div class="h-44 bg-black overflow-hidden"><img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(cityName)}" class="w-full h-full object-cover" /></div>` : ""}
+            <div
+                data-item-id="${escapeHtml(it.id)}"
+                onclick="if (suppressNextClick) { suppressNextClick = false; return; } toggleExpandItem('${escapeHtml(it.id)}');"
+                style="touch-action: pan-y;"
+                class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden transition cursor-pointer shadow-xl"
+            >
+                ${imgSrc ? `
+                <div class="h-48 bg-black relative overflow-hidden">
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(cityName)}" class="w-full h-full object-cover" />
+                </div>` : ""}
                 <div class="p-4">
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">City</span>
                         <span class="text-[10px] text-white/50">${escapeHtml(dispDate || indexLabel)}</span>
                     </div>
                     <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(cityName)}</h3>
-                    ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
-                    <div class="mt-2.5 flex items-center justify-between text-[10px] text-white/40">
-                        <span>← Swipe to switch →</span>
+                    ${noteLine ? `<p class="text-xs font-medium text-blue-300/90 mt-0.5">${escapeHtml(noteLine)}</p>` : ""}
+                    ${it.description ? `<p class="text-xs text-white/65 mt-1.5 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                    <div class="mt-3 flex items-center justify-between text-[10px] text-white/40">
+                        <span>← Swipe to switch • Tap to close →</span>
                         ${indexLabel ? `<span>${escapeHtml(indexLabel)}</span>` : ""}
                     </div>
                 </div>
             </div>`;
         }
 
-        function toggleExpandItem(itemId) {
-            if (suppressNextClick) { suppressNextClick = false; return; }
-            if (expandedItemId === itemId) {
-                const prevId = expandedItemId;
-                expandedItemId = null;
-                cameFromGlobalSearch = false;
-                renderAll();
-                syncHistoryState();
-                scrollToItemCard(prevId);
-                return;
-            }
-            expandedItemId = itemId;
-            cameFromGlobalSearch = false;
-            renderAll();
-            pushNavState();
-            window.scrollTo({ top: 0, behavior: "smooth" });
+        function buildCompactItemCardHtml(it, imgHeightClass = "h-20") {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const cityName = it.name || it.title || "Untitled City";
+            const mediaHtml = imgSrc
+                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(cityName)}" class="w-full h-full object-cover" />`
+                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🏙️</div>`;
+
+            return `
+            <div
+                data-item-id="${escapeHtml(it.id)}"
+                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
+                class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer"
+            >
+                <div class="${imgHeightClass} bg-black relative overflow-hidden">
+                    ${mediaHtml}
+                </div>
+                <div class="p-2 text-center">
+                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(cityName)}</span>
+                </div>
+            </div>`;
         }
 
         function renderItems() {
@@ -629,50 +767,70 @@
             const pinnedWrap = document.getElementById("pinned-item-wrap");
             const list = document.getElementById("items-list");
             const empty = document.getElementById("items-empty");
+
             const filteredItems = folder.items.filter(matchesSearch);
             empty.classList.toggle("hidden", filteredItems.length > 0);
 
             if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
                 expandedItemId = null;
+                saveViewStateToSession();
             }
 
-            const expandedIdx = expandedItemId ? filteredItems.findIndex(x => x.id === expandedItemId) : -1;
+            const expandedIdx = expandedItemId
+                ? filteredItems.findIndex(x => x.id === expandedItemId)
+                : -1;
             const expandedItem = expandedIdx !== -1 ? filteredItems[expandedIdx] : null;
 
             if (expandedItem) {
+                const posLabel = `${expandedIdx + 1} / ${filteredItems.length}`;
                 pinnedWrap.classList.remove("hidden");
-                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, `${expandedIdx + 1} / ${filteredItems.length}`);
-                attachExpandedSwipeGesture(pinnedWrap.firstElementChild, expandedItem.id, filteredItems);
+                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, posLabel);
+                const pinnedCard = pinnedWrap.querySelector(`[data-item-id]`);
+                attachExpandedSwipeGesture(pinnedCard, expandedItem.id, filteredItems);
             } else {
                 pinnedWrap.classList.add("hidden");
                 pinnedWrap.innerHTML = "";
             }
 
-            const remainingItems = expandedItem ? folder.items.filter(x => x.id !== expandedItem.id) : filteredItems;
-            list.className = expandedItem ? "grid grid-cols-2 gap-3" : "grid grid-cols-3 gap-2.5";
-            const compactHeight = expandedItem ? "h-24" : "h-20";
+            const remainingItems = expandedItem
+                ? filteredItems.filter(x => x.id !== expandedItem.id)
+                : filteredItems;
 
-            list.innerHTML = remainingItems.map(it => {
-                const imgSrc = resolveMediaUrl(it.driveLink);
-                const cityName = it.name || it.title || "";
-                const mediaHtml = imgSrc
-                    ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(cityName)}" class="w-full h-full object-cover" />`
-                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
-                return `
-                <div data-entity-id="${escapeHtml(it.id)}" onclick="toggleExpandItem('${escapeHtml(it.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer">
-                    <div class="${compactHeight} bg-black overflow-hidden">${mediaHtml}</div>
-                    <div class="p-2 text-center">
-                        <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(cityName)}</span>
-                    </div>
-                </div>`;
-            }).join("");
+            list.className = expandedItem
+                ? "grid grid-cols-2 gap-3"
+                : "grid grid-cols-3 gap-2.5";
+
+            const compactHeight = expandedItem ? "h-24" : "h-20";
+            list.innerHTML = remainingItems.map(it => buildCompactItemCardHtml(it, compactHeight)).join("");
         }
 
         function renderAll() {
             syncSearchClearButton();
             updateHeaderUI();
-            if (!activeFolderId) renderFolders();
-            else renderItems();
+            if (!activeFolderId) {
+                renderFolders();
+            } else {
+                renderItems();
+            }
+        }
+
+        function toggleExpandItem(itemId) {
+            if (expandedItemId === itemId) {
+                const prevId = expandedItemId;
+                expandedItemId = null;
+                cameFromGlobalSearch = false;
+                saveViewStateToSession();
+                renderAll();
+                syncHistoryState();
+                scrollToItemCard(prevId);
+                return;
+            }
+            expandedItemId = itemId;
+            cameFromGlobalSearch = false;
+            saveViewStateToSession();
+            renderAll();
+            pushNavState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function stepBackOneLevel() {
@@ -685,6 +843,7 @@
                     searchQuery = "";
                     cameFromGlobalSearch = false;
                 }
+                saveViewStateToSession();
                 renderAll();
                 scrollToItemCard(prevExpandedId);
                 return true;
@@ -693,6 +852,7 @@
                 activeFolderId = null;
                 expandedItemId = null;
                 cameFromGlobalSearch = false;
+                saveViewStateToSession();
                 renderAll();
                 return true;
             }
@@ -704,6 +864,7 @@
                 syncHistoryState();
                 return;
             }
+            saveViewStateToSession();
             window.location.href = "index.html";
         }
 
@@ -727,15 +888,16 @@
 
         window.handleSearchInput = handleSearchInput;
         window.clearSearchInput = clearSearchInput;
-        window.handleHeaderBack = handleHeaderBack;
         window.openFolder = openFolder;
         window.openItemFromGlobalSearch = openItemFromGlobalSearch;
         window.toggleExpandItem = toggleExpandItem;
+        window.handleHeaderBack = handleHeaderBack;
 
-        onValue(citiesRef, (snap) => {
+        onValue(citiesRef, async (snap) => {
             folders = normalizeFolders(snap.val());
+            restoreViewStateFromSession();
             renderAll();
-            revealAppWhenReady();
+            await revealAppWhenReady();
         });
     </script>
 </body>
