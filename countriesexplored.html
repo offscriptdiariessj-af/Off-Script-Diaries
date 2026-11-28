@@ -112,6 +112,7 @@
                     <p class="text-sm font-bold text-white">No Country Folders Yet</p>
                 </div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
+                <div id="global-search-items" class="hidden space-y-2"></div>
             </div>
 
             <!-- ITEMS INSIDE FOLDER VIEW -->
@@ -123,8 +124,7 @@
                     </div>
                     <div class="p-4">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country Folder</span>
-                            <span id="folder-banner-date" class="text-[11px] text-white/50"></span>
+                            <span id="folder-banner-date" class="text-[11px] text-blue-400"></span>
                         </div>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
                         <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
@@ -217,12 +217,22 @@
             return parsed;
         }
 
-        function formatDisplayDate(rawDate = "") {
+        function formatSingleDate(rawDate = "") {
             const clean = String(rawDate || "").trim();
             if (!clean) return "";
             const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
             if (m) return `${m[3]}/${m[2]}/${m[1]}`;
             return clean;
+        }
+
+        function formatEntityDate(obj = {}) {
+            if (obj.dateRangeEnabled) {
+                const f = formatSingleDate(obj.dateFrom);
+                const t = formatSingleDate(obj.dateTo);
+                if (f && t) return `${f} - ${t}`;
+                return f || t || formatSingleDate(obj.date);
+            }
+            return formatSingleDate(obj.date);
         }
 
         function normalizeFolders(raw) {
@@ -241,6 +251,9 @@
                             name: String(it.name || ""),
                             title: String(it.title || ""),
                             date: String(it.date || ""),
+                            dateFrom: String(it.dateFrom || ""),
+                            dateTo: String(it.dateTo || ""),
+                            dateRangeEnabled: !!it.dateRangeEnabled,
                             driveLink: String(it.driveLink || ""),
                             description: String(it.description || ""),
                             order: typeof it.order === "number" ? it.order : iIdx
@@ -251,6 +264,9 @@
                         id: String(f.id || `fld_${Date.now()}_${idx}`),
                         title: String(f.title || "Untitled Folder"),
                         date: String(f.date || ""),
+                        dateFrom: String(f.dateFrom || ""),
+                        dateTo: String(f.dateTo || ""),
+                        dateRangeEnabled: !!f.dateRangeEnabled,
                         driveLink: String(f.driveLink || ""),
                         description: String(f.description || ""),
                         order: typeof f.order === "number" ? f.order : idx,
@@ -278,16 +294,25 @@
             const fields = [
                 obj.name,
                 obj.title,
+                obj.description,
                 obj.date,
-                formatDisplayDate(obj.date)
+                obj.dateFrom,
+                obj.dateTo,
+                formatSingleDate(obj.date),
+                formatSingleDate(obj.dateFrom),
+                formatSingleDate(obj.dateTo),
+                formatEntityDate(obj)
             ];
             return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
         }
 
-        function openFolder(folderId) {
+        function openFolder(folderId, itemId = null) {
             activeFolderId = folderId;
-            expandedItemId = null;
+            expandedItemId = itemId;
             renderAll();
+            if (itemId) {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
         }
 
         function toggleExpandItem(itemId) {
@@ -313,7 +338,7 @@
 
         function buildExpandedItemCardHtml(it) {
             const imgSrc = resolveMediaUrl(it.driveLink);
-            const dispDate = formatDisplayDate(it.date);
+            const dispDate = formatEntityDate(it);
             return `
             <div
                 onclick="toggleExpandItem('${escapeHtml(it.id)}')"
@@ -321,7 +346,7 @@
             >
                 ${imgSrc ? `
                 <div class="h-44 bg-black">
-                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover" />
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" />
                 </div>` : ""}
                 <div class="p-4 space-y-1.5">
                     <div class="flex items-center justify-between gap-2">
@@ -330,6 +355,25 @@
                     </div>
                     <h3 class="text-base font-bold text-white">${escapeHtml(it.title || it.name)}</h3>
                     ${it.description ? `<p class="text-xs text-white/70 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                </div>
+            </div>`;
+        }
+
+        function buildCompactItemCardHtml(it, imgHeightClass = "h-20") {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const mediaHtml = imgSrc
+                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" />`
+                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🌍</div>`;
+            return `
+            <div
+                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
+                class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer transition"
+            >
+                <div class="${imgHeightClass} bg-black relative">
+                    ${mediaHtml}
+                </div>
+                <div class="p-2 text-center">
+                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
                 </div>
             </div>`;
         }
@@ -350,12 +394,21 @@
 
                 const grid = document.getElementById("folders-grid");
                 const empty = document.getElementById("folders-empty");
-                const filtered = folders.filter(matchesSearch);
-                empty.classList.toggle("hidden", filtered.length > 0);
+                const globalBox = document.getElementById("global-search-items");
 
-                grid.innerHTML = filtered.map(f => {
+                const matchedFolders = searchQuery
+                    ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
+                    : folders;
+
+                const matchedItems = searchQuery
+                    ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
+                    : [];
+
+                empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
+
+                grid.innerHTML = matchedFolders.map(f => {
                     const cover = resolveMediaUrl(f.driveLink);
-                    const dispDate = formatDisplayDate(f.date);
+                    const dispDate = formatEntityDate(f);
                     const mediaHtml = cover
                         ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
                         : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
@@ -378,6 +431,27 @@
                         </div>
                     </div>`;
                 }).join("");
+
+                if (searchQuery && matchedItems.length > 0) {
+                    globalBox.classList.remove("hidden");
+                    globalBox.innerHTML = `
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Countries</div>
+                        ${matchedItems.map(({ folder, item }) => {
+                            const dispDate = formatEntityDate(item);
+                            return `
+                            <div onclick="openFolder('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-3 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-center justify-between gap-2 cursor-pointer transition">
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    <div class="text-[10px] text-white/55 truncate">${escapeHtml(item.name)}${item.name && folder.title ? " • " : ""}${escapeHtml(folder.title)}</div>
+                                </div>
+                                ${dispDate ? `<span class="text-[10px] text-blue-400 shrink-0">${escapeHtml(dispDate)}</span>` : ""}
+                            </div>`;
+                        }).join("")}
+                    `;
+                } else {
+                    globalBox.classList.add("hidden");
+                    globalBox.innerHTML = "";
+                }
             } else {
                 const folder = folders.find(f => f.id === activeFolderId);
                 if (!folder) {
@@ -403,7 +477,7 @@
                 }
                 document.getElementById("folder-banner-title").textContent = folder.title;
                 const dateEl = document.getElementById("folder-banner-date");
-                const dispDate = formatDisplayDate(folder.date);
+                const dispDate = formatEntityDate(folder);
                 dateEl.textContent = dispDate;
                 dateEl.classList.toggle("hidden", !dispDate);
                 const descEl = document.getElementById("folder-banner-desc");
@@ -440,14 +514,8 @@
                     ? "grid grid-cols-2 gap-3"
                     : "grid grid-cols-3 gap-2.5";
 
-                list.innerHTML = remainingItems.map(it => `
-                    <div
-                        onclick="toggleExpandItem('${escapeHtml(it.id)}')"
-                        class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 p-3 flex items-center justify-center text-center min-h-[76px] cursor-pointer transition"
-                    >
-                        <span class="text-xs font-bold text-white break-words leading-snug">${escapeHtml(it.name)}</span>
-                    </div>
-                `).join("");
+                const compactHeight = expandedItem ? "h-24" : "h-20";
+                list.innerHTML = remainingItems.map(it => buildCompactItemCardHtml(it, compactHeight)).join("");
             }
         }
 
