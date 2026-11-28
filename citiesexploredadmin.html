@@ -19,16 +19,32 @@
         }
         [data-entity-type] {
             touch-action: none;
+            will-change: transform;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .drag-ghost {
-            opacity: 0.45;
+        .drag-placeholder {
+            opacity: 0.22;
+            border: 2px dashed #60a5fa !important;
+            background: rgba(96, 165, 250, 0.08) !important;
             transform: scale(0.97);
         }
-        .drag-target {
-            outline: 2px dashed #60a5fa;
-            outline-offset: 2px;
+        .drag-floating-clone {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            margin: 0 !important;
+            transform: scale(1.045) rotate(1deg);
+            box-shadow: 0 22px 45px rgba(0, 0, 0, 0.72), 0 0 0 2px #60a5fa;
+            transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s ease;
+        }
+        .drag-floating-clone.dropping {
+            transition: left 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                        top 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                        box-shadow 0.22s ease;
+            transform: scale(1) rotate(0deg);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         }
     </style>
 </head>
@@ -277,12 +293,15 @@
         let pendingDeleteAction = null;
         let lockEnforced = false;
 
-        // Drag & Hold Sorting State
+        // Floating Lift & Live Shift Drag State
         let holdTimer = null;
         let isDragging = false;
         let dragType = null;
         let dragSourceId = null;
-        let dragOverId = null;
+        let floatingClone = null;
+        let grabOffsetX = 0;
+        let grabOffsetY = 0;
+        let orderChangedDuringDrag = false;
         let suppressNextClick = false;
         let startX = 0;
         let startY = 0;
@@ -498,6 +517,7 @@
             grid.innerHTML = folders.map(f => {
                 const cover = resolveMediaUrl(f.driveLink);
                 const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
+                const isPlaceholder = isDragging && dragType === "folder" && dragSourceId === f.id;
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
                     : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
@@ -506,7 +526,7 @@
                 <div
                     data-entity-type="folder"
                     data-entity-id="${escapeHtml(f.id)}"
-                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-visible transition cursor-pointer"
+                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} ${isPlaceholder ? "drag-placeholder" : ""} overflow-visible transition-colors cursor-pointer"
                 >
                     <div class="h-32 bg-black relative rounded-t-2xl overflow-hidden">
                         ${mediaHtml}
@@ -554,12 +574,13 @@
             list.innerHTML = folder.items.map(it => {
                 const imgSrc = resolveMediaUrl(it.driveLink);
                 const isSelected = selectionKind === "item" && selectedIds.has(it.id);
+                const isPlaceholder = isDragging && dragType === "item" && dragSourceId === it.id;
 
                 return `
                 <div
                     data-entity-type="item"
                     data-entity-id="${escapeHtml(it.id)}"
-                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-visible transition cursor-pointer"
+                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} ${isPlaceholder ? "drag-placeholder" : ""} overflow-visible transition-colors cursor-pointer"
                 >
                     ${imgSrc ? `
                     <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
@@ -687,38 +708,101 @@
             renderAll();
         }
 
-        function setCardSelectedVisual(container, type, activeIdSet) {
-            container.querySelectorAll(`[data-entity-type="${type}"]`).forEach(el => {
-                const id = el.getAttribute("data-entity-id");
-                const match = activeIdSet.has(id);
-                el.classList.toggle("border-blue-400", match);
-                el.classList.toggle("ring-2", match);
-                el.classList.toggle("ring-blue-500/40", match);
-                el.classList.toggle("border-white/10", !match);
+        // Smooth FLIP slide animation for sibling cards as the floating card moves across them
+        function animateSiblingShift(container, type, mutateFn) {
+            const cards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
+            const beforeRects = new Map();
+            cards.forEach(el => {
+                beforeRects.set(el.getAttribute("data-entity-id"), el.getBoundingClientRect());
             });
+
+            mutateFn();
+
+            if (type === "folder") renderFolders();
+            else renderItems();
+
+            const afterCards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
+            afterCards.forEach(el => {
+                const id = el.getAttribute("data-entity-id");
+                const prev = beforeRects.get(id);
+                if (!prev) return;
+                const next = el.getBoundingClientRect();
+                const dx = prev.left - next.left;
+                const dy = prev.top - next.top;
+                if (dx !== 0 || dy !== 0) {
+                    el.style.transition = "none";
+                    el.style.transform = `translate(${dx}px, ${dy}px)`;
+                    el.getBoundingClientRect();
+                    el.style.transition = "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
+                    el.style.transform = "";
+                }
+            });
+        }
+
+        function createFloatingClone(cardEl) {
+            const rect = cardEl.getBoundingClientRect();
+            const clone = cardEl.cloneNode(true);
+            clone.removeAttribute("data-entity-type");
+            clone.removeAttribute("data-entity-id");
+            clone.classList.remove("drag-placeholder");
+            clone.classList.add("drag-floating-clone");
+            clone.style.width = `${rect.width}px`;
+            clone.style.height = `${rect.height}px`;
+            clone.style.left = `${rect.left}px`;
+            clone.style.top = `${rect.top}px`;
+            document.body.appendChild(clone);
+            return clone;
         }
 
         function bindCardGestures(container, type) {
             const cards = container.querySelectorAll(`[data-entity-type="${type}"]`);
 
             const onWindowPointerMove = (e) => {
-                if (!isDragging) return;
+                if (!isDragging || !floatingClone) return;
                 if (e.cancelable) e.preventDefault();
 
+                floatingClone.style.left = `${e.clientX - grabOffsetX}px`;
+                floatingClone.style.top = `${e.clientY - grabOffsetY}px`;
+
+                // Auto-scroll gently near top/bottom viewport edges
+                const edgeZone = 75;
+                if (e.clientY < edgeZone) {
+                    window.scrollBy(0, -10);
+                } else if (e.clientY > window.innerHeight - edgeZone) {
+                    window.scrollBy(0, 10);
+                }
+
+                // Find card directly beneath pointer (floatingClone has pointer-events: none)
                 const elUnder = document.elementFromPoint(e.clientX, e.clientY);
                 const targetCard = elUnder ? elUnder.closest(`[data-entity-type="${dragType}"]`) : null;
+                if (!targetCard) return;
 
-                container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
-                if (targetCard) {
-                    const targetId = targetCard.getAttribute("data-entity-id");
-                    if (targetId && targetId !== dragSourceId) {
-                        dragOverId = targetId;
-                        targetCard.classList.add("drag-target");
-                    } else {
-                        dragOverId = null;
+                const targetId = targetCard.getAttribute("data-entity-id");
+                if (!targetId || targetId === dragSourceId) return;
+
+                if (dragType === "folder") {
+                    const fromIdx = folders.findIndex(x => x.id === dragSourceId);
+                    const toIdx = folders.findIndex(x => x.id === targetId);
+                    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                        orderChangedDuringDrag = true;
+                        animateSiblingShift(container, "folder", () => {
+                            const [moved] = folders.splice(fromIdx, 1);
+                            folders.splice(toIdx, 0, moved);
+                        });
                     }
-                } else {
-                    dragOverId = null;
+                } else if (dragType === "item") {
+                    const folder = folders.find(x => x.id === activeFolderId);
+                    if (folder) {
+                        const fromIdx = folder.items.findIndex(x => x.id === dragSourceId);
+                        const toIdx = folder.items.findIndex(x => x.id === targetId);
+                        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                            orderChangedDuringDrag = true;
+                            animateSiblingShift(container, "item", () => {
+                                const [moved] = folder.items.splice(fromIdx, 1);
+                                folder.items.splice(toIdx, 0, moved);
+                            });
+                        }
+                    }
                 }
             };
 
@@ -730,46 +814,36 @@
                 if (!isDragging) return;
 
                 const srcId = dragSourceId;
-                const dstId = dragOverId;
                 const dType = dragType;
+                const didReorder = orderChangedDuringDrag;
+                const clone = floatingClone;
 
                 isDragging = false;
                 dragSourceId = null;
-                dragOverId = null;
                 dragType = null;
+                floatingClone = null;
+                orderChangedDuringDrag = false;
 
-                container.querySelectorAll(".drag-ghost, .drag-target").forEach(el => {
-                    el.classList.remove("drag-ghost", "drag-target");
-                });
+                // Glide floating clone smoothly into the final placeholder slot
+                const landingCard = container.querySelector(`[data-entity-type="${dType}"][data-entity-id="${srcId}"]`);
+                if (clone && landingCard) {
+                    const destRect = landingCard.getBoundingClientRect();
+                    clone.classList.add("dropping");
+                    clone.style.left = `${destRect.left}px`;
+                    clone.style.top = `${destRect.top}px`;
 
-                if (srcId && dstId && srcId !== dstId) {
-                    if (dType === "folder") {
-                        const fromIdx = folders.findIndex(x => x.id === srcId);
-                        const toIdx = folders.findIndex(x => x.id === dstId);
-                        if (fromIdx !== -1 && toIdx !== -1) {
-                            const [moved] = folders.splice(fromIdx, 1);
-                            folders.splice(toIdx, 0, moved);
-                            renderAll();
-                            await persistToFirebase("Folder order updated");
-                            return;
-                        }
-                    } else if (dType === "item") {
-                        const folder = folders.find(x => x.id === activeFolderId);
-                        if (folder) {
-                            const fromIdx = folder.items.findIndex(x => x.id === srcId);
-                            const toIdx = folder.items.findIndex(x => x.id === dstId);
-                            if (fromIdx !== -1 && toIdx !== -1) {
-                                const [moved] = folder.items.splice(fromIdx, 1);
-                                folder.items.splice(toIdx, 0, moved);
-                                renderAll();
-                                await persistToFirebase("City order updated");
-                                return;
-                            }
-                        }
-                    }
+                    await new Promise(resolve => setTimeout(resolve, 220));
                 }
 
-                updateSelectionBar();
+                if (clone && clone.parentNode) {
+                    clone.parentNode.removeChild(clone);
+                }
+
+                renderAll();
+
+                if (didReorder) {
+                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "City order updated");
+                }
             };
 
             cards.forEach(card => {
@@ -780,10 +854,13 @@
                     if (e.button !== 0 && e.pointerType === "mouse") return;
                     startX = e.clientX;
                     startY = e.clientY;
-                    dragOverId = null;
 
                     clearTimeout(holdTimer);
                     holdTimer = setTimeout(() => {
+                        const rect = card.getBoundingClientRect();
+                        grabOffsetX = e.clientX - rect.left;
+                        grabOffsetY = e.clientY - rect.top;
+
                         if (selectionKind && selectionKind !== type) {
                             selectedIds.clear();
                         }
@@ -793,10 +870,12 @@
                         isDragging = true;
                         dragType = type;
                         dragSourceId = id;
+                        orderChangedDuringDrag = false;
                         suppressNextClick = true;
 
-                        setCardSelectedVisual(container, type, selectedIds);
-                        card.classList.add("drag-ghost");
+                        // Lift card out into floating clone & leave placeholder in list/grid
+                        floatingClone = createFloatingClone(card);
+                        card.classList.add("drag-placeholder");
                         updateSelectionBar();
 
                         if (navigator.vibrate) navigator.vibrate(25);
@@ -804,7 +883,7 @@
                         window.addEventListener("pointermove", onWindowPointerMove, { passive: false });
                         window.addEventListener("pointerup", onWindowPointerUp);
                         window.addEventListener("pointercancel", onWindowPointerUp);
-                    }, 420);
+                    }, 380);
                 });
 
                 const cancelHoldBeforeDrag = () => {
@@ -1160,7 +1239,9 @@
 
         onValue(citiesRef, (snap) => {
             folders = normalizeFolders(snap.val());
-            renderAll();
+            if (!isDragging) {
+                renderAll();
+            }
             if (!lockEnforced && typeof enforceRoleLock === "function") {
                 lockEnforced = true;
                 enforceRoleLock("admin", "Cities Admin");
