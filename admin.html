@@ -255,9 +255,9 @@
             <main id="sec-brand" class="max-w-md lg:max-w-none lg:flex-1 lg:w-full mx-auto px-4 lg:px-8 pt-4 lg:pt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
 
                 <!-- BRAND & CIRCULAR LOGO -->
-                <section data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Brand & Circular Logo</h2>
-                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                <section data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Brand & Circular Logo</h2>
+                    <div data-section-body class="hidden space-y-3 mt-3">
                         <div class="flex items-center gap-4">
                             <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 lg:w-20 lg:h-20 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
                             <div class="flex-1 space-y-2">
@@ -277,9 +277,9 @@
                 </section>
 
                 <!-- SECTION 1: HERO -->
-                <section id="sec-hero" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 1 • Hero</h2>
-                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                <section id="sec-hero" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 1 • Hero</h2>
+                    <div data-section-body class="hidden space-y-2.5 mt-2.5">
                         <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
@@ -291,9 +291,9 @@
                 </section>
 
                 <!-- SECTION 2: ORIGIN -->
-                <section id="sec-origin" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 2 • Origin</h2>
-                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                <section id="sec-origin" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 2 • Origin</h2>
+                    <div data-section-body class="hidden space-y-2.5 mt-2.5">
                         <div class="grid grid-cols-2 gap-2.5">
                             <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                             <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -305,9 +305,9 @@
                 </section>
 
                 <!-- SECTIONS 3 & 4 -->
-                <section id="sec-stats" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 3 & 4 • Stats & Magazine</h2>
-                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                <section id="sec-stats" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 3 & 4 • Stats & Magazine</h2>
+                    <div data-section-body class="hidden space-y-2.5 mt-2.5">
                         <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
                             <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
                             <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
@@ -333,9 +333,9 @@
                 </section>
 
                 <!-- SECTIONS 5 & 6 -->
-                <section id="sec-bucket" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 5 & 6 • Bucket List & Notes</h2>
-                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                <section id="sec-bucket" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 5 & 6 • Bucket List & Notes</h2>
+                    <div data-section-body class="hidden space-y-3 mt-3">
                         <div id="admin-bucket-editor" class="space-y-2"></div>
                         <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
                         <div class="space-y-2 pt-2 border-t border-white/10">
@@ -348,9 +348,9 @@
                 </section>
 
                 <!-- SECTIONS 7, 8, 9 & 10 -->
-                <section id="sec-timeline" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
-                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
-                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                <section id="sec-timeline" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
+                    <div data-section-body class="hidden space-y-3 mt-3">
                         <div id="admin-milestones-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
                         <div class="pt-2 border-t border-white/10 space-y-2">
                             <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
@@ -375,20 +375,80 @@
 
     </div>
 
+    <!-- SEPARATE PAGE VIEW FOR SELECTED SECTION -->
+    <div id="section-page-overlay" class="hidden fixed inset-0 z-50 bg-[#121417] overflow-y-auto pb-24 lg:pb-10">
+        <header class="sticky top-0 z-40 w-full bg-[#121417]/95 backdrop-blur border-b border-white/10">
+            <div class="max-w-3xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button type="button" onclick="closeSectionPage()" aria-label="Back to Admin" title="Back" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/85 hover:text-blue-400 transition shrink-0">
+                        ←
+                    </button>
+                    <h2 id="section-page-title" class="text-sm lg:text-base font-bold text-white truncate"></h2>
+                </div>
+                <button type="button" onclick="closeSectionPage()" aria-label="Close Section" title="Close" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/85 hover:text-rose-400 text-xs font-bold transition shrink-0">
+                    ✕
+                </button>
+            </div>
+        </header>
+        <div id="section-page-content" class="max-w-3xl mx-auto px-4 lg:px-8 pt-6"></div>
+    </div>
+
     <script>
-        function toggleAdminSection(sectionEl) {
+        let activeSectionCard = null;
+        let activeSectionBody = null;
+        let activeSectionHomeParent = null;
+        let activeSectionHomeNextSibling = null;
+
+        function openSectionAsPage(sectionEl) {
             if (!sectionEl) return;
-            const body = sectionEl.querySelector('[data-accordion-body]');
-            if (!body) return;
-            const shouldExpand = body.classList.contains('hidden');
-            document.querySelectorAll('[data-accordion-section] [data-accordion-body]').forEach((el) => {
-                el.classList.add('hidden');
-            });
-            if (shouldExpand) {
-                body.classList.remove('hidden');
+            const body = sectionEl.querySelector('[data-section-body]');
+            const heading = sectionEl.querySelector('h2');
+            const overlay = document.getElementById('section-page-overlay');
+            const titleEl = document.getElementById('section-page-title');
+            const contentEl = document.getElementById('section-page-content');
+            if (!body || !overlay || !contentEl) return;
+
+            if (activeSectionCard && activeSectionBody) {
+                closeSectionPage();
             }
+
+            activeSectionCard = sectionEl;
+            activeSectionBody = body;
+            activeSectionHomeParent = body.parentElement;
+            activeSectionHomeNextSibling = body.nextSibling;
+
+            if (titleEl && heading) {
+                titleEl.textContent = heading.textContent;
+            }
+
+            body.classList.remove('hidden');
+            contentEl.innerHTML = '';
+            contentEl.appendChild(body);
+            overlay.classList.remove('hidden');
+            overlay.scrollTop = 0;
         }
-        window.toggleAdminSection = toggleAdminSection;
+
+        function closeSectionPage() {
+            const overlay = document.getElementById('section-page-overlay');
+            if (activeSectionBody && activeSectionHomeParent) {
+                activeSectionBody.classList.add('hidden');
+                if (activeSectionHomeNextSibling && activeSectionHomeNextSibling.parentNode === activeSectionHomeParent) {
+                    activeSectionHomeParent.insertBefore(activeSectionBody, activeSectionHomeNextSibling);
+                } else {
+                    activeSectionHomeParent.appendChild(activeSectionBody);
+                }
+            }
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            activeSectionCard = null;
+            activeSectionBody = null;
+            activeSectionHomeParent = null;
+            activeSectionHomeNextSibling = null;
+        }
+
+        window.openSectionAsPage = openSectionAsPage;
+        window.closeSectionPage = closeSectionPage;
     </script>
 
     <script src="js/store.js"></script>
@@ -550,7 +610,7 @@
 
         function normalizeSiteData(raw) {
             const base = createEmptySiteData();
-            const src = raw && typeof raw === 'object' ? raw : {};
+            const src = raw && typeof raw === "object" ? raw : {};
 
             base.brand = { ...base.brand, ...(src.brand || {}) };
             const s = src.sections || {};
@@ -563,11 +623,11 @@
             base.sections.magazineSpotlight = { ...base.sections.magazineSpotlight, ...(s.magazineSpotlight || {}) };
             base.sections.bucketList = Array.isArray(s.bucketList)
                 ? s.bucketList
-                : (s.bucketList && typeof s.bucketList === 'object' ? Object.values(s.bucketList) : []);
+                : (s.bucketList && typeof s.bucketList === "object" ? Object.values(s.bucketList) : []);
             base.sections.perspectives = { ...base.sections.perspectives, ...(s.perspectives || {}) };
             base.sections.milestones = Array.isArray(s.milestones)
                 ? s.milestones
-                : (s.milestones && typeof s.milestones === 'object' ? Object.values(s.milestones) : []);
+                : (s.milestones && typeof s.milestones === "object" ? Object.values(s.milestones) : []);
 
             const snd = s.soundtrack || {};
             base.sections.soundtrack = {
@@ -575,12 +635,12 @@
                 ...snd,
                 tracks: Array.isArray(snd.tracks)
                     ? snd.tracks
-                    : (snd.tracks && typeof snd.tracks === 'object' ? Object.values(snd.tracks) : base.sections.soundtrack.tracks)
+                    : (snd.tracks && typeof snd.tracks === "object" ? Object.values(snd.tracks) : base.sections.soundtrack.tracks)
             };
 
             base.sections.loveNotes = Array.isArray(s.loveNotes)
                 ? s.loveNotes
-                : (s.loveNotes && typeof s.loveNotes === 'object' ? Object.values(s.loveNotes) : []);
+                : (s.loveNotes && typeof s.loveNotes === "object" ? Object.values(s.loveNotes) : []);
 
             base.sections.capsule = { ...base.sections.capsule, ...(s.capsule || {}) };
             return base;
