@@ -28,35 +28,74 @@
             z-index: 50;
             box-shadow: 0 22px 44px rgba(0, 0, 0, 0.78), 0 0 0 2px #60a5fa;
         }
-        @keyframes pulseBar {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(65%); }
-            100% { transform: translateX(220%); }
+
+        @keyframes osdOrbitSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .osd-progress-bar {
-            animation: pulseBar 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        @keyframes osdOrbitReverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes osdCorePulse {
+            0%, 100% { transform: scale(0.94); opacity: 0.75; }
+            50% { transform: scale(1.06); opacity: 1; }
+        }
+        @keyframes osdShimmerSlide {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(260%); }
+        }
+        @keyframes osdFloatUp {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .osd-ring-outer {
+            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .osd-ring-inner {
+            animation: osdOrbitReverse 1.9s linear infinite;
+        }
+        .osd-core-glow {
+            animation: osdCorePulse 2.2s ease-in-out infinite;
+        }
+        .osd-shimmer-bar {
+            animation: osdShimmerSlide 1.55s ease-in-out infinite;
+        }
+        .osd-float {
+            animation: osdFloatUp 3s ease-in-out infinite;
         }
     </style>
 </head>
 <body class="font-sans antialiased pb-28 overflow-hidden">
 
-    <!-- OFF SCRIPT DIARIES LOADING CURTAIN -->
-    <div id="app-loader" class="fixed inset-0 z-[100] bg-[#121417] flex flex-col items-center justify-center px-6">
-        <div class="w-full max-w-xs text-center space-y-4">
-            <div class="space-y-1">
-                <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-blue-400">Editorial Workspace</p>
-                <h2 class="text-xl font-extrabold tracking-tight text-white">Off Script Diaries</h2>
-                <p class="text-xs text-white/55">Countries Explored 🌍</p>
+    <!-- INDEX-STYLE OFF SCRIPT DIARIES PRELOADER -->
+    <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
+            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
+                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
+                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
+                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
+                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
+                </div>
             </div>
-            <div class="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-                <div class="h-full w-1/2 rounded-full bg-blue-400 osd-progress-bar"></div>
+
+            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
+            <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p class="text-xs text-white/50 mt-1">Countries Explored 🌍 • Syncing records</p>
+
+            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
+                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
             </div>
-            <p id="loader-status" class="text-[11px] text-white/60">Syncing records with Firebase...</p>
         </div>
     </div>
 
     <!-- APP SHELL (REVEALED ONCE READY) -->
-    <div id="app-shell" class="opacity-0 transition-opacity duration-200">
+    <div id="app-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
         <!-- HEADER -->
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
@@ -297,7 +336,7 @@
         let folders = [];
         let activeFolderId = null;
         let selectedIds = new Set();
-        let selectionKind = null; // 'folder' | 'item' | null
+        let selectionKind = null;
         let editingFolderId = null;
         let editingItemId = null;
         let pendingDeleteAction = null;
@@ -331,13 +370,16 @@
                 } catch (_) {}
             }
 
-            const loader = document.getElementById("app-loader");
+            const loader = document.getElementById("osd-preloader");
             const shell = document.getElementById("app-shell");
             document.body.classList.remove("overflow-hidden");
-            shell.classList.remove("opacity-0");
+            if (shell) {
+                shell.classList.remove("opacity-0", "pointer-events-none");
+                shell.classList.add("opacity-100");
+            }
             if (loader) {
-                loader.classList.add("opacity-0", "transition-opacity", "duration-200");
-                setTimeout(() => loader.remove(), 220);
+                loader.classList.add("opacity-0", "pointer-events-none");
+                setTimeout(() => loader.remove(), 520);
             }
         }
 
