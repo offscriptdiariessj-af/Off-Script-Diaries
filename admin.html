@@ -255,105 +255,117 @@
             <main id="sec-brand" class="max-w-md lg:max-w-none lg:flex-1 lg:w-full mx-auto px-4 lg:px-8 pt-4 lg:pt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
 
                 <!-- BRAND & CIRCULAR LOGO -->
-                <section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Brand & Circular Logo</h2>
-                    <div class="flex items-center gap-4">
-                        <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 lg:w-20 lg:h-20 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
-                        <div class="flex-1 space-y-2">
-                            <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                            <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <section data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Brand & Circular Logo</h2>
+                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                        <div class="flex items-center gap-4">
+                            <img id="preview-logo" src="" alt="Preview" class="w-16 h-16 lg:w-20 lg:h-20 rounded-full object-cover aspect-square border-2 border-blue-400 bg-[#121417] shrink-0" />
+                            <div class="flex-1 space-y-2">
+                                <input id="inp-siteName" type="text" placeholder="Website Name" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                                <input id="inp-coupleNames" type="text" placeholder="Names" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-blue-400 mb-1">Google Drive Image Link (Circular Logo)</label>
-                        <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    </div>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <input id="inp-location" type="text" placeholder="Location" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-year" type="text" placeholder="Year" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <div>
+                            <label class="block text-[11px] text-blue-400 mb-1">Google Drive Image Link (Circular Logo)</label>
+                            <input id="inp-logoUrl" type="text" oninput="updateLogoPreview()" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <input id="inp-location" type="text" placeholder="Location" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <input id="inp-year" type="text" placeholder="Year" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        </div>
                     </div>
                 </section>
 
                 <!-- SECTION 1: HERO -->
-                <section id="sec-hero" class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Section 1 • Hero</h2>
-                    <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <input id="inp-hero-cta" type="text" placeholder="Button Text" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-hero-bg" type="text" placeholder="Hero Image / Drive Link" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <section id="sec-hero" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 1 • Hero</h2>
+                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                        <input id="inp-hero-eyebrow" type="text" placeholder="Eyebrow" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="inp-hero-headline" type="text" placeholder="Headline" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <textarea id="inp-hero-sub" rows="2" placeholder="Subheadline" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <input id="inp-hero-cta" type="text" placeholder="Button Text" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <input id="inp-hero-bg" type="text" placeholder="Hero Image / Drive Link" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        </div>
                     </div>
                 </section>
 
                 <!-- SECTION 2: ORIGIN -->
-                <section id="sec-origin" class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Section 2 • Origin</h2>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <section id="sec-origin" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 2 • Origin</h2>
+                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        </div>
+                        <textarea id="inp-origin-story" rows="2" placeholder="Story" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                        <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     </div>
-                    <textarea id="inp-origin-story" rows="2" placeholder="Story" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-                    <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </section>
 
                 <!-- SECTIONS 3 & 4 -->
-                <section id="sec-stats" class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Sections 3 & 4 • Stats & Magazine</h2>
-                    <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
-                        <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
-                        <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2.5">
-                        <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
-                            <span class="block text-[10px] text-white/50">Cities Auto</span>
-                            <span id="auto-stat-cities" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                <section id="sec-stats" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 3 & 4 • Stats & Magazine</h2>
+                    <div data-accordion-body class="hidden space-y-2.5 mt-2.5">
+                        <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10 flex items-center justify-between gap-2">
+                            <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
+                            <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
                         </div>
-                        <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
-                            <span class="block text-[10px] text-white/50">Countries Auto</span>
-                            <span id="auto-stat-countries" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
+                                <span class="block text-[10px] text-white/50">Cities Auto</span>
+                                <span id="auto-stat-cities" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
+                                <span class="block text-[10px] text-white/50">Countries Auto</span>
+                                <span id="auto-stat-countries" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                            </div>
+                            <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-full min-h-[46px] px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         </div>
-                        <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-full min-h-[46px] px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <a href="citiesexploredadmin.html" class="h-10 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-semibold flex items-center justify-center transition">Cities Admin 🇮🇳</a>
+                            <a href="countriesexploredadmin.html" class="h-10 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-semibold flex items-center justify-center transition">Countries Admin 🌍</a>
+                        </div>
+                        <input id="inp-mag-heading" type="text" placeholder="Magazine Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                        <input id="inp-mag-desc" type="text" placeholder="Magazine Subtitle" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     </div>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <a href="citiesexploredadmin.html" class="h-10 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-semibold flex items-center justify-center transition">Cities Admin 🇮🇳</a>
-                        <a href="countriesexploredadmin.html" class="h-10 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-semibold flex items-center justify-center transition">Countries Admin 🌍</a>
-                    </div>
-                    <input id="inp-mag-heading" type="text" placeholder="Magazine Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    <input id="inp-mag-desc" type="text" placeholder="Magazine Subtitle" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                 </section>
 
                 <!-- SECTIONS 5 & 6 -->
-                <section id="sec-bucket" class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Sections 5 & 6 • Bucket List & Notes</h2>
-                    <div id="admin-bucket-editor" class="space-y-2"></div>
-                    <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
-                    <div class="space-y-2 pt-2 border-t border-white/10">
-                        <input id="inp-pov1-name" type="text" placeholder="Note 1 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <textarea id="inp-pov1-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-                        <input id="inp-pov2-name" type="text" placeholder="Note 2 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <textarea id="inp-pov2-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                <section id="sec-bucket" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 5 & 6 • Bucket List & Notes</h2>
+                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                        <div id="admin-bucket-editor" class="space-y-2"></div>
+                        <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400 font-semibold">+ Add Bucket Item</button>
+                        <div class="space-y-2 pt-2 border-t border-white/10">
+                            <input id="inp-pov1-name" type="text" placeholder="Note 1 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <textarea id="inp-pov1-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                            <input id="inp-pov2-name" type="text" placeholder="Note 2 Label" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <textarea id="inp-pov2-note" rows="2" class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+                        </div>
                     </div>
                 </section>
 
                 <!-- SECTIONS 7, 8, 9 & 10 -->
-                <section id="sec-timeline" class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                    <h2 class="text-sm lg:text-base font-bold text-white">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
-                    <div id="admin-milestones-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
-                    <div class="pt-2 border-t border-white/10 space-y-2">
-                        <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <div id="admin-tracks-editor" class="space-y-2"></div>
-                    </div>
-                    <div class="pt-2 border-t border-white/10 space-y-2">
-                        <div id="admin-notes-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
-                    </div>
-                    <div class="pt-2 border-t border-white/10 space-y-2">
-                        <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                            <input id="inp-cap-dest" type="text" placeholder="Destination" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                            <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                <section id="sec-timeline" data-accordion-section class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
+                    <h2 onclick="toggleAdminSection(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Sections 7–10 • Timeline, Music, Vault, Next Stop</h2>
+                    <div data-accordion-body class="hidden space-y-3 mt-3">
+                        <div id="admin-milestones-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
+                        <div class="pt-2 border-t border-white/10 space-y-2">
+                            <input id="inp-sound-title" type="text" placeholder="Playlist Title" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <input id="inp-sound-note" type="text" placeholder="Playlist Note" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <div id="admin-tracks-editor" class="space-y-2"></div>
+                        </div>
+                        <div class="pt-2 border-t border-white/10 space-y-2">
+                            <div id="admin-notes-editor" class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0"></div>
+                        </div>
+                        <div class="pt-2 border-t border-white/10 space-y-2">
+                            <input id="inp-cap-head" type="text" placeholder="Next Stop Heading" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                                <input id="inp-cap-dest" type="text" placeholder="Destination" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                                <input id="inp-cap-msg" type="text" placeholder="Footer Message" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -362,6 +374,22 @@
         </div>
 
     </div>
+
+    <script>
+        function toggleAdminSection(sectionEl) {
+            if (!sectionEl) return;
+            const body = sectionEl.querySelector('[data-accordion-body]');
+            if (!body) return;
+            const shouldExpand = body.classList.contains('hidden');
+            document.querySelectorAll('[data-accordion-section] [data-accordion-body]').forEach((el) => {
+                el.classList.add('hidden');
+            });
+            if (shouldExpand) {
+                body.classList.remove('hidden');
+            }
+        }
+        window.toggleAdminSection = toggleAdminSection;
+    </script>
 
     <script src="js/store.js"></script>
     <script type="module">
