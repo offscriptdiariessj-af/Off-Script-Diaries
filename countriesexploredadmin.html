@@ -26,24 +26,32 @@
         .card-dragging {
             position: relative;
             z-index: 50;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.72), 0 0 0 2px #60a5fa;
+            box-shadow: 0 22px 44px rgba(0, 0, 0, 0.78), 0 0 0 2px #60a5fa;
         }
-        @keyframes spinSlow {
-            to { transform: rotate(360deg); }
+        @keyframes pulseBar {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(65%); }
+            100% { transform: translateX(220%); }
         }
-        .loader-spinner {
-            animation: spinSlow 0.85s linear infinite;
+        .osd-progress-bar {
+            animation: pulseBar 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
     </style>
 </head>
 <body class="font-sans antialiased pb-28 overflow-hidden">
 
-    <!-- FULL-SCREEN LOADING OVERLAY UNTIL EVERYTHING IS READY -->
-    <div id="app-loader" class="fixed inset-0 z-[100] bg-[#121417] flex flex-col items-center justify-center gap-3.5 px-6">
-        <div class="w-11 h-11 rounded-full border-2 border-blue-500/25 border-t-blue-400 loader-spinner"></div>
-        <div class="text-center space-y-1">
-            <p class="text-sm font-bold text-white tracking-wide">Countries Explored 🌍</p>
-            <p id="loader-status" class="text-xs text-blue-400/90">Loading data &amp; workspace...</p>
+    <!-- OFF SCRIPT DIARIES LOADING CURTAIN -->
+    <div id="app-loader" class="fixed inset-0 z-[100] bg-[#121417] flex flex-col items-center justify-center px-6">
+        <div class="w-full max-w-xs text-center space-y-4">
+            <div class="space-y-1">
+                <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-blue-400">Editorial Workspace</p>
+                <h2 class="text-xl font-extrabold tracking-tight text-white">Off Script Diaries</h2>
+                <p class="text-xs text-white/55">Countries Explored 🌍</p>
+            </div>
+            <div class="w-full h-1 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full w-1/2 rounded-full bg-blue-400 osd-progress-bar"></div>
+            </div>
+            <p id="loader-status" class="text-[11px] text-white/60">Syncing records with Firebase...</p>
         </div>
     </div>
 
@@ -296,18 +304,19 @@
         let lockEnforced = false;
         let appReadyShown = false;
 
-        // Direct Finger Drag & Overlap Neighbor Shift State
+        // Finger-anchored drag & overlap neighbor shift state
         let holdTimer = null;
         let isDragging = false;
         let dragType = null;
         let dragSourceId = null;
         let dragCardEl = null;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let currentDx = 0;
-        let currentDy = 0;
-        let holdDownX = 0;
-        let holdDownY = 0;
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+        let cardInitialLeft = 0;
+        let cardInitialTop = 0;
+        let pointerOffsetInCardX = 0;
+        let pointerOffsetInCardY = 0;
+        let lastMovedTargetId = null;
         let orderChangedDuringDrag = false;
         let suppressNextClick = false;
 
@@ -732,7 +741,7 @@
             renderAll();
         }
 
-        function rectsOverlap(a, b, inset = 12) {
+        function rectsOverlap(a, b, inset = 14) {
             return (
                 a.left + inset < b.right - inset &&
                 a.right - inset > b.left + inset &&
@@ -741,7 +750,16 @@
             );
         }
 
-        function swapOnOverlap(container, type, activeId, mutateFn) {
+        function positionCardOnFinger(el, clientX, clientY) {
+            const desiredLeft = clientX - pointerOffsetInCardX;
+            const desiredTop = clientY - pointerOffsetInCardY;
+            const dx = desiredLeft - cardInitialLeft;
+            const dy = desiredTop - cardInitialTop;
+            el.style.transition = "none";
+            el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        }
+
+        function swapOnOverlap(container, type, activeId, clientX, clientY, mutateFn) {
             const cards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
             const beforeRects = new Map();
             cards.forEach(el => {
@@ -764,15 +782,10 @@
 
                 if (id === activeId) {
                     movedActiveEl = el;
-                    const newDx = prev.left + currentDx - next.left;
-                    const newDy = prev.top + currentDy - next.top;
-                    currentDx = newDx;
-                    currentDy = newDy;
-                    dragStartX = dragStartX - (next.left - prev.left);
-                    dragStartY = dragStartY - (next.top - prev.top);
+                    cardInitialLeft = next.left;
+                    cardInitialTop = next.top;
                     el.classList.add("card-dragging");
-                    el.style.transition = "none";
-                    el.style.transform = `translate3d(${currentDx}px, ${currentDy}px, 0)`;
+                    positionCardOnFinger(el, clientX, clientY);
                 } else {
                     const shiftX = prev.left - next.left;
                     const shiftY = prev.top - next.top;
@@ -780,7 +793,7 @@
                         el.style.transition = "none";
                         el.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`;
                         el.getBoundingClientRect();
-                        el.style.transition = "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)";
+                        el.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)";
                         el.style.transform = "translate3d(0, 0, 0)";
                     }
                 }
@@ -798,10 +811,7 @@
                 if (!isDragging || !dragCardEl) return;
                 if (e.cancelable) e.preventDefault();
 
-                currentDx = e.clientX - dragStartX;
-                currentDy = e.clientY - dragStartY;
-                dragCardEl.style.transition = "none";
-                dragCardEl.style.transform = `translate3d(${currentDx}px, ${currentDy}px, 0)`;
+                positionCardOnFinger(dragCardEl, e.clientX, e.clientY);
 
                 const draggedRect = dragCardEl.getBoundingClientRect();
                 const otherCards = Array.from(container.querySelectorAll(`[data-entity-type="${dragType}"]`))
@@ -815,16 +825,21 @@
                     }
                 }
 
-                if (!overlappingTarget) return;
+                if (!overlappingTarget) {
+                    lastMovedTargetId = null;
+                    return;
+                }
+
                 const targetId = overlappingTarget.getAttribute("data-entity-id");
-                if (!targetId || targetId === dragSourceId) return;
+                if (!targetId || targetId === dragSourceId || targetId === lastMovedTargetId) return;
 
                 if (dragType === "folder") {
                     const fromIdx = folders.findIndex(x => x.id === dragSourceId);
                     const toIdx = folders.findIndex(x => x.id === targetId);
                     if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                        lastMovedTargetId = targetId;
                         orderChangedDuringDrag = true;
-                        swapOnOverlap(container, "folder", dragSourceId, () => {
+                        swapOnOverlap(container, "folder", dragSourceId, e.clientX, e.clientY, () => {
                             const [moved] = folders.splice(fromIdx, 1);
                             folders.splice(toIdx, 0, moved);
                         });
@@ -835,8 +850,9 @@
                         const fromIdx = folder.items.findIndex(x => x.id === dragSourceId);
                         const toIdx = folder.items.findIndex(x => x.id === targetId);
                         if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                            lastMovedTargetId = targetId;
                             orderChangedDuringDrag = true;
-                            swapOnOverlap(container, "item", dragSourceId, () => {
+                            swapOnOverlap(container, "item", dragSourceId, e.clientX, e.clientY, () => {
                                 const [moved] = folder.items.splice(fromIdx, 1);
                                 folder.items.splice(toIdx, 0, moved);
                             });
@@ -860,14 +876,13 @@
                 dragType = null;
                 dragSourceId = null;
                 dragCardEl = null;
-                currentDx = 0;
-                currentDy = 0;
+                lastMovedTargetId = null;
                 orderChangedDuringDrag = false;
 
                 if (activeEl) {
-                    activeEl.style.transition = "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
+                    activeEl.style.transition = "transform 170ms cubic-bezier(0.22, 1, 0.36, 1)";
                     activeEl.style.transform = "translate3d(0, 0, 0)";
-                    await new Promise(resolve => setTimeout(resolve, 180));
+                    await new Promise(resolve => setTimeout(resolve, 170));
                 }
 
                 renderAll();
@@ -883,8 +898,8 @@
                 card.addEventListener("pointerdown", (e) => {
                     if (e.target.closest("button")) return;
                     if (e.button !== 0 && e.pointerType === "mouse") return;
-                    holdDownX = e.clientX;
-                    holdDownY = e.clientY;
+                    pointerDownX = e.clientX;
+                    pointerDownY = e.clientY;
 
                     clearTimeout(holdTimer);
                     holdTimer = setTimeout(() => {
@@ -894,20 +909,22 @@
                         selectionKind = type;
                         selectedIds.add(id);
 
+                        const rect = card.getBoundingClientRect();
+                        cardInitialLeft = rect.left;
+                        cardInitialTop = rect.top;
+                        pointerOffsetInCardX = pointerDownX - rect.left;
+                        pointerOffsetInCardY = pointerDownY - rect.top;
+
                         isDragging = true;
                         dragType = type;
                         dragSourceId = id;
                         dragCardEl = card;
-                        dragStartX = holdDownX;
-                        dragStartY = holdDownY;
-                        currentDx = 0;
-                        currentDy = 0;
+                        lastMovedTargetId = null;
                         orderChangedDuringDrag = false;
                         suppressNextClick = true;
 
                         card.classList.add("card-dragging");
-                        card.style.transition = "none";
-                        card.style.transform = "translate3d(0, 0, 0)";
+                        positionCardOnFinger(card, pointerDownX, pointerDownY);
                         updateSelectionBar();
 
                         if (navigator.vibrate) navigator.vibrate(25);
@@ -923,7 +940,7 @@
                 };
 
                 card.addEventListener("pointermove", (e) => {
-                    if (!isDragging && Math.hypot(e.clientX - holdDownX, e.clientY - holdDownY) > 10) {
+                    if (!isDragging && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 10) {
                         cancelHoldBeforeDrag();
                     }
                 });
