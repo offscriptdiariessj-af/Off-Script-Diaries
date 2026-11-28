@@ -684,6 +684,7 @@
             const fabBtn = document.getElementById("fab-add-item");
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
+            const folderBanner = document.getElementById("folder-banner");
 
             const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
@@ -711,23 +712,28 @@
                 foldersView.classList.add("hidden");
                 itemsView.classList.remove("hidden");
 
-                const coverSrc = resolveMediaUrl(folder.driveLink);
-                const coverWrap = document.getElementById("folder-banner-cover-wrap");
-                const coverImg = document.getElementById("folder-banner-cover");
-                if (coverSrc) {
-                    coverImg.src = coverSrc;
-                    coverWrap.classList.remove("hidden");
+                if (expandedItemId) {
+                    if (folderBanner) folderBanner.classList.add("hidden");
                 } else {
-                    coverWrap.classList.add("hidden");
+                    if (folderBanner) folderBanner.classList.remove("hidden");
+                    const coverSrc = resolveMediaUrl(folder.driveLink);
+                    const coverWrap = document.getElementById("folder-banner-cover-wrap");
+                    const coverImg = document.getElementById("folder-banner-cover");
+                    if (coverSrc) {
+                        coverImg.src = coverSrc;
+                        coverWrap.classList.remove("hidden");
+                    } else {
+                        coverWrap.classList.add("hidden");
+                    }
+                    document.getElementById("folder-banner-title").textContent = folder.title;
+                    const dateEl = document.getElementById("folder-banner-date");
+                    const dispDate = formatEntityDate(folder);
+                    dateEl.textContent = dispDate;
+                    dateEl.classList.toggle("hidden", !dispDate);
+                    const descEl = document.getElementById("folder-banner-desc");
+                    descEl.textContent = folder.description || "";
+                    descEl.classList.toggle("hidden", !folder.description);
                 }
-                document.getElementById("folder-banner-title").textContent = folder.title;
-                const dateEl = document.getElementById("folder-banner-date");
-                const dispDate = formatEntityDate(folder);
-                dateEl.textContent = dispDate;
-                dateEl.classList.toggle("hidden", !dispDate);
-                const descEl = document.getElementById("folder-banner-desc");
-                descEl.textContent = folder.description || "";
-                descEl.classList.toggle("hidden", !folder.description);
             }
         }
 
@@ -816,14 +822,32 @@
                 globalBox.innerHTML = `
                     <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Cities</div>
                     ${matchedItems.map(({ folder, item }) => {
-                        const dispDate = formatEntityDate(item);
+                        const folderCover = resolveMediaUrl(folder.driveLink);
+                        const folderDate = formatEntityDate(folder);
+                        const itemThumb = resolveMediaUrl(item.driveLink);
+                        const itemDate = formatEntityDate(item);
                         return `
-                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-3 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-center justify-between gap-2 cursor-pointer transition">
-                            <div class="min-w-0">
-                                <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
-                                <div class="text-[10px] text-white/55 truncate">${escapeHtml(item.name)}${item.name && folder.title ? " • " : ""}${escapeHtml(folder.title)}</div>
+                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-stretch justify-between gap-2 cursor-pointer transition">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div class="w-12 h-12 rounded-xl bg-black overflow-hidden shrink-0 border border-white/10 flex items-center justify-center">
+                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-base text-white/30">🇮🇳</span>`}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(folder.title)}</div>
+                                    ${folderDate ? `<div class="text-[10px] text-blue-400 truncate">${escapeHtml(folderDate)}</div>` : ""}
+                                    ${folder.description ? `<div class="text-[10px] text-white/55 truncate">${escapeHtml(folder.description)}</div>` : ""}
+                                </div>
                             </div>
-                            ${dispDate ? `<span class="text-[10px] text-blue-400 shrink-0">${escapeHtml(dispDate)}</span>` : ""}
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <div class="w-12 h-12 rounded-xl bg-black overflow-hidden border border-white/10 flex items-center justify-center">
+                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-sm text-white/30">📍</span>`}
+                                </div>
+                                <div class="w-24 rounded-xl bg-[#121417] border border-white/10 p-1.5 flex flex-col justify-center min-w-0">
+                                    <div class="text-[11px] font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    ${item.name ? `<div class="text-[9px] text-blue-400 truncate">${escapeHtml(item.name)}</div>` : ""}
+                                    ${itemDate ? `<div class="text-[9px] text-white/50 truncate">${escapeHtml(itemDate)}</div>` : ""}
+                                </div>
+                            </div>
                         </div>`;
                     }).join("")}
                 `;
@@ -1015,7 +1039,7 @@
             }
 
             const remainingItems = expandedItem
-                ? filteredItems.filter(x => x.id !== expandedItem.id)
+                ? folder.items.filter(x => x.id !== expandedItem.id)
                 : filteredItems;
 
             list.className = expandedItem
@@ -1480,11 +1504,12 @@
                 });
             }
 
+            const wasEditingId = editingFolderId;
             closeFolderModal();
             selectedIds.clear();
             selectionKind = null;
             renderAll();
-            await persistToFirebase("Folder saved!");
+            await persistToFirebase(wasEditingId ? "Folder updated!" : "Folder saved!");
         }
 
         function openItemModal(itemId = null) {
@@ -1585,12 +1610,12 @@
         function editSelectedEntity() {
             if (!selectionKind || selectedIds.size !== 1) return;
             const id = Array.from(selectedIds)[0];
+            const kind = selectionKind;
             selectedIds.clear();
             selectionKind = null;
             updateSelectionBar();
             if (id) {
-                const isFolder = folders.some(f => f.id === id) && !activeFolderId;
-                if (isFolder) openFolderModal(id);
+                if (kind === "folder") openFolderModal(id);
                 else openItemModal(id);
             }
         }
@@ -1630,6 +1655,7 @@
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
+                        syncHistoryState();
                         await persistToFirebase("Folder deleted!");
                     }
                 );
@@ -1647,6 +1673,7 @@
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
+                        syncHistoryState();
                         await persistToFirebase("City deleted!");
                     }
                 );
@@ -1679,6 +1706,7 @@
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
+                        syncHistoryState();
                         await persistToFirebase(count > 1 ? `${count} folders deleted!` : "Folder deleted!");
                     }
                 );
@@ -1700,6 +1728,7 @@
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
+                        syncHistoryState();
                         await persistToFirebase(count > 1 ? `${count} cities deleted!` : "City deleted!");
                     }
                 );
