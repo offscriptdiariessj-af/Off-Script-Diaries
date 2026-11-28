@@ -305,10 +305,16 @@
                         <div class="text-[11px] text-white/60">Count Started Date 🔒</div>
                         <div class="text-xs font-bold text-blue-400">18 June 2025 (18, 6, 2025)</div>
                     </div>
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
-                        <input id="inp-stat-cities" type="text" placeholder="Cities" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-stat-coffee" type="text" placeholder="Coffees" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
+                            <span class="block text-[10px] text-white/50">Cities Auto</span>
+                            <span id="auto-stat-cities" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#121417] border border-white/10">
+                            <span class="block text-[10px] text-white/50">Countries Auto</span>
+                            <span id="auto-stat-countries" class="text-sm font-bold text-blue-400 mt-0.5 block">0</span>
+                        </div>
+                        <input id="inp-stat-calls" type="text" placeholder="Late Calls" class="h-full min-h-[46px] px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     </div>
                     <div class="grid grid-cols-2 gap-2.5">
                         <a href="citiesexploredadmin.html" class="h-10 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-semibold flex items-center justify-center transition">Cities Admin 🇮🇳</a>
@@ -395,12 +401,35 @@
         // Isolated nodes in Firebase RTDB so existing magazineFolders, magazineItems, magazineRecentlyDeleted are never touched
         const siteDataRef = ref(rtdb, "siteContent");
         const authConfigRef = ref(rtdb, "siteAuthConfig");
+        const citiesDataRef = ref(rtdb, "citiesData");
+        const countriesDataRef = ref(rtdb, "countriesData");
 
         let currentData = null;
         let firebaseAuthConfig = null;
+        let autoCitiesCount = 0;
+        let autoCountriesCount = 0;
         let hasLoadedAdminFromFirebase = false;
         let lockEnforcedOnce = false;
         const statusEl = document.getElementById('admin-db-status');
+
+        function countItemsInFoldersNode(raw) {
+            if (!raw || typeof raw !== "object") return 0;
+            const folderList = Array.isArray(raw) ? raw : Object.values(raw);
+            return folderList.reduce((sum, folder) => {
+                if (!folder || typeof folder !== "object" || !folder.items) return sum;
+                const itemsList = Array.isArray(folder.items)
+                    ? folder.items
+                    : (typeof folder.items === "object" ? Object.values(folder.items) : []);
+                return sum + itemsList.filter(Boolean).length;
+            }, 0);
+        }
+
+        function syncAutoCountLabels() {
+            const cEl = document.getElementById('auto-stat-cities');
+            const nEl = document.getElementById('auto-stat-countries');
+            if (cEl) cEl.textContent = String(autoCitiesCount);
+            if (nEl) nEl.textContent = String(autoCountriesCount);
+        }
 
         function revealAdminAfterFirebaseLoad() {
             if (hasLoadedAdminFromFirebase) return;
@@ -460,8 +489,8 @@
                         image: ''
                     },
                     telemetry: {
-                        citiesExplored: '',
-                        coffeeCups: '',
+                        citiesExplored: '0',
+                        coffeeCups: '0',
                         midnightCalls: ''
                     },
                     magazineSpotlight: {
@@ -698,6 +727,7 @@
 
         function loadAdminForm(sourceData = null) {
             renderLockToggles();
+            syncAutoCountLabels();
             currentData = normalizeSiteData(sourceData || currentData);
             const b = currentData.brand;
             const s = currentData.sections;
@@ -721,8 +751,6 @@
             document.getElementById('inp-origin-quote').value = s.origin.quote || '';
             document.getElementById('inp-origin-img').value = s.origin.image || '';
 
-            document.getElementById('inp-stat-cities').value = s.telemetry.citiesExplored || '';
-            document.getElementById('inp-stat-coffee').value = s.telemetry.coffeeCups || '';
             document.getElementById('inp-stat-calls').value = s.telemetry.midnightCalls || '';
 
             document.getElementById('inp-mag-heading').value = s.magazineSpotlight.heading || '';
@@ -825,8 +853,8 @@
             };
 
             fresh.sections.telemetry = {
-                citiesExplored: document.getElementById('inp-stat-cities').value,
-                coffeeCups: document.getElementById('inp-stat-coffee').value,
+                citiesExplored: String(autoCitiesCount),
+                coffeeCups: String(autoCountriesCount),
                 midnightCalls: document.getElementById('inp-stat-calls').value
             };
 
@@ -893,6 +921,16 @@
         window.updateBucketTask = updateBucketTask;
         window.removeBucketItem = removeBucketItem;
         window.saveAllChanges = saveAllChanges;
+
+        onValue(citiesDataRef, (snap) => {
+            autoCitiesCount = countItemsInFoldersNode(snap.val());
+            syncAutoCountLabels();
+        });
+
+        onValue(countriesDataRef, (snap) => {
+            autoCountriesCount = countItemsInFoldersNode(snap.val());
+            syncAutoCountLabels();
+        });
 
         onValue(
             siteDataRef,
