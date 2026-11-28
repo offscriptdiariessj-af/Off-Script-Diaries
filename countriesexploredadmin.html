@@ -151,6 +151,17 @@
         <!-- MAIN VIEWER-STYLE CONTAINER -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
+            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, COUNTRY NAME) -->
+            <div>
+                <input
+                    id="search-input"
+                    type="text"
+                    oninput="handleSearchInput(this.value)"
+                    placeholder="Search by date, title, or country name..."
+                    class="w-full h-11 px-4 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
+                />
+            </div>
+
             <!-- FOLDERS VIEW (LEVEL 1) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
@@ -169,7 +180,10 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                     </div>
                     <div class="p-4">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country Folder</span>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country Folder</span>
+                            <span id="folder-banner-date" class="text-[11px] text-white/50"></span>
+                        </div>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
                         <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
                     </div>
@@ -181,7 +195,8 @@
                     <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
                 </div>
 
-                <div id="items-list" class="space-y-3"></div>
+                <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
+                <div id="items-list" class="grid grid-cols-3 gap-2.5"></div>
             </div>
 
         </main>
@@ -250,6 +265,10 @@
                     <input id="fld-title" type="text" placeholder="Folder title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
+                    <label class="block text-[11px] text-white/70 mb-1">Date</label>
+                    <input id="fld-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
                     <label class="block text-[11px] text-blue-400 mb-1">Google Drive Link (Thumbnail)</label>
                     <input id="fld-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
@@ -279,6 +298,10 @@
                     <input id="itm-title" type="text" placeholder="Title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
+                    <label class="block text-[11px] text-white/70 mb-1">Date</label>
+                    <input id="itm-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
                     <label class="block text-[11px] text-blue-400 mb-1">Google drive link</label>
                     <input id="itm-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
@@ -289,24 +312,6 @@
                 <button type="button" onclick="saveItemModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
                     Save Country
                 </button>
-            </div>
-        </div>
-
-        <!-- DETAIL VIEW MODAL -->
-        <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if(event.target===this) closeDetailModal()">
-            <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 overflow-hidden max-h-[90vh] overflow-y-auto">
-                <div id="detail-img-wrap" class="hidden h-56 bg-black relative">
-                    <img id="detail-img" src="" alt="" class="w-full h-full object-cover" />
-                    <button type="button" onclick="closeDetailModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</button>
-                </div>
-                <div class="p-5 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span id="detail-name" class="text-[11px] font-bold uppercase tracking-wider text-blue-400"></span>
-                        <button id="detail-close-noimg" type="button" onclick="closeDetailModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
-                    </div>
-                    <h3 id="detail-title" class="text-lg font-extrabold text-white"></h3>
-                    <p id="detail-desc" class="text-xs text-white/75 leading-relaxed whitespace-pre-line pt-1"></p>
-                </div>
             </div>
         </div>
 
@@ -335,6 +340,8 @@
 
         let folders = [];
         let activeFolderId = null;
+        let expandedItemId = null;
+        let searchQuery = "";
         let selectedIds = new Set();
         let selectionKind = null;
         let editingFolderId = null;
@@ -421,6 +428,14 @@
             return parsed;
         }
 
+        function formatDisplayDate(rawDate = "") {
+            const clean = String(rawDate || "").trim();
+            if (!clean) return "";
+            const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            return clean;
+        }
+
         function normalizeFolders(raw) {
             if (!raw || typeof raw !== "object") return [];
             const arr = Array.isArray(raw) ? raw : Object.values(raw);
@@ -436,6 +451,7 @@
                             id: String(it.id || `country_${Date.now()}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
+                            date: String(it.date || ""),
                             driveLink: String(it.driveLink || ""),
                             description: String(it.description || ""),
                             order: typeof it.order === "number" ? it.order : iIdx
@@ -445,6 +461,7 @@
                     return {
                         id: String(f.id || `fld_${Date.now()}_${idx}`),
                         title: String(f.title || "Untitled Folder"),
+                        date: String(f.date || ""),
                         driveLink: String(f.driveLink || ""),
                         description: String(f.description || ""),
                         order: typeof f.order === "number" ? f.order : idx,
@@ -468,6 +485,7 @@
                         id: it.id,
                         name: it.name,
                         title: it.title,
+                        date: it.date || "",
                         driveLink: it.driveLink,
                         description: it.description,
                         order: iIdx
@@ -476,6 +494,7 @@
                 payload[f.id] = {
                     id: f.id,
                     title: f.title,
+                    date: f.date || "",
                     driveLink: f.driveLink,
                     description: f.description,
                     order: fIdx,
@@ -494,6 +513,22 @@
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;");
+        }
+
+        function handleSearchInput(val) {
+            searchQuery = String(val || "").trim().toLowerCase();
+            renderAll();
+        }
+
+        function matchesSearch(obj = {}) {
+            if (!searchQuery) return true;
+            const fields = [
+                obj.name,
+                obj.title,
+                obj.date,
+                formatDisplayDate(obj.date)
+            ];
+            return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
         }
 
         function closeFolderHeaderMenu() {
@@ -551,6 +586,7 @@
                 const folder = folders.find(f => f.id === activeFolderId);
                 if (!folder) {
                     activeFolderId = null;
+                    expandedItemId = null;
                     updateHeaderUI();
                     return;
                 }
@@ -572,6 +608,10 @@
                     coverWrap.classList.add("hidden");
                 }
                 document.getElementById("folder-banner-title").textContent = folder.title;
+                const dateEl = document.getElementById("folder-banner-date");
+                const dispDate = formatDisplayDate(folder.date);
+                dateEl.textContent = dispDate;
+                dateEl.classList.toggle("hidden", !dispDate);
                 const descEl = document.getElementById("folder-banner-desc");
                 descEl.textContent = folder.description || "";
                 descEl.classList.toggle("hidden", !folder.description);
@@ -589,11 +629,13 @@
         function renderFolders() {
             const grid = document.getElementById("folders-grid");
             const empty = document.getElementById("folders-empty");
-            empty.classList.toggle("hidden", folders.length > 0);
+            const filtered = folders.filter(matchesSearch);
+            empty.classList.toggle("hidden", filtered.length > 0);
 
-            grid.innerHTML = folders.map(f => {
+            grid.innerHTML = filtered.map(f => {
                 const cover = resolveMediaUrl(f.driveLink);
                 const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
+                const dispDate = formatDisplayDate(f.date);
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
                     : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
@@ -630,6 +672,7 @@
                         </button>
                     </div>
                     <div class="p-3">
+                        ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
                         <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
                         <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
                     </div>
@@ -639,63 +682,106 @@
             bindCardGestures(grid, "folder");
         }
 
+        function buildExpandedItemCardHtml(it, isSelected) {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const dispDate = formatDisplayDate(it.date);
+            return `
+            <div
+                data-entity-type="item"
+                data-entity-id="${escapeHtml(it.id)}"
+                class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-blue-400/50"} overflow-visible transition-colors cursor-pointer shadow-xl"
+            >
+                ${imgSrc ? `
+                <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover pointer-events-none" />
+                    <button
+                        type="button"
+                        onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
+                        aria-label="Country Menu"
+                        class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
+                    >
+                        ${renderThreeDotsSvg()}
+                    </button>
+                </div>` : ""}
+                <div id="card-menu-item-${escapeHtml(it.id)}" data-card-menu="true" class="hidden absolute right-3 top-11 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
+                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openItemModal('${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
+                        <span>✎</span><span>Edit Country</span>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
+                        <span>☑</span><span>Select</span>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); requestDeleteSingle('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
+                        <span>🗑</span><span>Delete</span>
+                    </button>
+                </div>
+                <div class="p-4 flex items-start justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                            ${dispDate ? `<span class="text-[10px] text-white/50">${escapeHtml(dispDate)}</span>` : ""}
+                        </div>
+                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                        ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                    </div>
+                    ${!imgSrc ? `
+                    <button
+                        type="button"
+                        onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
+                        aria-label="Country Menu"
+                        class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/80 flex items-center justify-center shrink-0"
+                    >
+                        ${renderThreeDotsSvg()}
+                    </button>` : ""}
+                </div>
+            </div>`;
+        }
+
         function renderItems() {
             const folder = folders.find(f => f.id === activeFolderId);
             if (!folder) return;
 
+            const pinnedWrap = document.getElementById("pinned-item-wrap");
             const list = document.getElementById("items-list");
             const empty = document.getElementById("items-empty");
-            empty.classList.toggle("hidden", folder.items.length > 0);
 
-            list.innerHTML = folder.items.map(it => {
-                const imgSrc = resolveMediaUrl(it.driveLink);
+            const filteredItems = folder.items.filter(matchesSearch);
+            empty.classList.toggle("hidden", filteredItems.length > 0);
+
+            if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
+                expandedItemId = null;
+            }
+
+            const expandedItem = expandedItemId
+                ? filteredItems.find(x => x.id === expandedItemId)
+                : null;
+
+            if (expandedItem) {
+                const isSel = selectionKind === "item" && selectedIds.has(expandedItem.id);
+                pinnedWrap.classList.remove("hidden");
+                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, isSel);
+                bindCardGestures(pinnedWrap, "item");
+            } else {
+                pinnedWrap.classList.add("hidden");
+                pinnedWrap.innerHTML = "";
+            }
+
+            const remainingItems = expandedItem
+                ? filteredItems.filter(x => x.id !== expandedItem.id)
+                : filteredItems;
+
+            list.className = expandedItem
+                ? "grid grid-cols-2 gap-3"
+                : "grid grid-cols-3 gap-2.5";
+
+            list.innerHTML = remainingItems.map(it => {
                 const isSelected = selectionKind === "item" && selectedIds.has(it.id);
-
                 return `
                 <div
                     data-entity-type="item"
                     data-entity-id="${escapeHtml(it.id)}"
-                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-visible transition-colors cursor-pointer"
+                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} p-3 flex items-center justify-center text-center min-h-[76px] transition-colors cursor-pointer"
                 >
-                    ${imgSrc ? `
-                    <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
-                        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover pointer-events-none" />
-                        <button
-                            type="button"
-                            onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                            aria-label="Country Menu"
-                            class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
-                        >
-                            ${renderThreeDotsSvg()}
-                        </button>
-                    </div>` : ""}
-                    <div id="card-menu-item-${escapeHtml(it.id)}" data-card-menu="true" class="hidden absolute right-3 top-11 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openItemModal('${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                            <span>✎</span><span>Edit Country</span>
-                        </button>
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
-                            <span>☑</span><span>Select</span>
-                        </button>
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); requestDeleteSingle('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                            <span>🗑</span><span>Delete</span>
-                        </button>
-                    </div>
-                    <div class="p-4 flex items-start justify-between gap-2">
-                        <div class="min-w-0 flex-1">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
-                            <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
-                            ${it.description ? `<p class="text-xs text-white/65 mt-1 line-clamp-3 leading-relaxed">${escapeHtml(it.description)}</p>` : ""}
-                        </div>
-                        ${!imgSrc ? `
-                        <button
-                            type="button"
-                            onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                            aria-label="Country Menu"
-                            class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/80 flex items-center justify-center shrink-0"
-                        >
-                            ${renderThreeDotsSvg()}
-                        </button>` : ""}
-                    </div>
+                    <span class="text-xs font-bold text-white break-words leading-snug">${escapeHtml(it.name)}</span>
                 </div>`;
             }).join("");
 
@@ -710,6 +796,17 @@
                 renderItems();
             }
             updateSelectionBar();
+        }
+
+        function toggleExpandItem(itemId) {
+            if (expandedItemId === itemId) {
+                expandedItemId = null;
+                renderAll();
+                return;
+            }
+            expandedItemId = itemId;
+            renderAll();
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function selectSingleEntity(kind, id) {
@@ -1007,9 +1104,10 @@
                     }
                     if (type === "folder") {
                         activeFolderId = id;
+                        expandedItemId = null;
                         renderAll();
                     } else {
-                        openDetailModal(id);
+                        toggleExpandItem(id);
                     }
                 });
             });
@@ -1022,6 +1120,7 @@
             }
             if (activeFolderId) {
                 activeFolderId = null;
+                expandedItemId = null;
                 renderAll();
                 return;
             }
@@ -1032,6 +1131,7 @@
             editingFolderId = folderId;
             const heading = document.getElementById("folder-modal-heading");
             const titleInp = document.getElementById("fld-title");
+            const dateInp = document.getElementById("fld-date");
             const driveInp = document.getElementById("fld-drive");
             const descInp = document.getElementById("fld-desc");
 
@@ -1039,11 +1139,13 @@
                 const f = folders.find(x => x.id === folderId);
                 heading.textContent = "Edit Folder";
                 titleInp.value = f ? f.title : "";
+                dateInp.value = f ? (f.date || "") : "";
                 driveInp.value = f ? f.driveLink : "";
                 descInp.value = f ? f.description : "";
             } else {
                 heading.textContent = "New Folder";
                 titleInp.value = "";
+                dateInp.value = "";
                 driveInp.value = "";
                 descInp.value = "";
             }
@@ -1057,6 +1159,7 @@
 
         async function saveFolderModal() {
             const title = document.getElementById("fld-title").value.trim();
+            const date = document.getElementById("fld-date").value.trim();
             const driveLink = document.getElementById("fld-drive").value.trim();
             const description = document.getElementById("fld-desc").value.trim();
 
@@ -1069,6 +1172,7 @@
                 const f = folders.find(x => x.id === editingFolderId);
                 if (f) {
                     f.title = title;
+                    f.date = date;
                     f.driveLink = driveLink;
                     f.description = description;
                 }
@@ -1076,6 +1180,7 @@
                 folders.push({
                     id: `fld_${Date.now()}`,
                     title,
+                    date,
                     driveLink,
                     description,
                     order: folders.length,
@@ -1095,6 +1200,7 @@
             const heading = document.getElementById("item-modal-heading");
             const nameInp = document.getElementById("itm-name");
             const titleInp = document.getElementById("itm-title");
+            const dateInp = document.getElementById("itm-date");
             const driveInp = document.getElementById("itm-drive");
             const descInp = document.getElementById("itm-desc");
 
@@ -1104,12 +1210,14 @@
                 heading.textContent = "Edit Country";
                 nameInp.value = it ? it.name : "";
                 titleInp.value = it ? it.title : "";
+                dateInp.value = it ? (it.date || "") : "";
                 driveInp.value = it ? it.driveLink : "";
                 descInp.value = it ? it.description : "";
             } else {
                 heading.textContent = "Add Country";
                 nameInp.value = "";
                 titleInp.value = "";
+                dateInp.value = "";
                 driveInp.value = "";
                 descInp.value = "";
             }
@@ -1124,6 +1232,7 @@
         async function saveItemModal() {
             const name = document.getElementById("itm-name").value.trim();
             const title = document.getElementById("itm-title").value.trim();
+            const date = document.getElementById("itm-date").value.trim();
             const driveLink = document.getElementById("itm-drive").value.trim();
             const description = document.getElementById("itm-desc").value.trim();
 
@@ -1140,6 +1249,7 @@
                 if (it) {
                     it.name = name;
                     it.title = title;
+                    it.date = date;
                     it.driveLink = driveLink;
                     it.description = description;
                 }
@@ -1148,6 +1258,7 @@
                     id: `country_${Date.now()}`,
                     name,
                     title,
+                    date,
                     driveLink,
                     description,
                     order: folder.items.length
@@ -1202,7 +1313,10 @@
                     `Delete "${f ? f.title : "this folder"}" and all countries inside it?`,
                     async () => {
                         folders = folders.filter(x => x.id !== id);
-                        if (activeFolderId === id) activeFolderId = null;
+                        if (activeFolderId === id) {
+                            activeFolderId = null;
+                            expandedItemId = null;
+                        }
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
@@ -1219,6 +1333,7 @@
                         if (folder) {
                             folder.items = folder.items.filter(x => x.id !== id);
                         }
+                        if (expandedItemId === id) expandedItemId = null;
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
@@ -1249,6 +1364,7 @@
                         folders = folders.filter(x => !removeSet.has(x.id));
                         if (activeFolderId && removeSet.has(activeFolderId)) {
                             activeFolderId = null;
+                            expandedItemId = null;
                         }
                         selectedIds.clear();
                         selectionKind = null;
@@ -1268,6 +1384,9 @@
                             const removeSet = new Set(ids);
                             folder.items = folder.items.filter(x => !removeSet.has(x.id));
                         }
+                        if (expandedItemId && ids.includes(expandedItemId)) {
+                            expandedItemId = null;
+                        }
                         selectedIds.clear();
                         selectionKind = null;
                         renderAll();
@@ -1277,35 +1396,7 @@
             }
         }
 
-        function openDetailModal(itemId) {
-            const folder = folders.find(x => x.id === activeFolderId);
-            const it = folder ? folder.items.find(x => x.id === itemId) : null;
-            if (!it) return;
-
-            const imgSrc = resolveMediaUrl(it.driveLink);
-            const imgWrap = document.getElementById("detail-img-wrap");
-            const imgEl = document.getElementById("detail-img");
-            const closeNoImg = document.getElementById("detail-close-noimg");
-
-            if (imgSrc) {
-                imgEl.src = imgSrc;
-                imgWrap.classList.remove("hidden");
-                closeNoImg.classList.add("hidden");
-            } else {
-                imgWrap.classList.add("hidden");
-                closeNoImg.classList.remove("hidden");
-            }
-
-            document.getElementById("detail-name").textContent = it.name;
-            document.getElementById("detail-title").textContent = it.title || it.name;
-            document.getElementById("detail-desc").textContent = it.description || "";
-            document.getElementById("detail-modal").classList.remove("hidden");
-        }
-
-        function closeDetailModal() {
-            document.getElementById("detail-modal").classList.add("hidden");
-        }
-
+        window.handleSearchInput = handleSearchInput;
         window.handleHeaderBack = handleHeaderBack;
         window.toggleFolderHeaderMenu = toggleFolderHeaderMenu;
         window.closeFolderHeaderMenu = closeFolderHeaderMenu;
@@ -1326,7 +1417,6 @@
         window.closeConfirmModal = closeConfirmModal;
         window.executeConfirmedAction = executeConfirmedAction;
         window.clearSelection = clearSelection;
-        window.closeDetailModal = closeDetailModal;
 
         onValue(countriesRef, async (snap) => {
             folders = normalizeFolders(snap.val());
