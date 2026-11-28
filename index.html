@@ -62,6 +62,19 @@
             animation: osdDoorCardExit 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
             pointer-events: none;
         }
+
+        .osd-story-heading-stroke {
+            -webkit-text-stroke: 0.75px rgba(96, 165, 250, 0.42);
+            text-shadow: 0 2px 16px rgba(37, 99, 235, 0.22);
+        }
+        .osd-story-subheading-stroke {
+            -webkit-text-stroke: 0.45px rgba(125, 211, 252, 0.3);
+        }
+        .osd-story-chapter-card {
+            background: linear-gradient(145deg, rgba(30, 33, 38, 0.94), rgba(18, 20, 23, 0.96));
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 28px -12px rgba(0, 0, 0, 0.65);
+        }
     </style>
 </head>
 <body class="font-sans antialiased pb-24 overflow-hidden">
@@ -142,14 +155,24 @@
                         <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">02 • Origin</span>
                         <span id="origin-date" class="text-[11px] text-white/50"></span>
                     </div>
-                    <div class="flex gap-3.5 items-center">
+                    <div class="flex gap-3.5 items-start">
                         <img id="origin-img" src="" alt="Origin" class="w-24 h-28 rounded-2xl object-cover shrink-0 bg-[#121417]" />
-                        <div class="min-w-0">
-                            <h3 id="origin-title" class="text-base font-bold text-white"></h3>
-                            <p id="origin-story" class="text-xs text-white/70 mt-1 line-clamp-3 leading-relaxed"></p>
+                        <div class="min-w-0 flex-1">
+                            <h3 id="origin-title" class="text-base font-extrabold text-white tracking-tight osd-story-heading-stroke"></h3>
+                            <div id="origin-subheadings-preview" class="mt-2 space-y-1"></div>
                         </div>
                     </div>
                     <p id="origin-quote" class="mt-3 pt-3 border-t border-white/10 text-xs italic text-blue-300"></p>
+                    <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                        <button
+                            type="button"
+                            onclick="openOriginStoryOverlay()"
+                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white text-xs font-bold tracking-wide shadow-lg shadow-blue-950/50 flex items-center justify-center gap-2 active:scale-[0.99] transition"
+                        >
+                            <span>Read Entire Story</span>
+                            <span aria-hidden="true">↗</span>
+                        </button>
+                    </div>
                 </section>
 
                 <!-- 3. TELEMETRY (2x2 GRID) -->
@@ -332,6 +355,44 @@
 
     </div>
 
+    <!-- FULL-PAGE STORY READER OVERLAY -->
+    <div id="osd-story-reader-overlay" class="hidden fixed inset-0 z-[950] bg-[#121417] overflow-y-auto pb-16">
+        <header class="sticky top-0 z-20 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
+            <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 block">Full Story Edition</span>
+                    <p id="story-reader-topbar-date" class="text-xs text-white/55 truncate"></p>
+                </div>
+                <button
+                    type="button"
+                    onclick="closeOriginStoryOverlay()"
+                    aria-label="Close Full Story"
+                    class="px-3.5 py-2 rounded-xl bg-[#1E2126] hover:bg-white/10 border border-white/15 text-xs font-bold text-white flex items-center gap-1.5 shrink-0 transition"
+                >
+                    <span>Close</span>
+                    <span aria-hidden="true">✕</span>
+                </button>
+            </div>
+        </header>
+
+        <article class="max-w-2xl mx-auto px-4 pt-6 space-y-6">
+            <div class="rounded-3xl bg-gradient-to-br from-[#1E2126] via-[#191C21] to-[#121417] border border-white/10 p-5 space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between gap-2 text-[11px]">
+                    <span class="font-bold uppercase tracking-widest text-blue-400">02 • Origin Chapter</span>
+                    <span id="story-reader-date" class="text-white/55 font-medium"></span>
+                </div>
+
+                <h1 id="story-reader-main-title" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight osd-story-heading-stroke"></h1>
+
+                <img id="story-reader-hero-img" src="" alt="Story Cover" class="w-full max-h-72 object-cover rounded-2xl border border-white/10 bg-[#121417]" />
+
+                <blockquote id="story-reader-quote" class="p-4 rounded-2xl bg-blue-500/10 border-l-4 border-l-blue-400 border border-blue-400/20 text-sm italic text-blue-200 leading-relaxed"></blockquote>
+            </div>
+
+            <div id="story-reader-sections" class="space-y-4"></div>
+        </article>
+    </div>
+
     <!-- DOOR.MP4 OVERLAY & PASSWORD BOX OVER INDEX -->
     <div id="osd-door-overlay" class="hidden fixed inset-0 z-[9999] bg-[#121417] text-white transition-opacity duration-700 opacity-100 select-none">
         <video
@@ -385,6 +446,196 @@
         let hasLoadedSiteFromFirebase = false;
         let citiesInsideFoldersCount = 0;
         let countriesInsideFoldersCount = 0;
+        let isStoryOverlayOpen = false;
+
+        function escapeStoryHtml(str = '') {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function parseOriginStoryStructure(originData = {}) {
+            const blocks = [];
+            const rawBlocks = originData.storyBlocks;
+            if (Array.isArray(rawBlocks) && rawBlocks.length > 0) {
+                rawBlocks.forEach((b, idx) => {
+                    if (!b || typeof b !== 'object') return;
+                    const headingText = String(b.heading || '').trim();
+                    const descText = String(b.description || '').trim();
+                    if (!headingText && !descText) return;
+                    blocks.push({
+                        heading: headingText,
+                        isSubHeading: Boolean(b.isSubHeading),
+                        description: descText,
+                        order: idx + 1
+                    });
+                });
+            }
+
+            if (blocks.length === 0 && typeof originData.story === 'string' && originData.story.trim()) {
+                const chunks = originData.story
+                    .split(/\n{2,}/)
+                    .map(part => part.trim())
+                    .filter(Boolean);
+
+                chunks.forEach((chunk, idx) => {
+                    const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+                    if (lines.length === 0) return;
+
+                    let heading = '';
+                    let isSubHeading = false;
+                    let bodyLines = lines;
+
+                    const firstLine = lines[0];
+                    const hasMarkdownSub = /^###\s+/.test(firstLine);
+                    const hasMarkdownHead = /^#{1,2}\s+/.test(firstLine);
+                    const isShortTitleLine =
+                        lines.length > 1 &&
+                        firstLine.length <= 72 &&
+                        !/[.!?]$/.test(firstLine);
+
+                    if (hasMarkdownSub) {
+                        heading = firstLine.replace(/^###\s+/, '').trim();
+                        isSubHeading = true;
+                        bodyLines = lines.slice(1);
+                    } else if (hasMarkdownHead) {
+                        heading = firstLine.replace(/^#{1,2}\s+/, '').trim();
+                        isSubHeading = false;
+                        bodyLines = lines.slice(1);
+                    } else if (isShortTitleLine) {
+                        heading = firstLine;
+                        isSubHeading = idx > 0;
+                        bodyLines = lines.slice(1);
+                    }
+
+                    blocks.push({
+                        heading,
+                        isSubHeading,
+                        description: bodyLines.join('\n\n'),
+                        order: idx + 1
+                    });
+                });
+            }
+
+            return blocks;
+        }
+
+        function renderOriginStoryPreview(originData = {}) {
+            const previewEl = document.getElementById('origin-subheadings-preview');
+            if (!previewEl) return;
+
+            const blocks = parseOriginStoryStructure(originData);
+            const headingsList = blocks
+                .map(b => b.heading)
+                .filter(Boolean)
+                .slice(0, 4);
+
+            if (headingsList.length > 0) {
+                previewEl.innerHTML = headingsList.map((h, i) => `
+                    <div class="flex items-center gap-2 text-xs text-white/80 truncate">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                        <span class="font-semibold text-white/90 truncate osd-story-subheading-stroke">${escapeStoryHtml(h)}</span>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            const fallbackText = String(originData.story || '').trim();
+            const firstLine = fallbackText.split(/\n+/)[0] || '';
+            previewEl.innerHTML = firstLine
+                ? `<p class="text-xs text-white/70 line-clamp-2 leading-relaxed">${escapeStoryHtml(firstLine)}</p>`
+                : '';
+        }
+
+        function openOriginStoryOverlay() {
+            const data = resolveFirebaseSiteData();
+            const origin = data.sections.origin || {};
+            const overlay = document.getElementById('osd-story-reader-overlay');
+            if (!overlay) return;
+
+            const originImgSrc = origin.image && typeof parseDriveMedia === 'function'
+                ? parseDriveMedia(origin.image, 'image')
+                : (origin.image || '');
+
+            document.getElementById('story-reader-topbar-date').textContent = origin.date || '';
+            document.getElementById('story-reader-date').textContent = origin.date || '';
+            document.getElementById('story-reader-main-title').textContent = origin.title || 'Our Story';
+
+            const heroImg = document.getElementById('story-reader-hero-img');
+            if (heroImg) {
+                if (originImgSrc) {
+                    heroImg.src = originImgSrc;
+                    heroImg.classList.remove('hidden');
+                } else {
+                    heroImg.classList.add('hidden');
+                }
+            }
+
+            const quoteEl = document.getElementById('story-reader-quote');
+            if (quoteEl) {
+                if (origin.quote && String(origin.quote).trim()) {
+                    quoteEl.textContent = `"${String(origin.quote).trim()}"`;
+                    quoteEl.classList.remove('hidden');
+                } else {
+                    quoteEl.classList.add('hidden');
+                }
+            }
+
+            const sectionsContainer = document.getElementById('story-reader-sections');
+            const blocks = parseOriginStoryStructure(origin);
+
+            if (sectionsContainer) {
+                if (blocks.length > 0) {
+                    sectionsContainer.innerHTML = blocks.map((b, idx) => {
+                        const badgeText = b.isSubHeading ? 'Sub Heading' : 'Chapter Heading';
+                        const badgeClass = b.isSubHeading
+                            ? 'bg-sky-400/15 text-sky-300 border-sky-400/30'
+                            : 'bg-blue-500/15 text-blue-300 border-blue-400/30';
+                        const headingClass = b.isSubHeading
+                            ? 'text-lg sm:text-xl font-bold text-sky-200 tracking-tight osd-story-subheading-stroke'
+                            : 'text-xl sm:text-2xl font-extrabold text-white tracking-tight osd-story-heading-stroke';
+
+                        const paragraphsHtml = (b.description || '')
+                            .split(/\n+/)
+                            .map(p => p.trim())
+                            .filter(Boolean)
+                            .map(p => `<p class="text-sm sm:text-[15px] text-white/85 leading-relaxed font-normal">${escapeStoryHtml(p)}</p>`)
+                            .join('');
+
+                        return `
+                        <section class="osd-story-chapter-card rounded-3xl p-5 space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-white/40">Part 0${idx + 1}</span>
+                                ${b.heading ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${badgeClass}">${badgeText}</span>` : ''}
+                            </div>
+                            ${b.heading ? `<h2 class="${headingClass}">${escapeStoryHtml(b.heading)}</h2>` : ''}
+                            ${paragraphsHtml ? `<div class="space-y-3 ${b.heading ? 'pt-1 border-t border-white/10' : ''}">${paragraphsHtml}</div>` : ''}
+                        </section>`;
+                    }).join('');
+                } else {
+                    sectionsContainer.innerHTML = `
+                        <section class="osd-story-chapter-card rounded-3xl p-5">
+                            <p class="text-sm text-white/70 leading-relaxed">${escapeStoryHtml(origin.story || '')}</p>
+                        </section>`;
+                }
+            }
+
+            isStoryOverlayOpen = true;
+            overlay.classList.remove('hidden');
+            overlay.scrollTop = 0;
+            document.documentElement.style.overflow = 'hidden';
+        }
+
+        function closeOriginStoryOverlay() {
+            const overlay = document.getElementById('osd-story-reader-overlay');
+            isStoryOverlayOpen = false;
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            document.documentElement.style.overflow = '';
+        }
 
         function countItemsInsideFolders(raw) {
             if (!raw || typeof raw !== 'object') return 0;
@@ -416,7 +667,9 @@
             const overlay = document.getElementById('osd-door-overlay');
             const lockWrap = document.getElementById('osd-door-lock-wrap');
             const video = document.getElementById('osd-door-video');
-            document.documentElement.style.overflow = '';
+            if (!isStoryOverlayOpen) {
+                document.documentElement.style.overflow = '';
+            }
             if (lockWrap) lockWrap.classList.add('hidden');
             if (!overlay) return;
             overlay.classList.remove('opacity-100');
@@ -478,7 +731,9 @@
                 const lockWrap = document.getElementById('osd-door-lock-wrap');
                 if (lockWrap) lockWrap.classList.add('hidden');
                 if (overlay) overlay.classList.add('hidden');
-                document.documentElement.style.overflow = '';
+                if (!isStoryOverlayOpen) {
+                    document.documentElement.style.overflow = '';
+                }
                 return;
             }
 
@@ -660,6 +915,11 @@
         }
 
         window.addEventListener('popstate', () => {
+            if (isStoryOverlayOpen) {
+                closeOriginStoryOverlay();
+                pushHomeLockState();
+                return;
+            }
             switchIndexMode('home', false);
             if (!backExitArmed) {
                 backExitArmed = true;
@@ -856,7 +1116,7 @@
             document.getElementById('origin-img').src = originImgSrc;
             document.getElementById('origin-date').textContent = data.sections.origin.date || '';
             document.getElementById('origin-title').textContent = data.sections.origin.title || '';
-            document.getElementById('origin-story').textContent = data.sections.origin.story || '';
+            renderOriginStoryPreview(data.sections.origin);
             document.getElementById('origin-quote').textContent = data.sections.origin.quote || '';
 
             updateTogetherCounter();
