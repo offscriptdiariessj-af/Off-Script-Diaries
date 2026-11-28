@@ -111,12 +111,12 @@
                 </div>
                 <div class="flex items-center gap-2 shrink-0 relative">
                     <button id="btn-new-folder" type="button" onclick="openFolderModal(null)" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 active:scale-95 transition">
-                        + New Folder
+                        + New Continent
                     </button>
 
-                    <!-- UPPER RIGHT THREE-DOTS MENU WHEN FOLDER IS OPENED -->
+                    <!-- UPPER RIGHT THREE-DOTS MENU WHEN CONTINENT IS OPENED -->
                     <div id="folder-header-menu-wrap" class="hidden relative">
-                        <button type="button" onclick="toggleFolderHeaderMenu(event)" aria-label="Folder Options" class="w-9 h-9 rounded-xl bg-[#1E2126] hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/85 active:scale-95 transition">
+                        <button type="button" onclick="toggleFolderHeaderMenu(event)" aria-label="Continent Options" class="w-9 h-9 rounded-xl bg-[#1E2126] hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/85 active:scale-95 transition">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                 <circle cx="12" cy="5" r="2"/>
                                 <circle cx="12" cy="12" r="2"/>
@@ -128,14 +128,14 @@
                                 <span>+</span><span>Add Country</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); openFolderModal(activeFolderId);" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                                <span>✎</span><span>Edit Folder</span>
+                                <span>✎</span><span>Edit Continent</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); startItemSelectionMode();" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
                                 <span>☑</span><span>Select Countries</span>
                             </button>
                             <div class="my-1 border-t border-white/10"></div>
                             <button type="button" onclick="closeFolderHeaderMenu(); requestDeleteActiveFolder();" class="w-full px-3.5 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                                <span>🗑</span><span>Delete Folder</span>
+                                <span>🗑</span><span>Delete Continent</span>
                             </button>
                         </div>
                     </div>
@@ -151,13 +151,13 @@
         <!-- MAIN VIEWER-STYLE CONTAINER -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, COUNTRY NAME) -->
+            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, CONTINENT OR COUNTRY NAME) -->
             <div class="relative">
                 <input
                     id="search-input"
                     type="text"
                     oninput="handleSearchInput(this.value)"
-                    placeholder="Search by date, title, or country name..."
+                    placeholder="Search by date, continent, or country..."
                     class="w-full h-11 pl-4 pr-10 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
                 />
                 <button
@@ -171,23 +171,23 @@
                 </button>
             </div>
 
-            <!-- FOLDERS VIEW (LEVEL 1) -->
+            <!-- CONTINENTS VIEW (LEVEL 1) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">🌍</div>
-                    <p class="text-sm font-bold text-white">No Country Folders Yet</p>
-                    <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
+                    <p class="text-sm font-bold text-white">No Continents Yet</p>
+                    <p class="text-xs text-white/55">Tap "+ New Continent" at the top to add your first continent.</p>
                 </div>
                 <div id="global-search-items" class="hidden space-y-2"></div>
-                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Countries</div>
+                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Continents</div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
-            <!-- ITEMS INSIDE FOLDER VIEW (LEVEL 2) -->
+            <!-- COUNTRIES INSIDE CONTINENT VIEW (LEVEL 2) -->
             <div id="items-view" class="hidden space-y-4">
                 <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
                     <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
-                        <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
+                        <img id="folder-banner-cover" src="" alt="Continent Cover" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                     </div>
                     <div class="p-4">
@@ -201,7 +201,7 @@
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">📍</div>
-                    <p class="text-sm font-bold text-white">No Countries in This Folder</p>
+                    <p class="text-sm font-bold text-white">No Countries in This Continent</p>
                     <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
                 </div>
 
@@ -211,7 +211,7 @@
 
         </main>
 
-        <!-- FLOATING PLUS BUTTON (INSIDE FOLDER ONLY) -->
+        <!-- FLOATING PLUS BUTTON (INSIDE CONTINENT ONLY) -->
         <button id="fab-add-item" type="button" onclick="openItemModal(null)" title="Add Country" class="hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold shadow-2xl shadow-blue-950/80 flex items-center justify-center active:scale-95 transition">
             +
         </button>
@@ -263,16 +263,16 @@
             </div>
         </div>
 
-        <!-- FOLDER CREATE / EDIT MODAL -->
+        <!-- CONTINENT CREATE / EDIT MODAL -->
         <div id="folder-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                    <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New Folder</h3>
+                    <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New Continent</h3>
                     <button type="button" onclick="closeFolderModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
                 </div>
                 <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Title</label>
-                    <input id="fld-title" type="text" placeholder="Folder title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="block text-[11px] text-white/70 mb-1">Continent name</label>
+                    <input id="fld-title" type="text" placeholder="Continent name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="flex items-center justify-between pt-1">
                     <span class="text-[11px] text-white/70">Date Range (From - To)</span>
@@ -300,10 +300,10 @@
                 </div>
                 <div>
                     <label class="block text-[11px] text-white/70 mb-1">Description</label>
-                    <textarea id="fld-desc" rows="3" placeholder="Folder description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                    <textarea id="fld-desc" rows="3" placeholder="Continent description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
                 </div>
                 <button type="button" onclick="saveFolderModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Save Folder
+                    Save Continent
                 </button>
             </div>
         </div>
@@ -320,8 +320,8 @@
                     <input id="itm-name" type="text" placeholder="Country name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Title</label>
-                    <input id="itm-title" type="text" placeholder="Title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="block text-[11px] text-white/70 mb-1">Note / Title</label>
+                    <input id="itm-title" type="text" placeholder="Note or subtitle" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div class="flex items-center justify-between pt-1">
                     <span class="text-[11px] text-white/70">Date Range (From - To)</span>
@@ -570,7 +570,7 @@
 
                     return {
                         id: String(f.id || `fld_${Date.now()}_${idx}`),
-                        title: String(f.title || "Untitled Folder"),
+                        title: String(f.title || "Untitled Continent"),
                         date: String(f.date || ""),
                         dateFrom: String(f.dateFrom || ""),
                         dateTo: String(f.dateTo || ""),
@@ -714,11 +714,11 @@
             const itemsView = document.getElementById("items-view");
             const folderBanner = document.getElementById("folder-banner");
 
-            const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+            const totalCountries = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
             if (!activeFolderId) {
                 titleEl.textContent = "Countries Explored 🌍";
-                subEl.textContent = `${folders.length} Folders • ${totalCount} Countries`;
+                subEl.textContent = `${folders.length} Continents • ${totalCountries} Countries`;
                 newFolderBtn.classList.remove("hidden");
                 folderMenuWrap.classList.add("hidden");
                 fabBtn.classList.add("hidden");
@@ -806,9 +806,10 @@
                         const folderCover = resolveMediaUrl(folder.driveLink);
                         const itemThumb = resolveMediaUrl(item.driveLink);
                         const itemDate = formatEntityDate(item);
+                        const countryLabel = item.name || item.title || "—";
                         return `
                         <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
-                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG NAME BOX MATCHING RIGHT TOP TWO SMALL BOXES -->
+                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG CONTINENT NAME BOX -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
                                     ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🌍</span>`}
@@ -818,12 +819,12 @@
                                 </div>
                             </div>
 
-                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED ITEM -> INFO BELOW -->
+                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED COUNTRY -> INFO BELOW -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
                                         <span class="text-[9px] uppercase tracking-wider text-white/45 block">Country</span>
-                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(item.name || "—")}</span>
+                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(countryLabel)}</span>
                                     </div>
                                     <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
                                         <span class="text-[9px] uppercase tracking-wider text-white/45 block">Date</span>
@@ -832,11 +833,11 @@
                                 </div>
 
                                 <div class="h-24 rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
+                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(countryLabel)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
                                 </div>
 
                                 <div class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0">
-                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(countryLabel)}</div>
                                     ${item.description ? `<div class="text-[10px] text-white/60 line-clamp-2 mt-0.5">${escapeHtml(item.description)}</div>` : ""}
                                 </div>
                             </div>
@@ -870,7 +871,7 @@
                         <button
                             type="button"
                             onclick="toggleCardMenu(event, 'folder', '${escapeHtml(f.id)}')"
-                            aria-label="Folder Menu"
+                            aria-label="Continent Menu"
                             class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
                         >
                             ${renderThreeDotsSvg()}
@@ -878,7 +879,7 @@
                     </div>
                     <div id="card-menu-folder-${escapeHtml(f.id)}" data-card-menu="true" class="hidden absolute right-2 top-10 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
                         <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openFolderModal('${escapeHtml(f.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                            <span>✎</span><span>Edit Folder</span>
+                            <span>✎</span><span>Edit Continent</span>
                         </button>
                         <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('folder', '${escapeHtml(f.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
                             <span>☑</span><span>Select</span>
@@ -971,6 +972,7 @@
         function buildExpandedItemCardHtml(it, isSelected, indexLabel = "") {
             const imgSrc = resolveMediaUrl(it.driveLink);
             const dispDate = formatEntityDate(it);
+            const countryName = it.name || it.title || "";
             return `
             <div
                 data-entity-type="item"
@@ -980,7 +982,7 @@
             >
                 ${imgSrc ? `
                 <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
-                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(countryName)}" class="w-full h-full object-cover pointer-events-none" />
                     <button
                         type="button"
                         onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
@@ -1004,10 +1006,10 @@
                 <div class="p-4 flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country</span>
                             <span class="text-[10px] text-white/50">${escapeHtml(dispDate || indexLabel)}</span>
                         </div>
-                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(countryName)}</h3>
                         ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
                         <div class="mt-2.5 flex items-center justify-between text-[10px] text-white/40">
                             <span>← Swipe to switch →</span>
@@ -1029,8 +1031,9 @@
 
         function buildCompactItemCardHtml(it, isSelected, imgHeightClass = "h-20") {
             const imgSrc = resolveMediaUrl(it.driveLink);
+            const countryName = it.name || it.title || "";
             const mediaHtml = imgSrc
-                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />`
+                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(countryName)}" class="w-full h-full object-cover pointer-events-none" />`
                 : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🌍</div>`;
             return `
             <div
@@ -1042,7 +1045,7 @@
                     ${mediaHtml}
                 </div>
                 <div class="p-2 text-center">
-                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
+                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(countryName)}</span>
                 </div>
             </div>`;
         }
@@ -1174,15 +1177,15 @@
                 editBtn.classList.remove("hidden");
                 if (selectionKind === "folder") {
                     const f = folders.find(x => x.id === ids[0]);
-                    label.textContent = f ? f.title : "1 Folder";
+                    label.textContent = f ? f.title : "1 Continent";
                 } else {
                     const folder = folders.find(x => x.id === activeFolderId);
                     const it = folder ? folder.items.find(x => x.id === ids[0]) : null;
-                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 Country";
+                    label.textContent = it ? (it.name || it.title || "1 Country") : "1 Country";
                 }
             } else {
                 editBtn.classList.add("hidden");
-                label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "countries"} selected`;
+                label.textContent = `${ids.length} ${selectionKind === "folder" ? "continents" : "countries"} selected`;
             }
 
             fab.classList.add("hidden");
@@ -1342,7 +1345,7 @@
                 renderAll();
 
                 if (didReorder) {
-                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "Country order updated");
+                    await persistToFirebase(dType === "folder" ? "Continent order updated" : "Country order updated");
                 }
             };
 
@@ -1495,7 +1498,7 @@
 
             if (folderId) {
                 const f = folders.find(x => x.id === folderId);
-                heading.textContent = "Edit Folder";
+                heading.textContent = "Edit Continent";
                 titleInp.value = f ? f.title : "";
                 dateInp.value = f ? (f.date || "") : "";
                 fromInp.value = f ? (f.dateFrom || "") : "";
@@ -1504,7 +1507,7 @@
                 driveInp.value = f ? f.driveLink : "";
                 descInp.value = f ? f.description : "";
             } else {
-                heading.textContent = "New Folder";
+                heading.textContent = "New Continent";
                 titleInp.value = "";
                 dateInp.value = "";
                 fromInp.value = "";
@@ -1532,7 +1535,7 @@
             const description = document.getElementById("fld-desc").value.trim();
 
             if (!title) {
-                showToast("Enter folder title");
+                showToast("Enter continent name");
                 return;
             }
 
@@ -1567,7 +1570,7 @@
             selectedIds.clear();
             selectionKind = null;
             renderAll();
-            await persistToFirebase(wasEditingId ? "Folder updated!" : "Folder saved!");
+            await persistToFirebase(wasEditingId ? "Continent updated!" : "Continent saved!");
         }
 
         function openItemModal(itemId = null) {
@@ -1702,8 +1705,8 @@
             if (kind === "folder") {
                 const f = folders.find(x => x.id === id);
                 openConfirmModal(
-                    "Delete Folder?",
-                    `Delete "${f ? f.title : "this folder"}" and all countries inside it?`,
+                    "Delete Continent?",
+                    `Delete "${f ? f.title : "this continent"}" and all countries inside it?`,
                     async () => {
                         folders = folders.filter(x => x.id !== id);
                         if (activeFolderId === id) {
@@ -1715,7 +1718,7 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase("Folder deleted!");
+                        await persistToFirebase("Continent deleted!");
                     }
                 );
             } else {
@@ -1754,10 +1757,10 @@
 
             if (selectionKind === "folder") {
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Folders?` : "Delete Folder?",
+                    count > 1 ? `Delete ${count} Continents?` : "Delete Continent?",
                     count > 1
-                        ? `Delete ${count} selected folders and all countries inside them?`
-                        : "Delete the selected folder and all countries inside it?",
+                        ? `Delete ${count} selected continents and all countries inside them?`
+                        : "Delete the selected continent and all countries inside it?",
                     async () => {
                         const removeSet = new Set(ids);
                         folders = folders.filter(x => !removeSet.has(x.id));
@@ -1770,15 +1773,15 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} folders deleted!` : "Folder deleted!");
+                        await persistToFirebase(count > 1 ? `${count} continents deleted!` : "Continent deleted!");
                     }
                 );
             } else {
                 openConfirmModal(
                     count > 1 ? `Delete ${count} Countries?` : "Delete Country?",
                     count > 1
-                        ? `Delete ${count} selected countries from this folder?`
-                        : "Delete the selected country from this folder?",
+                        ? `Delete ${count} selected countries from this continent?`
+                        : "Delete the selected country from this continent?",
                     async () => {
                         const folder = folders.find(x => x.id === activeFolderId);
                         if (folder) {
