@@ -827,25 +827,39 @@
                         const itemThumb = resolveMediaUrl(item.driveLink);
                         const itemDate = formatEntityDate(item);
                         return `
-                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-stretch justify-between gap-2 cursor-pointer transition">
-                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div class="w-12 h-12 rounded-xl bg-black overflow-hidden shrink-0 border border-white/10 flex items-center justify-center">
-                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-base text-white/30">🌍</span>`}
+                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-start cursor-pointer">
+                            <!-- LEFT SIDE: BIG FOLDER THUMBNAIL + BIG NAME BOX -->
+                            <div class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition flex flex-col">
+                                <div class="h-32 bg-black overflow-hidden border-b border-white/10 flex items-center justify-center">
+                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🌍</span>`}
                                 </div>
-                                <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(folder.title)}</div>
-                                    ${folderDate ? `<div class="text-[10px] text-blue-400 truncate">${escapeHtml(folderDate)}</div>` : ""}
-                                    ${folder.description ? `<div class="text-[10px] text-white/55 truncate">${escapeHtml(folder.description)}</div>` : ""}
+                                <div class="p-3 flex-1 flex flex-col justify-center min-w-0">
+                                    <div class="text-sm font-extrabold text-white truncate">${escapeHtml(folder.title)}</div>
+                                    ${folderDate ? `<div class="text-[10px] text-blue-400 truncate mt-0.5">${escapeHtml(folderDate)}</div>` : ""}
+                                    ${folder.description ? `<div class="text-[11px] text-white/60 line-clamp-2 mt-1">${escapeHtml(folder.description)}</div>` : ""}
                                 </div>
                             </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <div class="w-12 h-12 rounded-xl bg-black overflow-hidden border border-white/10 flex items-center justify-center">
-                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-sm text-white/30">📍</span>`}
+
+                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED ITEM -> INFO BELOW -->
+                            <div class="flex flex-col gap-2 min-w-0">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
+                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">Country</span>
+                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(item.name || "—")}</span>
+                                    </div>
+                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
+                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">Date</span>
+                                        <span class="text-[11px] font-semibold text-white truncate block">${escapeHtml(itemDate || "—")}</span>
+                                    </div>
                                 </div>
-                                <div class="w-24 rounded-xl bg-[#121417] border border-white/10 p-1.5 flex flex-col justify-center min-w-0">
-                                    <div class="text-[11px] font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
-                                    ${item.name ? `<div class="text-[9px] text-blue-400 truncate">${escapeHtml(item.name)}</div>` : ""}
-                                    ${itemDate ? `<div class="text-[9px] text-white/50 truncate">${escapeHtml(itemDate)}</div>` : ""}
+
+                                <div class="h-24 rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
+                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
+                                </div>
+
+                                <div class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0">
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    ${item.description ? `<div class="text-[10px] text-white/60 line-clamp-2 mt-0.5">${escapeHtml(item.description)}</div>` : ""}
                                 </div>
                             </div>
                         </div>`;
