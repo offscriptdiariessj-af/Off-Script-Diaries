@@ -77,7 +77,7 @@
 
             <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
             <h2 class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Cities Explored 🏙️ • Loading records</p>
+            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳 • Loading records</p>
 
             <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
                 <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
@@ -96,7 +96,7 @@
                         ←
                     </button>
                     <div class="min-w-0">
-                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🏙️</h1>
+                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
                         <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Synced</p>
                     </div>
                 </div>
@@ -132,7 +132,7 @@
             <!-- STATES VIEW (LEVEL 1) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                    <div class="text-2xl">🏙️</div>
+                    <div class="text-2xl">🇮🇳</div>
                     <p id="folders-empty-title" class="text-sm font-bold text-white">No States Found</p>
                     <p id="folders-empty-desc" class="text-xs text-white/55">Check back soon for new travel logs.</p>
                 </div>
@@ -458,7 +458,7 @@
             }
 
             if (!activeFolderId) {
-                titleEl.textContent = `${pluralizeEntity(totalCities, "City", "Cities")} Explored 🏙️`;
+                titleEl.textContent = `${pluralizeEntity(totalCities, "City", "Cities")} Explored 🇮🇳`;
                 subEl.textContent = `${formatCountLabel(totalStates, "State", "States")} • ${formatCountLabel(totalCities, "City", "Cities")}`;
                 if (badgeEl) badgeEl.textContent = formatCountLabel(totalCities, "City", "Cities");
                 foldersView.classList.remove("hidden");
@@ -570,7 +570,7 @@
                         <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🏙️</span>`}
+                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🇮🇳</span>`}
                                 </div>
                                 <div class="px-3 py-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0 flex items-center">
                                     <div class="text-sm font-extrabold text-white truncate">${escapeHtml(folder.title)}</div>
@@ -612,7 +612,7 @@
                 const itemCount = f.items ? f.items.length : 0;
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
-                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🏙️</div>`;
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
 
                 return `
                 <div
@@ -743,7 +743,7 @@
             const cityName = it.name || it.title || "Untitled City";
             const mediaHtml = imgSrc
                 ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(cityName)}" class="w-full h-full object-cover" />`
-                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🏙️</div>`;
+                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
 
             return `
             <div
