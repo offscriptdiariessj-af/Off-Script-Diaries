@@ -6,7 +6,10 @@
     <title>Cities Explored — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121417; color: #F8FAFC; }
+        body {
+            background-color: #121417;
+            color: #F8FAFC;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -31,31 +34,20 @@
             50% { transform: translateY(-4px); }
         }
 
-        .osd-ring-outer {
-            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-        .osd-ring-inner {
-            animation: osdOrbitReverse 1.9s linear infinite;
-        }
-        .osd-core-glow {
-            animation: osdCorePulse 2.2s ease-in-out infinite;
-        }
-        .osd-shimmer-bar {
-            animation: osdShimmerSlide 1.55s ease-in-out infinite;
-        }
-        .osd-float {
-            animation: osdFloatUp 3s ease-in-out infinite;
-        }
+        .osd-ring-outer { animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .osd-ring-inner { animation: osdOrbitReverse 1.9s linear infinite; }
+        .osd-core-glow { animation: osdCorePulse 2.2s ease-in-out infinite; }
+        .osd-shimmer-bar { animation: osdShimmerSlide 1.55s ease-in-out infinite; }
+        .osd-float { animation: osdFloatUp 3s ease-in-out infinite; }
     </style>
 </head>
 <body class="font-sans antialiased pb-24 overflow-hidden">
 
-    <!-- INDEX-STYLE OFF SCRIPT DIARIES PRELOADER -->
+    <!-- PRELOADER -->
     <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
         </div>
-
         <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
             <div class="relative w-24 h-24 flex items-center justify-center mb-6">
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
@@ -64,11 +56,9 @@
                     <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
                 </div>
             </div>
-
             <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
-            <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳</p>
-
+            <h2 class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳 • Loading stories</p>
             <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
                 <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
             </div>
@@ -78,23 +68,25 @@
     <!-- APP SHELL -->
     <div id="app-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
 
+        <!-- HEADER -->
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
             <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <button type="button" onclick="handleBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                    <button type="button" onclick="handleHeaderBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
                         ←
                     </button>
                     <div class="min-w-0">
                         <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
-                        <p id="page-subtitle" class="text-[10px] text-blue-400 truncate"></p>
+                        <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Off Script Diaries</p>
                     </div>
                 </div>
             </div>
         </header>
 
+        <!-- MAIN -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, CITY NAME) -->
+            <!-- SEARCH BAR -->
             <div>
                 <input
                     id="search-input"
@@ -105,17 +97,18 @@
                 />
             </div>
 
-            <!-- FOLDERS VIEW -->
+            <!-- LEVEL 1: FOLDERS -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">🇮🇳</div>
-                    <p class="text-sm font-bold text-white">No City Folders Yet</p>
+                    <p class="text-sm font-bold text-white">No Cities Published Yet</p>
+                    <p class="text-xs text-white/55">Check back soon for new city diaries.</p>
                 </div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
                 <div id="global-search-items" class="hidden space-y-2"></div>
             </div>
 
-            <!-- ITEMS INSIDE FOLDER VIEW -->
+            <!-- LEVEL 2: ITEMS INSIDE FOLDER -->
             <div id="items-view" class="hidden space-y-4">
                 <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
                     <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
@@ -123,9 +116,7 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                     </div>
                     <div class="p-4">
-                        <div class="flex items-center justify-between gap-2">
-                            <span id="folder-banner-date" class="text-[11px] text-blue-400"></span>
-                        </div>
+                        <span id="folder-banner-date" class="text-[11px] text-blue-400 block"></span>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
                         <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
                     </div>
@@ -133,7 +124,8 @@
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">📍</div>
-                    <p class="text-sm font-bold text-white">No Cities Found</p>
+                    <p class="text-sm font-bold text-white">No Cities in This Folder</p>
+                    <p class="text-xs text-white/55">No entries available yet.</p>
                 </div>
 
                 <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
@@ -141,7 +133,6 @@
             </div>
 
         </main>
-
     </div>
 
     <script src="js/store.js"></script>
@@ -169,10 +160,39 @@
         let expandedItemId = null;
         let searchQuery = "";
         let appReadyShown = false;
+        let isHandlingPopState = false;
+        let suppressNextClick = false;
 
-        function revealApp() {
+        function getNavDepth() {
+            let depth = 0;
+            if (activeFolderId) depth += 1;
+            if (expandedItemId) depth += 1;
+            return depth;
+        }
+
+        function syncHistoryState() {
+            if (isHandlingPopState) return;
+            history.replaceState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId }, "");
+        }
+
+        function pushNavState() {
+            if (isHandlingPopState) return;
+            history.pushState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId }, "");
+        }
+
+        function scrollToItemCard(itemId) {
+            if (!itemId) return;
+            requestAnimationFrame(() => {
+                const target = document.querySelector(`#items-list [data-entity-id="${CSS.escape(itemId)}"]`);
+                if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+        }
+
+        function revealAppWhenReady() {
             if (appReadyShown) return;
             appReadyShown = true;
+            syncHistoryState();
+
             const loader = document.getElementById("osd-preloader");
             const shell = document.getElementById("app-shell");
             document.body.classList.remove("overflow-hidden");
@@ -211,9 +231,7 @@
                 if (res && typeof res === "string") parsed = res.trim();
             }
             const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
-            if (driveId) {
-                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
-            }
+            if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
             return parsed;
         }
 
@@ -247,7 +265,7 @@
                     const items = rawItems
                         .filter(Boolean)
                         .map((it, iIdx) => ({
-                            id: String(it.id || `city_${Date.now()}_${iIdx}`),
+                            id: String(it.id || `city_${idx}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
                             date: String(it.date || ""),
@@ -261,7 +279,7 @@
                         .sort((a, b) => a.order - b.order);
 
                     return {
-                        id: String(f.id || `fld_${Date.now()}_${idx}`),
+                        id: String(f.id || `fld_${idx}`),
                         title: String(f.title || "Untitled Folder"),
                         date: String(f.date || ""),
                         dateFrom: String(f.dateFrom || ""),
@@ -292,177 +310,35 @@
         function matchesSearch(obj = {}) {
             if (!searchQuery) return true;
             const fields = [
-                obj.name,
-                obj.title,
-                obj.description,
-                obj.date,
-                obj.dateFrom,
-                obj.dateTo,
-                formatSingleDate(obj.date),
-                formatSingleDate(obj.dateFrom),
-                formatSingleDate(obj.dateTo),
+                obj.name, obj.title, obj.description, obj.date, obj.dateFrom, obj.dateTo,
+                formatSingleDate(obj.date), formatSingleDate(obj.dateFrom), formatSingleDate(obj.dateTo),
                 formatEntityDate(obj)
             ];
             return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
         }
 
-        function openFolder(folderId, itemId = null) {
-            activeFolderId = folderId;
-            expandedItemId = itemId;
-            renderAll();
-            if (itemId) {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-        }
-
-        function toggleExpandItem(itemId) {
-            if (expandedItemId === itemId) {
-                expandedItemId = null;
-                renderAll();
-                return;
-            }
-            expandedItemId = itemId;
-            renderAll();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-
-        function handleBack() {
-            if (activeFolderId) {
-                activeFolderId = null;
-                expandedItemId = null;
-                renderAll();
-                return;
-            }
-            window.location.href = "index.html";
-        }
-
-        function buildExpandedItemCardHtml(it) {
-            const imgSrc = resolveMediaUrl(it.driveLink);
-            const dispDate = formatEntityDate(it);
-            return `
-            <div
-                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
-                class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden cursor-pointer shadow-xl"
-            >
-                ${imgSrc ? `
-                <div class="h-44 bg-black">
-                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" />
-                </div>` : ""}
-                <div class="p-4 space-y-1.5">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
-                        ${dispDate ? `<span class="text-[10px] text-white/50">${escapeHtml(dispDate)}</span>` : ""}
-                    </div>
-                    <h3 class="text-base font-bold text-white">${escapeHtml(it.title || it.name)}</h3>
-                    ${it.description ? `<p class="text-xs text-white/70 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
-                </div>
-            </div>`;
-        }
-
-        function buildCompactItemCardHtml(it, imgHeightClass = "h-20") {
-            const imgSrc = resolveMediaUrl(it.driveLink);
-            const mediaHtml = imgSrc
-                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" />`
-                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
-            return `
-            <div
-                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
-                class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden cursor-pointer transition"
-            >
-                <div class="${imgHeightClass} bg-black relative">
-                    ${mediaHtml}
-                </div>
-                <div class="p-2 text-center">
-                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
-                </div>
-            </div>`;
-        }
-
-        function renderAll() {
+        function updateHeaderUI() {
             const titleEl = document.getElementById("page-title");
             const subEl = document.getElementById("page-subtitle");
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
-
-            const totalCities = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+            const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
             if (!activeFolderId) {
                 titleEl.textContent = "Cities Explored 🇮🇳";
-                subEl.textContent = `${totalCities} Cities`;
+                subEl.textContent = `${folders.length} Folders • ${totalCount} Cities`;
                 foldersView.classList.remove("hidden");
                 itemsView.classList.add("hidden");
-
-                const grid = document.getElementById("folders-grid");
-                const empty = document.getElementById("folders-empty");
-                const globalBox = document.getElementById("global-search-items");
-
-                const matchedFolders = searchQuery
-                    ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
-                    : folders;
-
-                const matchedItems = searchQuery
-                    ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
-                    : [];
-
-                empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
-
-                grid.innerHTML = matchedFolders.map(f => {
-                    const cover = resolveMediaUrl(f.driveLink);
-                    const dispDate = formatEntityDate(f);
-                    const mediaHtml = cover
-                        ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
-                        : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
-
-                    return `
-                    <div
-                        onclick="openFolder('${escapeHtml(f.id)}')"
-                        class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden cursor-pointer hover:border-blue-400/40 transition"
-                    >
-                        <div class="h-32 bg-black relative">
-                            ${mediaHtml}
-                            <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
-                                ${f.items.length}
-                            </span>
-                        </div>
-                        <div class="p-3">
-                            ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
-                            <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
-                            <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
-                        </div>
-                    </div>`;
-                }).join("");
-
-                if (searchQuery && matchedItems.length > 0) {
-                    globalBox.classList.remove("hidden");
-                    globalBox.innerHTML = `
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Cities</div>
-                        ${matchedItems.map(({ folder, item }) => {
-                            const dispDate = formatEntityDate(item);
-                            return `
-                            <div onclick="openFolder('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-3 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-center justify-between gap-2 cursor-pointer transition">
-                                <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
-                                    <div class="text-[10px] text-white/55 truncate">${escapeHtml(item.name)}${item.name && folder.title ? " • " : ""}${escapeHtml(folder.title)}</div>
-                                </div>
-                                ${dispDate ? `<span class="text-[10px] text-blue-400 shrink-0">${escapeHtml(dispDate)}</span>` : ""}
-                            </div>`;
-                        }).join("")}
-                    `;
-                } else {
-                    globalBox.classList.add("hidden");
-                    globalBox.innerHTML = "";
-                }
             } else {
                 const folder = folders.find(f => f.id === activeFolderId);
                 if (!folder) {
                     activeFolderId = null;
                     expandedItemId = null;
-                    renderAll();
+                    updateHeaderUI();
                     return;
                 }
-
                 titleEl.textContent = folder.title;
-                subEl.textContent = `${folder.items.length} Cities`;
+                subEl.textContent = `${folder.items.length} Cities inside`;
                 foldersView.classList.add("hidden");
                 itemsView.classList.remove("hidden");
 
@@ -483,51 +359,268 @@
                 const descEl = document.getElementById("folder-banner-desc");
                 descEl.textContent = folder.description || "";
                 descEl.classList.toggle("hidden", !folder.description);
-
-                const filteredItems = folder.items.filter(matchesSearch);
-                const empty = document.getElementById("items-empty");
-                empty.classList.toggle("hidden", filteredItems.length > 0);
-
-                if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
-                    expandedItemId = null;
-                }
-
-                const pinnedWrap = document.getElementById("pinned-item-wrap");
-                const list = document.getElementById("items-list");
-                const expandedItem = expandedItemId
-                    ? filteredItems.find(x => x.id === expandedItemId)
-                    : null;
-
-                if (expandedItem) {
-                    pinnedWrap.classList.remove("hidden");
-                    pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem);
-                } else {
-                    pinnedWrap.classList.add("hidden");
-                    pinnedWrap.innerHTML = "";
-                }
-
-                const remainingItems = expandedItem
-                    ? filteredItems.filter(x => x.id !== expandedItem.id)
-                    : filteredItems;
-
-                list.className = expandedItem
-                    ? "grid grid-cols-2 gap-3"
-                    : "grid grid-cols-3 gap-2.5";
-
-                const compactHeight = expandedItem ? "h-24" : "h-20";
-                list.innerHTML = remainingItems.map(it => buildCompactItemCardHtml(it, compactHeight)).join("");
             }
         }
 
+        function openFolder(folderId) {
+            activeFolderId = folderId;
+            expandedItemId = null;
+            renderAll();
+            pushNavState();
+        }
+
+        function openItemFromGlobalSearch(folderId, itemId) {
+            activeFolderId = folderId;
+            expandedItemId = itemId;
+            renderAll();
+            pushNavState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function renderFolders() {
+            const grid = document.getElementById("folders-grid");
+            const empty = document.getElementById("folders-empty");
+            const globalBox = document.getElementById("global-search-items");
+
+            const matchedFolders = searchQuery
+                ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
+                : folders;
+            const matchedItems = searchQuery
+                ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
+                : [];
+
+            empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
+
+            grid.innerHTML = matchedFolders.map(f => {
+                const cover = resolveMediaUrl(f.driveLink);
+                const dispDate = formatEntityDate(f);
+                const mediaHtml = cover
+                    ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
+
+                return `
+                <div onclick="openFolder('${escapeHtml(f.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer">
+                    <div class="h-32 bg-black relative overflow-hidden">
+                        ${mediaHtml}
+                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">${f.items.length}</span>
+                    </div>
+                    <div class="p-3">
+                        ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
+                        <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
+                        <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
+                    </div>
+                </div>`;
+            }).join("");
+
+            if (searchQuery && matchedItems.length > 0) {
+                globalBox.classList.remove("hidden");
+                globalBox.innerHTML = `
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Cities</div>
+                    ${matchedItems.map(({ folder, item }) => {
+                        const dispDate = formatEntityDate(item);
+                        return `
+                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="p-3 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 flex items-center justify-between gap-2 cursor-pointer transition">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                <div class="text-[10px] text-white/55 truncate">${escapeHtml(item.name)}${item.name && folder.title ? " • " : ""}${escapeHtml(folder.title)}</div>
+                            </div>
+                            ${dispDate ? `<span class="text-[10px] text-blue-400 shrink-0">${escapeHtml(dispDate)}</span>` : ""}
+                        </div>`;
+                    }).join("")}
+                `;
+            } else {
+                globalBox.classList.add("hidden");
+                globalBox.innerHTML = "";
+            }
+        }
+
+        function attachExpandedSwipeGesture(cardEl, itemId, visibleItems) {
+            if (!cardEl || !Array.isArray(visibleItems) || visibleItems.length < 2) return;
+            const currentIdx = visibleItems.findIndex(x => x.id === itemId);
+            if (currentIdx === -1) return;
+
+            let startX = 0, startY = 0, deltaX = 0, tracking = false, lockedHorizontal = false;
+
+            cardEl.addEventListener("pointerdown", (e) => {
+                if (e.button !== 0 && e.pointerType === "mouse") return;
+                startX = e.clientX; startY = e.clientY; deltaX = 0; tracking = true; lockedHorizontal = false;
+                cardEl.style.transition = "none";
+            });
+
+            cardEl.addEventListener("pointermove", (e) => {
+                if (!tracking) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                if (!lockedHorizontal) {
+                    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.35) lockedHorizontal = true;
+                    else if (Math.abs(dy) > 12) { tracking = false; return; }
+                }
+                if (lockedHorizontal) {
+                    deltaX = dx;
+                    const clamped = Math.max(-130, Math.min(130, deltaX));
+                    cardEl.style.transform = `translate3d(${clamped}px, 0, 0) rotate(${clamped * 0.02}deg)`;
+                    cardEl.style.opacity = String(Math.max(0.65, 1 - Math.abs(clamped) / 360));
+                }
+            });
+
+            const finishSwipe = () => {
+                if (!tracking) return;
+                tracking = false;
+                cardEl.style.transition = "transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease";
+                cardEl.style.transform = "translate3d(0, 0, 0)";
+                cardEl.style.opacity = "1";
+                if (lockedHorizontal && Math.abs(deltaX) > 62) {
+                    const nextIdx = deltaX < 0
+                        ? (currentIdx + 1) % visibleItems.length
+                        : (currentIdx - 1 + visibleItems.length) % visibleItems.length;
+                    const nextItem = visibleItems[nextIdx];
+                    if (nextItem && nextItem.id !== itemId) {
+                        suppressNextClick = true;
+                        expandedItemId = nextItem.id;
+                        renderAll();
+                        syncHistoryState();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                }
+                deltaX = 0; lockedHorizontal = false;
+            };
+
+            cardEl.addEventListener("pointerup", finishSwipe);
+            cardEl.addEventListener("pointercancel", finishSwipe);
+        }
+
+        function buildExpandedItemCardHtml(it, indexLabel = "") {
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const dispDate = formatEntityDate(it);
+            return `
+            <div data-entity-id="${escapeHtml(it.id)}" style="touch-action: pan-y;" class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden shadow-xl">
+                ${imgSrc ? `<div class="h-44 bg-black overflow-hidden"><img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" /></div>` : ""}
+                <div class="p-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                        <span class="text-[10px] text-white/50">${escapeHtml(dispDate || indexLabel)}</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                    ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                    <div class="mt-2.5 flex items-center justify-between text-[10px] text-white/40">
+                        <span>← Swipe to switch →</span>
+                        ${indexLabel ? `<span>${escapeHtml(indexLabel)}</span>` : ""}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function toggleExpandItem(itemId) {
+            if (suppressNextClick) { suppressNextClick = false; return; }
+            if (expandedItemId === itemId) {
+                const prevId = expandedItemId;
+                expandedItemId = null;
+                renderAll();
+                syncHistoryState();
+                scrollToItemCard(prevId);
+                return;
+            }
+            expandedItemId = itemId;
+            renderAll();
+            pushNavState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function renderItems() {
+            const folder = folders.find(f => f.id === activeFolderId);
+            if (!folder) return;
+
+            const pinnedWrap = document.getElementById("pinned-item-wrap");
+            const list = document.getElementById("items-list");
+            const empty = document.getElementById("items-empty");
+            const filteredItems = folder.items.filter(matchesSearch);
+            empty.classList.toggle("hidden", filteredItems.length > 0);
+
+            if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
+                expandedItemId = null;
+            }
+
+            const expandedIdx = expandedItemId ? filteredItems.findIndex(x => x.id === expandedItemId) : -1;
+            const expandedItem = expandedIdx !== -1 ? filteredItems[expandedIdx] : null;
+
+            if (expandedItem) {
+                pinnedWrap.classList.remove("hidden");
+                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, `${expandedIdx + 1} / ${filteredItems.length}`);
+                attachExpandedSwipeGesture(pinnedWrap.firstElementChild, expandedItem.id, filteredItems);
+            } else {
+                pinnedWrap.classList.add("hidden");
+                pinnedWrap.innerHTML = "";
+            }
+
+            const remainingItems = expandedItem ? filteredItems.filter(x => x.id !== expandedItem.id) : filteredItems;
+            list.className = expandedItem ? "grid grid-cols-2 gap-3" : "grid grid-cols-3 gap-2.5";
+            const compactHeight = expandedItem ? "h-24" : "h-20";
+
+            list.innerHTML = remainingItems.map(it => {
+                const imgSrc = resolveMediaUrl(it.driveLink);
+                const mediaHtml = imgSrc
+                    ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
+                return `
+                <div data-entity-id="${escapeHtml(it.id)}" onclick="toggleExpandItem('${escapeHtml(it.id)}')" class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer">
+                    <div class="${compactHeight} bg-black overflow-hidden">${mediaHtml}</div>
+                    <div class="p-2 text-center">
+                        <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        function renderAll() {
+            updateHeaderUI();
+            if (!activeFolderId) renderFolders();
+            else renderItems();
+        }
+
+        function stepBackOneLevel() {
+            if (expandedItemId) {
+                const prevId = expandedItemId;
+                expandedItemId = null;
+                renderAll();
+                scrollToItemCard(prevId);
+                return true;
+            }
+            if (activeFolderId) {
+                activeFolderId = null;
+                expandedItemId = null;
+                renderAll();
+                return true;
+            }
+            return false;
+        }
+
+        function handleHeaderBack() {
+            if (stepBackOneLevel()) {
+                syncHistoryState();
+                return;
+            }
+            window.location.href = "index.html";
+        }
+
+        window.addEventListener("popstate", () => {
+            isHandlingPopState = true;
+            try {
+                if (!stepBackOneLevel()) window.location.href = "index.html";
+            } finally {
+                isHandlingPopState = false;
+            }
+        });
+
         window.handleSearchInput = handleSearchInput;
+        window.handleHeaderBack = handleHeaderBack;
         window.openFolder = openFolder;
+        window.openItemFromGlobalSearch = openItemFromGlobalSearch;
         window.toggleExpandItem = toggleExpandItem;
-        window.handleBack = handleBack;
 
         onValue(citiesRef, (snap) => {
             folders = normalizeFolders(snap.val());
             renderAll();
-            revealApp();
+            revealAppWhenReady();
         });
     </script>
 </body>
