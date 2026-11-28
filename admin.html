@@ -380,9 +380,6 @@
         <header class="sticky top-0 z-40 w-full bg-[#121417]/95 backdrop-blur border-b border-white/10">
             <div class="max-w-3xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
-                    <button type="button" onclick="closeSectionPage()" aria-label="Back to Admin" title="Back" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/85 hover:text-blue-400 transition shrink-0">
-                        ←
-                    </button>
                     <h2 id="section-page-title" class="text-sm lg:text-base font-bold text-white truncate"></h2>
                 </div>
                 <button type="button" onclick="closeSectionPage()" aria-label="Close Section" title="Close" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/15 flex items-center justify-center text-white/85 hover:text-rose-400 text-xs font-bold transition shrink-0">
@@ -398,6 +395,8 @@
         let activeSectionBody = null;
         let activeSectionHomeParent = null;
         let activeSectionHomeNextSibling = null;
+        let sectionHistoryPushed = false;
+        let ignoreNextPopstate = false;
 
         function openSectionAsPage(sectionEl) {
             if (!sectionEl) return;
@@ -409,7 +408,7 @@
             if (!body || !overlay || !contentEl) return;
 
             if (activeSectionCard && activeSectionBody) {
-                closeSectionPage();
+                closeSectionPage(false);
             }
 
             activeSectionCard = sectionEl;
@@ -426,9 +425,14 @@
             contentEl.appendChild(body);
             overlay.classList.remove('hidden');
             overlay.scrollTop = 0;
+
+            if (!sectionHistoryPushed) {
+                history.pushState({ osdSectionPage: true }, '');
+                sectionHistoryPushed = true;
+            }
         }
 
-        function closeSectionPage() {
+        function closeSectionPage(syncHistory = true) {
             const overlay = document.getElementById('section-page-overlay');
             if (activeSectionBody && activeSectionHomeParent) {
                 activeSectionBody.classList.add('hidden');
@@ -445,7 +449,26 @@
             activeSectionBody = null;
             activeSectionHomeParent = null;
             activeSectionHomeNextSibling = null;
+
+            if (syncHistory && sectionHistoryPushed) {
+                sectionHistoryPushed = false;
+                ignoreNextPopstate = true;
+                history.back();
+            } else {
+                sectionHistoryPushed = false;
+            }
         }
+
+        window.addEventListener('popstate', () => {
+            if (ignoreNextPopstate) {
+                ignoreNextPopstate = false;
+                return;
+            }
+            if (activeSectionCard || sectionHistoryPushed) {
+                sectionHistoryPushed = false;
+                closeSectionPage(false);
+            }
+        });
 
         window.openSectionAsPage = openSectionAsPage;
         window.closeSectionPage = closeSectionPage;
