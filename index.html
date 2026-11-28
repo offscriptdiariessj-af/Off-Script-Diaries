@@ -436,6 +436,7 @@
     <script>
         const VALID_MODES = ['home', 'stats', 'vault'];
         const TOGETHER_START_MS = new Date(2025, 5, 18, 0, 0, 0, 0).getTime();
+        const OSD_STORY_PERSIST_KEY = 'osd_story_reader_open';
         let currentActiveMode = 'home';
         let backExitArmed = false;
         let backExitTimer = null;
@@ -447,6 +448,8 @@
         let citiesInsideFoldersCount = 0;
         let countriesInsideFoldersCount = 0;
         let isStoryOverlayOpen = false;
+        let storyHistoryPushed = false;
+        let ignoreStoryPopstate = false;
 
         function escapeStoryHtml(str = '') {
             return String(str || '')
@@ -528,12 +531,12 @@
 
             const blocks = parseOriginStoryStructure(originData);
             const headingsList = blocks
+                .filter(b => !b.isSubHeading && b.heading)
                 .map(b => b.heading)
-                .filter(Boolean)
                 .slice(0, 4);
 
             if (headingsList.length > 0) {
-                previewEl.innerHTML = headingsList.map((h, i) => `
+                previewEl.innerHTML = headingsList.map((h) => `
                     <div class="flex items-center gap-2 text-xs text-white/80 truncate">
                         <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
                         <span class="font-semibold text-white/90 truncate osd-story-subheading-stroke">${escapeStoryHtml(h)}</span>
@@ -549,7 +552,8 @@
                 : '';
         }
 
-        function openOriginStoryOverlay() {
+        function openOriginStoryOverlay(options = {}) {
+            const pushHist = options.pushHistory !== false;
             const data = resolveFirebaseSiteData();
             const origin = data.sections.origin || {};
             const overlay = document.getElementById('osd-story-reader-overlay');
@@ -589,14 +593,7 @@
             if (sectionsContainer) {
                 if (blocks.length > 0) {
                     sectionsContainer.innerHTML = blocks.map((b, idx) => {
-                        const badgeText = b.isSubHeading ? 'Sub Heading' : 'Chapter Heading';
-                        const badgeClass = b.isSubHeading
-                            ? 'bg-sky-400/15 text-sky-300 border-sky-400/30'
-                            : 'bg-blue-500/15 text-blue-300 border-blue-400/30';
-                        const headingClass = b.isSubHeading
-                            ? 'text-lg sm:text-xl font-bold text-sky-200 tracking-tight osd-story-subheading-stroke'
-                            : 'text-xl sm:text-2xl font-extrabold text-white tracking-tight osd-story-heading-stroke';
-
+                        const showHeading = !b.isSubHeading && Boolean(b.heading);
                         const paragraphsHtml = (b.description || '')
                             .split(/\n+/)
                             .map(p => p.trim())
@@ -608,10 +605,10 @@
                         <section class="osd-story-chapter-card rounded-3xl p-5 space-y-3">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-white/40">Part 0${idx + 1}</span>
-                                ${b.heading ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${badgeClass}">${badgeText}</span>` : ''}
+                                ${showHeading ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-blue-500/15 text-blue-300 border-blue-400/30">Chapter Heading</span>` : ''}
                             </div>
-                            ${b.heading ? `<h2 class="${headingClass}">${escapeStoryHtml(b.heading)}</h2>` : ''}
-                            ${paragraphsHtml ? `<div class="space-y-3 ${b.heading ? 'pt-1 border-t border-white/10' : ''}">${paragraphsHtml}</div>` : ''}
+                            ${showHeading ? `<h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight osd-story-heading-stroke">${escapeStoryHtml(b.heading)}</h2>` : ''}
+                            ${paragraphsHtml ? `<div class="space-y-3 ${showHeading ? 'pt-1 border-t border-white/10' : ''}">${paragraphsHtml}</div>` : ''}
                         </section>`;
                     }).join('');
                 } else {
@@ -623,18 +620,45 @@
             }
 
             isStoryOverlayOpen = true;
+            sessionStorage.setItem(OSD_STORY_PERSIST_KEY, '1');
             overlay.classList.remove('hidden');
-            overlay.scrollTop = 0;
+            if (options.resetScroll !== false) {
+                overlay.scrollTop = 0;
+            }
             document.documentElement.style.overflow = 'hidden';
+
+            if (pushHist && !storyHistoryPushed) {
+                try {
+                    history.pushState({ osdStoryOverlay: true, mode: currentActiveMode }, '', `#${currentActiveMode}`);
+                    storyHistoryPushed = true;
+                } catch {}
+            }
         }
 
-        function closeOriginStoryOverlay() {
+        function closeOriginStoryOverlay(syncHistory = true) {
             const overlay = document.getElementById('osd-story-reader-overlay');
             isStoryOverlayOpen = false;
+            sessionStorage.removeItem(OSD_STORY_PERSIST_KEY);
             if (overlay) {
                 overlay.classList.add('hidden');
             }
             document.documentElement.style.overflow = '';
+
+            if (syncHistory && storyHistoryPushed) {
+                storyHistoryPushed = false;
+                ignoreStoryPopstate = true;
+                try {
+                    history.back();
+                } catch {}
+            } else {
+                storyHistoryPushed = false;
+            }
+        }
+
+        function restoreStoryOverlayIfPersisted() {
+            if (sessionStorage.getItem(OSD_STORY_PERSIST_KEY) === '1' && !isStoryOverlayOpen) {
+                openOriginStoryOverlay({ pushHistory: false, resetScroll: false });
+            }
         }
 
         function countItemsInsideFolders(raw) {
@@ -915,8 +939,13 @@
         }
 
         window.addEventListener('popstate', () => {
+            if (ignoreStoryPopstate) {
+                ignoreStoryPopstate = false;
+                return;
+            }
             if (isStoryOverlayOpen) {
-                closeOriginStoryOverlay();
+                closeOriginStoryOverlay(false);
+                switchIndexMode('home', false);
                 pushHomeLockState();
                 return;
             }
@@ -1196,6 +1225,8 @@
             document.getElementById('capsule-heading').textContent = data.sections.capsule.heading || '';
             document.getElementById('capsule-message').textContent = data.sections.capsule.message || '';
             document.getElementById('capsule-destination').textContent = data.sections.capsule.nextDestination || '';
+
+            restoreStoryOverlayIfPersisted();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -1203,7 +1234,12 @@
             startTogetherTicker();
             try {
                 history.replaceState({ osdHomeTrap: true, mode: currentActiveMode }, '', `#${currentActiveMode}`);
-                history.pushState({ osdHomeTrap: true, mode: 'home' }, '', '#home');
+                if (sessionStorage.getItem(OSD_STORY_PERSIST_KEY) === '1') {
+                    history.pushState({ osdStoryOverlay: true, mode: currentActiveMode }, '', `#${currentActiveMode}`);
+                    storyHistoryPushed = true;
+                } else {
+                    history.pushState({ osdHomeTrap: true, mode: 'home' }, '', '#home');
+                }
             } catch {}
         });
         window.addEventListener('hashchange', () => switchIndexMode(getSavedMode(), false));
