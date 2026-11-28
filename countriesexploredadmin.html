@@ -6,372 +6,198 @@
     <title>Countries Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121417; color: #F8FAFC; }
-
-        @keyframes osdOrbitSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        body {
+            background-color: #121417;
+            color: #F8FAFC;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
-        @keyframes osdOrbitReverse {
-            0% { transform: rotate(360deg); }
-            100% { transform: rotate(0deg); }
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
         }
-        @keyframes osdCorePulse {
-            0%, 100% { transform: scale(0.94); opacity: 0.75; }
-            50% { transform: scale(1.06); opacity: 1; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .drag-ghost {
+            opacity: 0.45;
+            transform: scale(0.97);
         }
-        @keyframes osdShimmerSlide {
-            0% { transform: translateX(-110%); }
-            100% { transform: translateX(260%); }
-        }
-        @keyframes osdFloatUp {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-        }
-
-        .osd-ring-outer {
-            animation: osdOrbitSpin 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-        .osd-ring-inner {
-            animation: osdOrbitReverse 1.9s linear infinite;
-        }
-        .osd-core-glow {
-            animation: osdCorePulse 2.2s ease-in-out infinite;
-        }
-        .osd-shimmer-bar {
-            animation: osdShimmerSlide 1.55s ease-in-out infinite;
-        }
-        .osd-float {
-            animation: osdFloatUp 3s ease-in-out infinite;
+        .drag-target {
+            outline: 2px dashed #60a5fa;
+            outline-offset: 2px;
         }
     </style>
 </head>
-<body class="font-sans antialiased pb-20 overflow-hidden">
+<body class="font-sans antialiased pb-28">
 
-    <!-- LOADING SCREEN (SHOWN UNTIL FIREBASE LOADS) -->
-    <div id="osd-admin-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
-        <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-blue-600/15 blur-3xl osd-core-glow"></div>
+    <!-- HEADER -->
+    <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button type="button" onclick="handleHeaderBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                    ←
+                </button>
+                <div class="min-w-0">
+                    <h1 id="page-title" class="text-sm font-bold text-white truncate">Countries Explored 🌍</h1>
+                    <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="btn-new-folder" type="button" onclick="openFolderModal(null)" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 active:scale-95 transition">
+                    + New Folder
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOAST -->
+    <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-2.5 px-4 rounded-xl shadow-xl text-center">
+        Saved!
+    </div>
+
+    <!-- MAIN VIEWER-STYLE CONTAINER -->
+    <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+
+        <!-- FOLDERS VIEW (LEVEL 1) -->
+        <div id="folders-view" class="space-y-4">
+            <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                <div class="text-2xl">🌍</div>
+                <p class="text-sm font-bold text-white">No Country Folders Yet</p>
+                <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
+            </div>
+            <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
         </div>
 
-        <div class="relative z-10 flex flex-col items-center text-center max-w-xs w-full osd-float">
-            <div class="relative w-24 h-24 flex items-center justify-center mb-6">
-                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-500/40 osd-ring-outer"></div>
-                <div class="absolute inset-2.5 rounded-full border border-dashed border-sky-300/35 osd-ring-inner"></div>
-                <div class="w-16 h-16 rounded-full bg-[#1E2126] border border-blue-400/40 shadow-2xl shadow-blue-950/60 overflow-hidden flex items-center justify-center">
-                    <img src="OSD.jpg" alt="Off Script Diaries Logo" class="w-full h-full object-cover aspect-square" />
+        <!-- ITEMS INSIDE FOLDER VIEW (LEVEL 2) -->
+        <div id="items-view" class="hidden space-y-4">
+            <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
+                <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
+                    <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
+                </div>
+                <div class="p-4">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country Folder</span>
+                    <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
+                    <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
                 </div>
             </div>
 
-            <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
-            <h2 id="admin-preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Our story is loading</p>
-
-            <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
-                <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
+            <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
+                <div class="text-2xl">✈️</div>
+                <p class="text-sm font-bold text-white">No Countries in This Folder</p>
+                <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
             </div>
+
+            <div id="items-list" class="space-y-3"></div>
+        </div>
+
+    </main>
+
+    <!-- FLOATING PLUS BUTTON (INSIDE FOLDER ONLY) -->
+    <button id="fab-add-item" type="button" onclick="openItemModal(null)" title="Add Country" class="hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold shadow-2xl shadow-blue-950/80 flex items-center justify-center active:scale-95 transition">
+        +
+    </button>
+
+    <!-- BOTTOM SELECTION ACTION BAR (APPEARS ON LONG-CLICK HOLD) -->
+    <div id="selection-bar" class="hidden fixed bottom-5 inset-x-4 max-w-md mx-auto z-50 rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/40 px-4 py-3 shadow-2xl flex items-center justify-between">
+        <div class="min-w-0 pr-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 block">Selected</span>
+            <span id="selection-label" class="text-xs font-semibold text-white truncate block"></span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="editSelectedEntity()" title="Edit Info" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center active:scale-95 transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                </svg>
+            </button>
+            <button type="button" onclick="deleteSelectedEntity()" title="Delete" class="w-10 h-10 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-300 flex items-center justify-center active:scale-95 transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+            </button>
+            <button type="button" onclick="clearSelection()" class="px-2.5 h-10 rounded-xl bg-white/10 text-xs font-semibold text-white/75">
+                ✕
+            </button>
         </div>
     </div>
 
-    <!-- MAIN SHELL (HIDDEN UNTIL FIREBASE LOADS) -->
-    <div id="osd-admin-shell" class="opacity-0 pointer-events-none transition-opacity duration-500">
-
-        <!-- HEADER -->
-        <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur border-b border-white/10">
-            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <a href="countriesexplored.html" class="w-9 h-9 rounded-full bg-[#1E2126] border border-white/10 flex items-center justify-center text-xs text-white/80 hover:text-blue-400 shrink-0 transition" title="View Countries Page">←</a>
-                    <div class="truncate">
-                        <h1 class="text-sm font-bold text-white truncate">Countries Explored Admin 🌍</h1>
-                        <p id="admin-db-status" class="text-[10px] text-blue-400 truncate">Connecting Firebase...</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <a href="admin.html" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold">Admin</a>
-                    <button type="button" onclick="saveCountriesToFirebase()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">Save</button>
-                </div>
+    <!-- FOLDER CREATE / EDIT MODAL -->
+    <div id="folder-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New Folder</h3>
+                <button type="button" onclick="closeFolderModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
             </div>
-        </header>
-
-        <!-- TOAST -->
-        <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-3 px-4 rounded-xl shadow-xl text-center">
-            Saved!
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Title</label>
+                <input id="fld-title" type="text" placeholder="Folder title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+                <label class="block text-[11px] text-blue-400 mb-1">Google Drive Link (Thumbnail)</label>
+                <input id="fld-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Description</label>
+                <textarea id="fld-desc" rows="3" placeholder="Folder description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            <button type="button" onclick="saveFolderModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                Save Folder
+            </button>
         </div>
+    </div>
 
-        <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+    <!-- COUNTRY CREATE / EDIT MODAL -->
+    <div id="item-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 id="item-modal-heading" class="text-sm font-bold text-white">Add Country</h3>
+                <button type="button" onclick="closeItemModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
+            </div>
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Country name</label>
+                <input id="itm-name" type="text" placeholder="Country name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Title</label>
+                <input id="itm-title" type="text" placeholder="Title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+                <label class="block text-[11px] text-blue-400 mb-1">Google drive link</label>
+                <input id="itm-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+                <label class="block text-[11px] text-white/70 mb-1">Description</label>
+                <textarea id="itm-desc" rows="3" placeholder="Description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            <button type="button" onclick="saveItemModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
+                Save Country
+            </button>
+        </div>
+    </div>
 
-            <!-- PAGE HEADER SETTINGS -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
+    <!-- DETAIL VIEW MODAL (VIEWER EXPERIENCE WHEN TAPPING A COUNTRY CARD) -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if(event.target===this) closeDetailModal()">
+        <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div id="detail-img-wrap" class="hidden h-56 bg-black relative">
+                <img id="detail-img" src="" alt="" class="w-full h-full object-cover" />
+                <button type="button" onclick="closeDetailModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</button>
+            </div>
+            <div class="p-5 space-y-2">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-white">Page Header</h2>
-                    <span class="text-xs font-extrabold text-blue-400">Total: <span id="countries-total-count">0</span></span>
+                    <span id="detail-name" class="text-[11px] font-bold uppercase tracking-wider text-blue-400"></span>
+                    <button id="detail-close-noimg" type="button" onclick="closeDetailModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
                 </div>
-                <input id="inp-countries-heading" type="text" placeholder="Heading (e.g. Countries Explored)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                <input id="inp-countries-desc" type="text" placeholder="Subtitle / Description" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-            </section>
-
-            <!-- ADD NEW COUNTRY FORM -->
-            <section class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-3">
-                <h2 class="text-sm font-bold text-white">Add Country</h2>
-
-                <div class="flex items-center gap-3.5">
-                    <img id="new-country-round-preview" src="" alt="Round Cover Preview" class="w-16 h-16 rounded-full object-cover aspect-square border-2 border-blue-400/60 bg-[#121417] shrink-0" />
-                    <div class="flex-1 space-y-2">
-                        <input id="new-country-name" type="text" placeholder="Country name (manual, e.g. Japan)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input id="new-country-title" type="text" placeholder="Title (e.g. Tokyo Rainy Nights)" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] text-blue-400 mb-1">Round Cover Picture Media Link</label>
-                    <input id="new-country-cover" type="text" oninput="updateNewCountryCoverPreview()" placeholder="Google Drive link or image URL" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                </div>
-
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Description</label>
-                    <textarea id="new-country-desc" rows="2" placeholder="Write description..." class="w-full p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
-                </div>
-
-                <button type="button" onclick="addCountryEntry()" class="w-full h-10 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/40 text-blue-300 text-xs font-bold transition">
-                    + Add Country
-                </button>
-            </section>
-
-            <!-- EXISTING COUNTRIES EDITOR -->
-            <section class="space-y-3">
-                <h2 class="text-sm font-bold text-white px-1">Saved Countries</h2>
-                <div id="countries-editor-list" class="space-y-3"></div>
-            </section>
-
-        </main>
+                <h3 id="detail-title" class="text-lg font-extrabold text-white"></h3>
+                <p id="detail-desc" class="text-xs text-white/75 leading-relaxed whitespace-pre-line pt-1"></p>
+            </div>
+        </div>
     </div>
 
     <script src="js/store.js"></script>
-    <script>
-        let rtdbSiteData = null;
-        let countriesItems = [];
-        let hasLoadedFromFirebase = false;
-        const statusEl = document.getElementById('admin-db-status');
-
-        function revealAdminAfterFirebaseLoad() {
-            if (hasLoadedFromFirebase) return;
-            hasLoadedFromFirebase = true;
-
-            const preloader = document.getElementById('osd-admin-preloader');
-            const shell = document.getElementById('osd-admin-shell');
-
-            document.body.classList.remove('overflow-hidden');
-            if (shell) {
-                shell.classList.remove('opacity-0', 'pointer-events-none');
-                shell.classList.add('opacity-100');
-            }
-            if (preloader) {
-                preloader.classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => preloader.remove(), 520);
-            }
-        }
-
-        function setAdminStatus(text, isError = false) {
-            if (!statusEl) return;
-            statusEl.textContent = text;
-            statusEl.className = isError
-                ? 'text-[10px] text-rose-400 truncate'
-                : 'text-[10px] text-blue-400 truncate';
-        }
-
-        function showToast(msg = 'Saved to Firebase!') {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2000);
-        }
-
-        function extractDriveFileId(rawUrl = '') {
-            const url = String(rawUrl || '').trim();
-            if (!url) return '';
-            const patterns = [
-                /\/file\/d\/([a-zA-Z0-9_-]+)/,
-                /\/d\/([a-zA-Z0-9_-]+)/,
-                /[?&]id=([a-zA-Z0-9_-]+)/,
-                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
-            ];
-            for (const re of patterns) {
-                const match = url.match(re);
-                if (match && match[1]) return match[1];
-            }
-            return '';
-        }
-
-        function resolveRoundCoverUrl(rawUrl) {
-            const cleaned = String(rawUrl || '').trim();
-            if (!cleaned) return '';
-            let parsed = cleaned;
-            if (typeof parseDriveMedia === 'function') {
-                const storeResult = parseDriveMedia(cleaned, 'image');
-                if (storeResult && typeof storeResult === 'string') {
-                    parsed = storeResult.trim();
-                }
-            }
-            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
-            if (driveId) {
-                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
-            }
-            return parsed;
-        }
-
-        function escapeAttr(val = '') {
-            return String(val || '')
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        }
-
-        function normalizeCountriesList(rawList) {
-            if (!rawList) return [];
-            const arr = Array.isArray(rawList)
-                ? rawList
-                : (typeof rawList === 'object' ? Object.values(rawList) : []);
-            return arr
-                .map((item, idx) => {
-                    if (typeof item === 'string') {
-                        const name = item.trim();
-                        if (!name) return null;
-                        return { id: `country_${idx}`, name, title: '', description: '', coverUrl: '' };
-                    }
-                    if (!item || typeof item !== 'object') return null;
-                    const name = String(item.name || item.country || '').trim();
-                    const title = String(item.title || '').trim();
-                    const description = String(item.description || item.note || item.desc || '').trim();
-                    const coverUrl = String(item.coverUrl || item.image || item.photoUrl || '').trim();
-                    if (!name && !title && !description && !coverUrl) return null;
-                    return {
-                        id: String(item.id || `country_${idx}`),
-                        name,
-                        title,
-                        description,
-                        coverUrl
-                    };
-                })
-                .filter(Boolean);
-        }
-
-        function updateTotalCountDisplay() {
-            const el = document.getElementById('countries-total-count');
-            if (el) el.textContent = String(countriesItems.length);
-        }
-
-        function updateNewCountryCoverPreview() {
-            const inputVal = document.getElementById('new-country-cover').value;
-            const imgEl = document.getElementById('new-country-round-preview');
-            imgEl.src = resolveRoundCoverUrl(inputVal);
-        }
-
-        function renderCountriesEditor() {
-            updateTotalCountDisplay();
-            const listEl = document.getElementById('countries-editor-list');
-            if (!listEl) return;
-
-            if (countriesItems.length === 0) {
-                listEl.innerHTML = `<div class="p-5 rounded-2xl bg-[#1E2126] border border-white/10 text-center text-xs text-white/50">No countries added yet.</div>`;
-                return;
-            }
-
-            listEl.innerHTML = countriesItems.map((country, idx) => {
-                const roundSrc = resolveRoundCoverUrl(country.coverUrl);
-                return `
-                <div class="p-4 rounded-2xl bg-[#1E2126] border border-white/10 space-y-2.5">
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <img id="country-round-img-${idx}" src="${escapeAttr(roundSrc)}" alt="${escapeAttr(country.title || country.name || 'Country')}" class="w-12 h-12 rounded-full object-cover aspect-square border border-blue-400/50 bg-[#121417] shrink-0" />
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 truncate">0${idx + 1} • ${escapeAttr(country.name || 'Country')}</span>
-                        </div>
-                        <button type="button" onclick="removeCountryEntry(${idx})" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 shrink-0">Remove</button>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" value="${escapeAttr(country.name)}" oninput="updateCountryField(${idx}, 'name', this.value)" placeholder="Country name" class="h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                        <input type="text" value="${escapeAttr(country.title)}" oninput="updateCountryField(${idx}, 'title', this.value)" placeholder="Title" class="h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-                    </div>
-
-                    <input type="text" value="${escapeAttr(country.coverUrl)}" oninput="updateCountryCover(${idx}, this.value)" placeholder="Round cover picture media link" class="w-full h-9 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
-
-                    <textarea rows="2" oninput="updateCountryField(${idx}, 'description', this.value)" placeholder="Description" class="w-full p-2.5 rounded-xl bg-[#121417] border border-white/10 text-xs">${escapeAttr(country.description)}</textarea>
-                </div>`;
-            }).join('');
-        }
-
-        function updateCountryField(idx, field, val) {
-            if (!countriesItems[idx]) return;
-            countriesItems[idx][field] = val;
-        }
-
-        function updateCountryCover(idx, val) {
-            if (!countriesItems[idx]) return;
-            countriesItems[idx].coverUrl = val;
-            const imgEl = document.getElementById(`country-round-img-${idx}`);
-            if (imgEl) imgEl.src = resolveRoundCoverUrl(val);
-        }
-
-        function removeCountryEntry(idx) {
-            countriesItems.splice(idx, 1);
-            renderCountriesEditor();
-        }
-
-        function addCountryEntry() {
-            const nameEl = document.getElementById('new-country-name');
-            const titleEl = document.getElementById('new-country-title');
-            const coverEl = document.getElementById('new-country-cover');
-            const descEl = document.getElementById('new-country-desc');
-
-            const name = nameEl.value.trim();
-            const title = titleEl.value.trim();
-            const coverUrl = coverEl.value.trim();
-            const description = descEl.value.trim();
-
-            if (!name && !title && !description && !coverUrl) return;
-
-            countriesItems.push({
-                id: `country_${Date.now()}`,
-                name,
-                title,
-                description,
-                coverUrl
-            });
-
-            nameEl.value = '';
-            titleEl.value = '';
-            coverEl.value = '';
-            descEl.value = '';
-            updateNewCountryCoverPreview();
-            renderCountriesEditor();
-        }
-
-        function hydrateFromSiteData(rawData) {
-            const src = rawData && typeof rawData === 'object' ? rawData : {};
-            const sections = src.sections && typeof src.sections === 'object' ? src.sections : {};
-            const telemetry = sections.telemetry && typeof sections.telemetry === 'object' ? sections.telemetry : {};
-            const explored = sections.explored && typeof sections.explored === 'object' ? sections.explored : {};
-
-            document.getElementById('inp-countries-heading').value = explored.countriesHeading || '';
-            document.getElementById('inp-countries-desc').value = explored.countriesDescription || '';
-
-            countriesItems = normalizeCountriesList(
-                explored.countriesList ||
-                sections.countriesExploredList ||
-                sections.countriesList ||
-                telemetry.countriesList
-            );
-
-            renderCountriesEditor();
-        }
-
-        window.updateNewCountryCoverPreview = updateNewCountryCoverPreview;
-        window.addCountryEntry = addCountryEntry;
-        window.removeCountryEntry = removeCountryEntry;
-        window.updateCountryField = updateCountryField;
-        window.updateCountryCover = updateCountryCover;
-    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -389,62 +215,639 @@
 
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
-        const siteDataRef = ref(rtdb, "siteContent");
+        const countriesRef = ref(rtdb, "countriesData");
+        const telemetryCountriesRef = ref(rtdb, "siteContent/sections/telemetry/coffeeCups");
 
-        async function saveCountriesToFirebase() {
-            const base = rtdbSiteData && typeof rtdbSiteData === "object"
-                ? JSON.parse(JSON.stringify(rtdbSiteData))
-                : {};
-            if (!base.sections || typeof base.sections !== "object") base.sections = {};
-            if (!base.sections.explored || typeof base.sections.explored !== "object") base.sections.explored = {};
-            if (!base.sections.telemetry || typeof base.sections.telemetry !== "object") base.sections.telemetry = {};
+        let folders = [];
+        let activeFolderId = null;
+        let selectedState = null; // { type: 'folder' | 'item', id: string }
+        let editingFolderId = null;
+        let editingItemId = null;
+        let lockEnforced = false;
 
-            const cleanedCountries = countriesItems
-                .map((item, idx) => ({
-                    id: item.id || `country_${idx}`,
-                    name: String(item.name || "").trim(),
-                    title: String(item.title || "").trim(),
-                    description: String(item.description || "").trim(),
-                    coverUrl: String(item.coverUrl || "").trim()
-                }))
-                .filter(c => c.name || c.title || c.description || c.coverUrl);
+        // Drag & Hold Sorting State
+        let holdTimer = null;
+        let isDragging = false;
+        let dragType = null;
+        let dragSourceId = null;
+        let dragOverId = null;
+        let suppressNextClick = false;
+        let startX = 0;
+        let startY = 0;
 
-            base.sections.explored.countriesHeading = document.getElementById("inp-countries-heading").value.trim();
-            base.sections.explored.countriesDescription = document.getElementById("inp-countries-desc").value.trim();
-            base.sections.explored.countriesList = cleanedCountries;
-            base.sections.telemetry.coffeeCups = String(cleanedCountries.length);
-            base.updatedAtMs = Date.now();
+        function showToast(msg = "Saved!") {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.classList.remove("hidden");
+            setTimeout(() => t.classList.add("hidden"), 1800);
+        }
 
-            try {
-                await set(siteDataRef, base);
-                rtdbSiteData = base;
-                countriesItems = cleanedCountries;
-                renderCountriesEditor();
-                setAdminStatus("Firebase Live • Countries saved");
-                showToast("Countries saved to Firebase!");
-            } catch (err) {
-                setAdminStatus(`Firebase save error: ${err.message || "Failed"}`, true);
-                showToast("Save failed!");
+        function extractDriveFileId(rawUrl = "") {
+            const url = String(rawUrl || "").trim();
+            if (!url) return "";
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /[?&]id=([a-zA-Z0-9_-]+)/,
+                /\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const re of patterns) {
+                const match = url.match(re);
+                if (match && match[1]) return match[1];
+            }
+            return "";
+        }
+
+        function resolveMediaUrl(rawUrl) {
+            const cleaned = String(rawUrl || "").trim();
+            if (!cleaned) return "";
+            let parsed = cleaned;
+            if (typeof parseDriveMedia === "function") {
+                const res = parseDriveMedia(cleaned, "image");
+                if (res && typeof res === "string") parsed = res.trim();
+            }
+            const driveId = extractDriveFileId(cleaned) || extractDriveFileId(parsed);
+            if (driveId) {
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+            }
+            return parsed;
+        }
+
+        function normalizeFolders(raw) {
+            if (!raw || typeof raw !== "object") return [];
+            const arr = Array.isArray(raw) ? raw : Object.values(raw);
+            return arr
+                .filter(Boolean)
+                .map((f, idx) => {
+                    const rawItems = f.items && typeof f.items === "object"
+                        ? (Array.isArray(f.items) ? f.items : Object.values(f.items))
+                        : [];
+                    const items = rawItems
+                        .filter(Boolean)
+                        .map((it, iIdx) => ({
+                            id: String(it.id || `country_${Date.now()}_${iIdx}`),
+                            name: String(it.name || ""),
+                            title: String(it.title || ""),
+                            driveLink: String(it.driveLink || ""),
+                            description: String(it.description || ""),
+                            order: typeof it.order === "number" ? it.order : iIdx
+                        }))
+                        .sort((a, b) => a.order - b.order);
+
+                    return {
+                        id: String(f.id || `fld_${Date.now()}_${idx}`),
+                        title: String(f.title || "Untitled Folder"),
+                        driveLink: String(f.driveLink || ""),
+                        description: String(f.description || ""),
+                        order: typeof f.order === "number" ? f.order : idx,
+                        items
+                    };
+                })
+                .sort((a, b) => a.order - b.order);
+        }
+
+        async function persistToFirebase(toastMsg = "Saved!") {
+            const payload = {};
+            let totalCountries = 0;
+
+            folders.forEach((f, fIdx) => {
+                f.order = fIdx;
+                const itemsObj = {};
+                (f.items || []).forEach((it, iIdx) => {
+                    it.order = iIdx;
+                    totalCountries += 1;
+                    itemsObj[it.id] = {
+                        id: it.id,
+                        name: it.name,
+                        title: it.title,
+                        driveLink: it.driveLink,
+                        description: it.description,
+                        order: iIdx
+                    };
+                });
+                payload[f.id] = {
+                    id: f.id,
+                    title: f.title,
+                    driveLink: f.driveLink,
+                    description: f.description,
+                    order: fIdx,
+                    items: itemsObj
+                };
+            });
+
+            await set(countriesRef, payload);
+            await set(telemetryCountriesRef, String(totalCountries));
+            showToast(toastMsg);
+        }
+
+        function escapeHtml(str = "") {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function updateHeaderUI() {
+            const titleEl = document.getElementById("page-title");
+            const subEl = document.getElementById("page-subtitle");
+            const newFolderBtn = document.getElementById("btn-new-folder");
+            const fabBtn = document.getElementById("fab-add-item");
+            const foldersView = document.getElementById("folders-view");
+            const itemsView = document.getElementById("items-view");
+
+            const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+
+            if (!activeFolderId) {
+                titleEl.textContent = "Countries Explored 🌍";
+                subEl.textContent = `${folders.length} Folders • ${totalCount} Countries`;
+                newFolderBtn.classList.remove("hidden");
+                fabBtn.classList.add("hidden");
+                foldersView.classList.remove("hidden");
+                itemsView.classList.add("hidden");
+            } else {
+                const folder = folders.find(f => f.id === activeFolderId);
+                if (!folder) {
+                    activeFolderId = null;
+                    updateHeaderUI();
+                    return;
+                }
+                titleEl.textContent = folder.title;
+                subEl.textContent = `${folder.items.length} Countries inside`;
+                newFolderBtn.classList.add("hidden");
+                fabBtn.classList.remove("hidden");
+                foldersView.classList.add("hidden");
+                itemsView.classList.remove("hidden");
+
+                const coverSrc = resolveMediaUrl(folder.driveLink);
+                const coverWrap = document.getElementById("folder-banner-cover-wrap");
+                const coverImg = document.getElementById("folder-banner-cover");
+                if (coverSrc) {
+                    coverImg.src = coverSrc;
+                    coverWrap.classList.remove("hidden");
+                } else {
+                    coverWrap.classList.add("hidden");
+                }
+                document.getElementById("folder-banner-title").textContent = folder.title;
+                const descEl = document.getElementById("folder-banner-desc");
+                descEl.textContent = folder.description || "";
+                descEl.classList.toggle("hidden", !folder.description);
             }
         }
 
-        window.saveCountriesToFirebase = saveCountriesToFirebase;
+        function renderFolders() {
+            const grid = document.getElementById("folders-grid");
+            const empty = document.getElementById("folders-empty");
+            empty.classList.toggle("hidden", folders.length > 0);
 
-        onValue(
-            siteDataRef,
-            (snap) => {
-                const val = snap.val();
-                rtdbSiteData = val && typeof val === "object" ? val : {};
-                revealAdminAfterFirebaseLoad();
-                hydrateFromSiteData(rtdbSiteData);
-                setAdminStatus("Firebase Live • Countries Explored");
-            },
-            (err) => {
-                const preStatus = document.getElementById("admin-preloader-status");
-                if (preStatus) preStatus.textContent = "Unable to load from Firebase";
-                setAdminStatus(`Firebase read error: ${err.message || "Error"}`, true);
+            grid.innerHTML = folders.map(f => {
+                const cover = resolveMediaUrl(f.driveLink);
+                const isSelected = selectedState && selectedState.type === "folder" && selectedState.id === f.id;
+                const mediaHtml = cover
+                    ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
+
+                return `
+                <div
+                    data-entity-type="folder"
+                    data-entity-id="${escapeHtml(f.id)}"
+                    class="rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-hidden transition cursor-pointer"
+                >
+                    <div class="h-32 bg-black relative">
+                        ${mediaHtml}
+                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
+                            ${f.items.length}
+                        </span>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
+                        <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
+                    </div>
+                </div>`;
+            }).join("");
+
+            bindCardGestures(grid, "folder");
+        }
+
+        function renderItems() {
+            const folder = folders.find(f => f.id === activeFolderId);
+            if (!folder) return;
+
+            const list = document.getElementById("items-list");
+            const empty = document.getElementById("items-empty");
+            empty.classList.toggle("hidden", folder.items.length > 0);
+
+            list.innerHTML = folder.items.map(it => {
+                const imgSrc = resolveMediaUrl(it.driveLink);
+                const isSelected = selectedState && selectedState.type === "item" && selectedState.id === it.id;
+
+                return `
+                <div
+                    data-entity-type="item"
+                    data-entity-id="${escapeHtml(it.id)}"
+                    class="rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-hidden transition cursor-pointer"
+                >
+                    ${imgSrc ? `
+                    <div class="h-44 bg-black">
+                        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.name)}" class="w-full h-full object-cover pointer-events-none" />
+                    </div>` : ""}
+                    <div class="p-4">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
+                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
+                        ${it.description ? `<p class="text-xs text-white/65 mt-1 line-clamp-3 leading-relaxed">${escapeHtml(it.description)}</p>` : ""}
+                    </div>
+                </div>`;
+            }).join("");
+
+            bindCardGestures(list, "item");
+        }
+
+        function renderAll() {
+            updateHeaderUI();
+            if (!activeFolderId) {
+                renderFolders();
+            } else {
+                renderItems();
             }
-        );
+            updateSelectionBar();
+        }
+
+        function updateSelectionBar() {
+            const bar = document.getElementById("selection-bar");
+            const label = document.getElementById("selection-label");
+            const fab = document.getElementById("fab-add-item");
+
+            if (!selectedState) {
+                bar.classList.add("hidden");
+                if (activeFolderId) fab.classList.remove("hidden");
+                return;
+            }
+
+            if (selectedState.type === "folder") {
+                const f = folders.find(x => x.id === selectedState.id);
+                if (!f) {
+                    selectedState = null;
+                    bar.classList.add("hidden");
+                    return;
+                }
+                label.textContent = f.title;
+            } else {
+                const folder = folders.find(x => x.id === activeFolderId);
+                const it = folder ? folder.items.find(x => x.id === selectedState.id) : null;
+                if (!it) {
+                    selectedState = null;
+                    bar.classList.add("hidden");
+                    return;
+                }
+                label.textContent = `${it.name}${it.title ? " • " + it.title : ""}`;
+            }
+
+            fab.classList.add("hidden");
+            bar.classList.remove("hidden");
+        }
+
+        function clearSelection() {
+            selectedState = null;
+            renderAll();
+        }
+
+        function bindCardGestures(container, type) {
+            const cards = container.querySelectorAll(`[data-entity-type="${type}"]`);
+            cards.forEach(card => {
+                const id = card.getAttribute("data-entity-id");
+
+                card.addEventListener("pointerdown", (e) => {
+                    if (e.button !== 0 && e.pointerType === "mouse") return;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    dragOverId = null;
+
+                    clearTimeout(holdTimer);
+                    holdTimer = setTimeout(() => {
+                        selectedState = { type, id };
+                        isDragging = true;
+                        dragType = type;
+                        dragSourceId = id;
+                        suppressNextClick = true;
+                        if (navigator.vibrate) navigator.vibrate(25);
+                        renderAll();
+                        const activeCard = container.querySelector(`[data-entity-id="${id}"]`);
+                        if (activeCard) activeCard.classList.add("drag-ghost");
+                    }, 420);
+                });
+
+                card.addEventListener("pointermove", (e) => {
+                    if (!isDragging) {
+                        if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) {
+                            clearTimeout(holdTimer);
+                        }
+                        return;
+                    }
+
+                    e.preventDefault();
+                    const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+                    const targetCard = elUnder ? elUnder.closest(`[data-entity-type="${dragType}"]`) : null;
+
+                    container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
+                    if (targetCard) {
+                        const targetId = targetCard.getAttribute("data-entity-id");
+                        if (targetId && targetId !== dragSourceId) {
+                            dragOverId = targetId;
+                            targetCard.classList.add("drag-target");
+                        } else {
+                            dragOverId = null;
+                        }
+                    } else {
+                        dragOverId = null;
+                    }
+                });
+
+                const finishPointer = async () => {
+                    clearTimeout(holdTimer);
+                    if (isDragging) {
+                        const srcId = dragSourceId;
+                        const dstId = dragOverId;
+                        const dType = dragType;
+
+                        isDragging = false;
+                        dragSourceId = null;
+                        dragOverId = null;
+                        dragType = null;
+
+                        container.querySelectorAll(".drag-ghost, .drag-target").forEach(el => {
+                            el.classList.remove("drag-ghost", "drag-target");
+                        });
+
+                        if (srcId && dstId && srcId !== dstId) {
+                            if (dType === "folder") {
+                                const fromIdx = folders.findIndex(x => x.id === srcId);
+                                const toIdx = folders.findIndex(x => x.id === dstId);
+                                if (fromIdx !== -1 && toIdx !== -1) {
+                                    const [moved] = folders.splice(fromIdx, 1);
+                                    folders.splice(toIdx, 0, moved);
+                                    renderAll();
+                                    await persistToFirebase("Folder order updated");
+                                }
+                            } else if (dType === "item") {
+                                const folder = folders.find(x => x.id === activeFolderId);
+                                if (folder) {
+                                    const fromIdx = folder.items.findIndex(x => x.id === srcId);
+                                    const toIdx = folder.items.findIndex(x => x.id === dstId);
+                                    if (fromIdx !== -1 && toIdx !== -1) {
+                                        const [moved] = folder.items.splice(fromIdx, 1);
+                                        folder.items.splice(toIdx, 0, moved);
+                                        renderAll();
+                                        await persistToFirebase("Country order updated");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                card.addEventListener("pointerup", finishPointer);
+                card.addEventListener("pointercancel", finishPointer);
+
+                card.addEventListener("click", () => {
+                    if (suppressNextClick) {
+                        suppressNextClick = false;
+                        return;
+                    }
+                    if (selectedState) {
+                        clearSelection();
+                        return;
+                    }
+                    if (type === "folder") {
+                        activeFolderId = id;
+                        renderAll();
+                    } else {
+                        openDetailModal(id);
+                    }
+                });
+            });
+        }
+
+        function handleHeaderBack() {
+            if (selectedState) {
+                clearSelection();
+                return;
+            }
+            if (activeFolderId) {
+                activeFolderId = null;
+                renderAll();
+                return;
+            }
+            window.location.href = "admin.html";
+        }
+
+        function openFolderModal(folderId = null) {
+            editingFolderId = folderId;
+            const heading = document.getElementById("folder-modal-heading");
+            const titleInp = document.getElementById("fld-title");
+            const driveInp = document.getElementById("fld-drive");
+            const descInp = document.getElementById("fld-desc");
+
+            if (folderId) {
+                const f = folders.find(x => x.id === folderId);
+                heading.textContent = "Edit Folder";
+                titleInp.value = f ? f.title : "";
+                driveInp.value = f ? f.driveLink : "";
+                descInp.value = f ? f.description : "";
+            } else {
+                heading.textContent = "New Folder";
+                titleInp.value = "";
+                driveInp.value = "";
+                descInp.value = "";
+            }
+            document.getElementById("folder-modal").classList.remove("hidden");
+        }
+
+        function closeFolderModal() {
+            document.getElementById("folder-modal").classList.add("hidden");
+            editingFolderId = null;
+        }
+
+        async function saveFolderModal() {
+            const title = document.getElementById("fld-title").value.trim();
+            const driveLink = document.getElementById("fld-drive").value.trim();
+            const description = document.getElementById("fld-desc").value.trim();
+
+            if (!title) {
+                showToast("Enter folder title");
+                return;
+            }
+
+            if (editingFolderId) {
+                const f = folders.find(x => x.id === editingFolderId);
+                if (f) {
+                    f.title = title;
+                    f.driveLink = driveLink;
+                    f.description = description;
+                }
+            } else {
+                folders.push({
+                    id: `fld_${Date.now()}`,
+                    title,
+                    driveLink,
+                    description,
+                    order: folders.length,
+                    items: []
+                });
+            }
+
+            closeFolderModal();
+            selectedState = null;
+            renderAll();
+            await persistToFirebase("Folder saved!");
+        }
+
+        function openItemModal(itemId = null) {
+            editingItemId = itemId;
+            const heading = document.getElementById("item-modal-heading");
+            const nameInp = document.getElementById("itm-name");
+            const titleInp = document.getElementById("itm-title");
+            const driveInp = document.getElementById("itm-drive");
+            const descInp = document.getElementById("itm-desc");
+
+            if (itemId) {
+                const folder = folders.find(x => x.id === activeFolderId);
+                const it = folder ? folder.items.find(x => x.id === itemId) : null;
+                heading.textContent = "Edit Country";
+                nameInp.value = it ? it.name : "";
+                titleInp.value = it ? it.title : "";
+                driveInp.value = it ? it.driveLink : "";
+                descInp.value = it ? it.description : "";
+            } else {
+                heading.textContent = "Add Country";
+                nameInp.value = "";
+                titleInp.value = "";
+                driveInp.value = "";
+                descInp.value = "";
+            }
+            document.getElementById("item-modal").classList.remove("hidden");
+        }
+
+        function closeItemModal() {
+            document.getElementById("item-modal").classList.add("hidden");
+            editingItemId = null;
+        }
+
+        async function saveItemModal() {
+            const name = document.getElementById("itm-name").value.trim();
+            const title = document.getElementById("itm-title").value.trim();
+            const driveLink = document.getElementById("itm-drive").value.trim();
+            const description = document.getElementById("itm-desc").value.trim();
+
+            if (!name) {
+                showToast("Enter country name");
+                return;
+            }
+
+            const folder = folders.find(x => x.id === activeFolderId);
+            if (!folder) return;
+
+            if (editingItemId) {
+                const it = folder.items.find(x => x.id === editingItemId);
+                if (it) {
+                    it.name = name;
+                    it.title = title;
+                    it.driveLink = driveLink;
+                    it.description = description;
+                }
+            } else {
+                folder.items.push({
+                    id: `country_${Date.now()}`,
+                    name,
+                    title,
+                    driveLink,
+                    description,
+                    order: folder.items.length
+                });
+            }
+
+            closeItemModal();
+            selectedState = null;
+            renderAll();
+            await persistToFirebase("Country saved!");
+        }
+
+        function editSelectedEntity() {
+            if (!selectedState) return;
+            const { type, id } = selectedState;
+            selectedState = null;
+            updateSelectionBar();
+            if (type === "folder") {
+                openFolderModal(id);
+            } else {
+                openItemModal(id);
+            }
+        }
+
+        async function deleteSelectedEntity() {
+            if (!selectedState) return;
+            const { type, id } = selectedState;
+            if (type === "folder") {
+                folders = folders.filter(x => x.id !== id);
+            } else {
+                const folder = folders.find(x => x.id === activeFolderId);
+                if (folder) {
+                    folder.items = folder.items.filter(x => x.id !== id);
+                }
+            }
+            selectedState = null;
+            renderAll();
+            await persistToFirebase("Deleted!");
+        }
+
+        function openDetailModal(itemId) {
+            const folder = folders.find(x => x.id === activeFolderId);
+            const it = folder ? folder.items.find(x => x.id === itemId) : null;
+            if (!it) return;
+
+            const imgSrc = resolveMediaUrl(it.driveLink);
+            const imgWrap = document.getElementById("detail-img-wrap");
+            const imgEl = document.getElementById("detail-img");
+            const closeNoImg = document.getElementById("detail-close-noimg");
+
+            if (imgSrc) {
+                imgEl.src = imgSrc;
+                imgWrap.classList.remove("hidden");
+                closeNoImg.classList.add("hidden");
+            } else {
+                imgWrap.classList.add("hidden");
+                closeNoImg.classList.remove("hidden");
+            }
+
+            document.getElementById("detail-name").textContent = it.name;
+            document.getElementById("detail-title").textContent = it.title || it.name;
+            document.getElementById("detail-desc").textContent = it.description || "";
+            document.getElementById("detail-modal").classList.remove("hidden");
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detail-modal").classList.add("hidden");
+        }
+
+        window.handleHeaderBack = handleHeaderBack;
+        window.openFolderModal = openFolderModal;
+        window.closeFolderModal = closeFolderModal;
+        window.saveFolderModal = saveFolderModal;
+        window.openItemModal = openItemModal;
+        window.closeItemModal = closeItemModal;
+        window.saveItemModal = saveItemModal;
+        window.editSelectedEntity = editSelectedEntity;
+        window.deleteSelectedEntity = deleteSelectedEntity;
+        window.clearSelection = clearSelection;
+        window.closeDetailModal = closeDetailModal;
+
+        onValue(countriesRef, (snap) => {
+            folders = normalizeFolders(snap.val());
+            renderAll();
+            if (!lockEnforced && typeof enforceRoleLock === "function") {
+                lockEnforced = true;
+                enforceRoleLock("admin", "Countries Admin");
+            }
+        });
     </script>
 </body>
 </html>
