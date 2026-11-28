@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Countries Admin — Off Script Diaries</title>
+    <title>Continents & Countries Explored — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -17,17 +17,8 @@
             -webkit-user-select: text;
             user-select: text;
         }
-        [data-entity-type] {
-            touch-action: none;
-            will-change: transform;
-        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .card-dragging {
-            position: relative;
-            z-index: 50;
-            box-shadow: 0 22px 44px rgba(0, 0, 0, 0.78), 0 0 0 2px #60a5fa;
-        }
 
         @keyframes osdOrbitSpin {
             0% { transform: rotate(0deg); }
@@ -67,7 +58,7 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased pb-28 overflow-hidden">
+<body class="font-sans antialiased pb-24 overflow-hidden">
 
     <!-- INDEX-STYLE OFF SCRIPT DIARIES PRELOADER -->
     <div id="osd-preloader" class="fixed inset-0 z-50 bg-[#121417] flex flex-col items-center justify-center px-6 transition-opacity duration-500">
@@ -85,8 +76,8 @@
             </div>
 
             <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
-            <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Countries Explored 🌍 • Syncing records</p>
+            <h2 class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
+            <p id="preloader-sub" class="text-xs text-white/50 mt-1">Continents & Countries 🌍 • Loading records</p>
 
             <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
                 <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
@@ -101,98 +92,76 @@
         <header class="sticky top-0 z-40 bg-[#121417]/95 backdrop-blur-md border-b border-white/10">
             <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <button type="button" onclick="handleHeaderBack()" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
+                    <button type="button" onclick="handleHeaderBack()" aria-label="Back" class="w-9 h-9 rounded-xl bg-[#1E2126] border border-white/10 flex items-center justify-center text-white/80 hover:text-blue-400 active:scale-95 transition shrink-0">
                         ←
                     </button>
                     <div class="min-w-0">
-                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Countries Explored 🌍</h1>
+                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Continents Explored 🌍</h1>
                         <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Synced</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0 relative">
-                    <button id="btn-new-folder" type="button" onclick="openFolderModal(null)" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 active:scale-95 transition">
-                        + New Folder
-                    </button>
-
-                    <!-- UPPER RIGHT THREE-DOTS MENU WHEN FOLDER IS OPENED -->
-                    <div id="folder-header-menu-wrap" class="hidden relative">
-                        <button type="button" onclick="toggleFolderHeaderMenu(event)" aria-label="Folder Options" class="w-9 h-9 rounded-xl bg-[#1E2126] hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/85 active:scale-95 transition">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="5" r="2"/>
-                                <circle cx="12" cy="12" r="2"/>
-                                <circle cx="12" cy="19" r="2"/>
-                            </svg>
-                        </button>
-                        <div id="folder-header-menu" class="hidden absolute right-0 mt-2 w-44 rounded-2xl bg-[#1E2126] border border-white/15 shadow-2xl py-1.5 z-50 text-xs">
-                            <button type="button" onclick="closeFolderHeaderMenu(); openItemModal(null);" class="w-full px-3.5 py-2 text-left text-blue-300 hover:bg-white/5 font-semibold flex items-center gap-2">
-                                <span>+</span><span>Add Country</span>
-                            </button>
-                            <button type="button" onclick="closeFolderHeaderMenu(); openFolderModal(activeFolderId);" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                                <span>✎</span><span>Edit Folder</span>
-                            </button>
-                            <button type="button" onclick="closeFolderHeaderMenu(); startItemSelectionMode();" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                                <span>☑</span><span>Select Countries</span>
-                            </button>
-                            <div class="my-1 border-t border-white/10"></div>
-                            <button type="button" onclick="closeFolderHeaderMenu(); requestDeleteActiveFolder();" class="w-full px-3.5 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                                <span>🗑</span><span>Delete Folder</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <span id="header-badge" class="px-2.5 py-1 rounded-full bg-[#1E2126] border border-white/10 text-[10px] font-bold text-blue-300 shrink-0">
+                    0 Continents
+                </span>
             </div>
         </header>
 
-        <!-- TOAST -->
-        <div id="toast" class="hidden fixed top-20 inset-x-4 max-w-md mx-auto z-50 bg-emerald-500 text-slate-950 text-xs font-bold py-2.5 px-4 rounded-xl shadow-xl text-center">
-            Saved!
-        </div>
-
-        <!-- MAIN VIEWER-STYLE CONTAINER -->
+        <!-- MAIN CONTAINER -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, COUNTRY NAME) -->
-            <div>
+            <!-- SEARCH BAR -->
+            <div class="relative">
                 <input
                     id="search-input"
                     type="text"
                     oninput="handleSearchInput(this.value)"
-                    placeholder="Search by date, title, or country name..."
-                    class="w-full h-11 px-4 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
+                    placeholder="Search by date, continent, or country..."
+                    class="w-full h-11 pl-4 pr-10 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
                 />
+                <button
+                    id="search-clear-btn"
+                    type="button"
+                    onclick="clearSearchInput()"
+                    aria-label="Clear search"
+                    class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white/75 hover:text-white text-xs flex items-center justify-center transition"
+                >
+                    ✕
+                </button>
             </div>
 
-            <!-- FOLDERS VIEW (LEVEL 1) -->
+            <!-- CONTINENTS VIEW (LEVEL 1: TOP-LEVEL FOLDERS = CONTINENT / CONTINENTS) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">🌍</div>
-                    <p class="text-sm font-bold text-white">No Country Folders Yet</p>
-                    <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
+                    <p id="folders-empty-title" class="text-sm font-bold text-white">No Continents Found</p>
+                    <p id="folders-empty-desc" class="text-xs text-white/55">Check back soon for new travel logs.</p>
                 </div>
+                <div id="global-search-items" class="hidden space-y-2.5"></div>
+                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Continents</div>
                 <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
-                <div id="global-search-items" class="hidden space-y-2"></div>
             </div>
 
-            <!-- ITEMS INSIDE FOLDER VIEW (LEVEL 2) -->
+            <!-- COUNTRIES INSIDE CONTINENT VIEW (LEVEL 2) -->
             <div id="items-view" class="hidden space-y-4">
                 <div id="folder-banner" class="rounded-2xl bg-[#1E2126] border border-white/10 overflow-hidden">
                     <div id="folder-banner-cover-wrap" class="hidden h-36 bg-black relative">
-                        <img id="folder-banner-cover" src="" alt="Folder Cover" class="w-full h-full object-cover" />
+                        <img id="folder-banner-cover" src="" alt="Continent Cover" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-[#1E2126] via-transparent to-transparent"></div>
                     </div>
                     <div class="p-4">
                         <div class="flex items-center justify-between gap-2">
                             <span id="folder-banner-date" class="text-[11px] text-blue-400"></span>
+                            <span id="folder-banner-count" class="text-[10px] font-bold text-blue-300"></span>
                         </div>
                         <h2 id="folder-banner-title" class="text-lg font-extrabold text-white mt-0.5"></h2>
-                        <p id="folder-banner-desc" class="text-xs text-white/65 mt-1"></p>
+                        <p id="folder-banner-desc" class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line"></p>
                     </div>
                 </div>
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                    <div class="text-2xl">📍</div>
-                    <p class="text-sm font-bold text-white">No Countries in This Folder</p>
-                    <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
+                    <div class="text-2xl">🏳️</div>
+                    <p class="text-sm font-bold text-white">No Countries in This Continent</p>
+                    <p class="text-xs text-white/55">No matching country entries here yet.</p>
                 </div>
 
                 <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
@@ -200,159 +169,12 @@
             </div>
 
         </main>
-
-        <!-- FLOATING PLUS BUTTON (INSIDE FOLDER ONLY) -->
-        <button id="fab-add-item" type="button" onclick="openItemModal(null)" title="Add Country" class="hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold shadow-2xl shadow-blue-950/80 flex items-center justify-center active:scale-95 transition">
-            +
-        </button>
-
-        <!-- BOTTOM SELECTION ACTION BAR (SUPPORTS SINGLE & MULTI SELECT) -->
-        <div id="selection-bar" class="hidden fixed bottom-5 inset-x-4 max-w-md mx-auto z-50 rounded-2xl bg-[#1E2126]/95 backdrop-blur-xl border border-blue-400/40 px-4 py-3 shadow-2xl flex items-center justify-between">
-            <div class="min-w-0 pr-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 block">Selected</span>
-                <span id="selection-label" class="text-xs font-semibold text-white truncate block"></span>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <button id="btn-edit-selected" type="button" onclick="editSelectedEntity()" title="Edit Info" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center active:scale-95 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                        <path d="m15 5 4 4"/>
-                    </svg>
-                </button>
-                <button type="button" onclick="requestDeleteSelected()" title="Delete" class="w-10 h-10 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-300 flex items-center justify-center active:scale-95 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 6h18"/>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                    </svg>
-                </button>
-                <button type="button" onclick="clearSelection()" class="px-2.5 h-10 rounded-xl bg-white/10 text-xs font-semibold text-white/75">
-                    ✕
-                </button>
-            </div>
-        </div>
-
-        <!-- INBUILT WEBSITE DELETE CONFIRMATION BOX -->
-        <div id="confirm-modal" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="w-full max-w-sm rounded-3xl bg-[#1E2126] border border-white/15 p-5 shadow-2xl space-y-4">
-                <div class="space-y-1.5">
-                    <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-400/25">
-                        Confirm Delete
-                    </span>
-                    <h3 id="confirm-title" class="text-base font-extrabold text-white">Delete Selected?</h3>
-                    <p id="confirm-message" class="text-xs text-white/70 leading-relaxed"></p>
-                </div>
-                <div class="grid grid-cols-2 gap-2.5 pt-1">
-                    <button type="button" onclick="closeConfirmModal()" class="h-10 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white/85 transition">
-                        Cancel
-                    </button>
-                    <button id="confirm-accept-btn" type="button" onclick="executeConfirmedAction()" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition">
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- FOLDER CREATE / EDIT MODAL -->
-        <div id="folder-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5">
-                <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                    <h3 id="folder-modal-heading" class="text-sm font-bold text-white">New Folder</h3>
-                    <button type="button" onclick="closeFolderModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
-                </div>
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Title</label>
-                    <input id="fld-title" type="text" placeholder="Folder title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div class="flex items-center justify-between pt-1">
-                    <span class="text-[11px] text-white/70">Date Range (From - To)</span>
-                    <button id="fld-range-toggle" type="button" onclick="toggleModalDateRange('fld')" class="w-11 h-6 rounded-full bg-white/15 relative transition">
-                        <span id="fld-range-knob" class="block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform"></span>
-                    </button>
-                </div>
-                <div id="fld-single-date-wrap">
-                    <label class="block text-[11px] text-white/70 mb-1">Date</label>
-                    <input id="fld-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div id="fld-range-date-wrap" class="hidden grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block text-[11px] text-white/70 mb-1">From</label>
-                        <input id="fld-date-from" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-white/70 mb-1">To</label>
-                        <input id="fld-date-to" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] text-blue-400 mb-1">Google Drive Link (Thumbnail)</label>
-                    <input id="fld-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Description</label>
-                    <textarea id="fld-desc" rows="3" placeholder="Folder description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
-                </div>
-                <button type="button" onclick="saveFolderModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Save Folder
-                </button>
-            </div>
-        </div>
-
-        <!-- COUNTRY CREATE / EDIT MODAL -->
-        <div id="item-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5 max-h-[90vh] overflow-y-auto">
-                <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                    <h3 id="item-modal-heading" class="text-sm font-bold text-white">Add Country</h3>
-                    <button type="button" onclick="closeItemModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
-                </div>
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Country name</label>
-                    <input id="itm-name" type="text" placeholder="Country name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Title</label>
-                    <input id="itm-title" type="text" placeholder="Title" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div class="flex items-center justify-between pt-1">
-                    <span class="text-[11px] text-white/70">Date Range (From - To)</span>
-                    <button id="itm-range-toggle" type="button" onclick="toggleModalDateRange('itm')" class="w-11 h-6 rounded-full bg-white/15 relative transition">
-                        <span id="itm-range-knob" class="block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform"></span>
-                    </button>
-                </div>
-                <div id="itm-single-date-wrap">
-                    <label class="block text-[11px] text-white/70 mb-1">Date</label>
-                    <input id="itm-date" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div id="itm-range-date-wrap" class="hidden grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block text-[11px] text-white/70 mb-1">From</label>
-                        <input id="itm-date-from" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-white/70 mb-1">To</label>
-                        <input id="itm-date-to" type="date" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] text-blue-400 mb-1">Google drive link</label>
-                    <input id="itm-drive" type="text" placeholder="https://drive.google.com/file/d/..." class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Description</label>
-                    <textarea id="itm-desc" rows="3" placeholder="Description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
-                </div>
-                <button type="button" onclick="saveItemModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Save Country
-                </button>
-            </div>
-        </div>
-
     </div>
 
     <script src="js/store.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCnZZ98QZ_Spf-cxUuEjEi0NN1rRpbtOUk",
@@ -368,35 +190,70 @@
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
         const countriesRef = ref(rtdb, "countriesData");
-        const telemetryCountriesRef = ref(rtdb, "siteContent/sections/telemetry/countriesExplored");
+
+        const SESSION_STATE_KEY = "osd_country_viewer_state_v1";
 
         let folders = [];
         let activeFolderId = null;
         let expandedItemId = null;
+        let cameFromGlobalSearch = false;
         let searchQuery = "";
-        let selectedIds = new Set();
-        let selectionKind = null;
-        let editingFolderId = null;
-        let editingItemId = null;
-        let pendingDeleteAction = null;
-        let lockEnforced = false;
         let appReadyShown = false;
+        let hasRestoredSessionState = false;
         let isHandlingPopState = false;
-
-        let holdTimer = null;
-        let isDragging = false;
-        let dragType = null;
-        let dragSourceId = null;
-        let dragCardEl = null;
-        let pointerDownX = 0;
-        let pointerDownY = 0;
-        let cardInitialLeft = 0;
-        let cardInitialTop = 0;
-        let pointerOffsetInCardX = 0;
-        let pointerOffsetInCardY = 0;
-        let lastMovedTargetId = null;
-        let orderChangedDuringDrag = false;
+        let navStackDepth = 0;
         let suppressNextClick = false;
+
+        function pluralizeEntity(count, singular, plural) {
+            return Number(count) === 1 ? singular : plural;
+        }
+
+        function formatCountLabel(count, singular, plural) {
+            const n = Number(count) || 0;
+            return `${n} ${pluralizeEntity(n, singular, plural)}`;
+        }
+
+        function saveViewStateToSession() {
+            try {
+                sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify({
+                    activeFolderId,
+                    expandedItemId,
+                    cameFromGlobalSearch,
+                    searchQuery
+                }));
+            } catch (_) {}
+        }
+
+        function restoreViewStateFromSession() {
+            if (hasRestoredSessionState) return;
+            hasRestoredSessionState = true;
+            try {
+                const raw = sessionStorage.getItem(SESSION_STATE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                if (!saved || typeof saved !== "object") return;
+
+                if (typeof saved.searchQuery === "string" && saved.searchQuery) {
+                    searchQuery = saved.searchQuery;
+                    const input = document.getElementById("search-input");
+                    if (input) input.value = saved.searchQuery;
+                }
+
+                if (saved.activeFolderId) {
+                    const folder = folders.find(f => String(f.id) === String(saved.activeFolderId));
+                    if (folder) {
+                        activeFolderId = folder.id;
+                        if (saved.expandedItemId) {
+                            const item = (folder.items || []).find(it => String(it.id) === String(saved.expandedItemId));
+                            if (item) {
+                                expandedItemId = item.id;
+                                cameFromGlobalSearch = !!saved.cameFromGlobalSearch;
+                            }
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
 
         function getNavDepth() {
             let depth = 0;
@@ -408,19 +265,21 @@
         function syncHistoryState() {
             if (isHandlingPopState) return;
             const depth = getNavDepth();
+            navStackDepth = Math.max(navStackDepth, depth);
             history.replaceState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId }, "");
         }
 
         function pushNavState() {
             if (isHandlingPopState) return;
             const depth = getNavDepth();
-            history.pushState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId }, "");
+            navStackDepth += 1;
+            history.pushState({ osdDepth: depth, folderId: activeFolderId, itemId: expandedItemId, step: navStackDepth }, "");
         }
 
         function scrollToItemCard(itemId) {
             if (!itemId) return;
             requestAnimationFrame(() => {
-                const target = document.querySelector(`#items-list [data-entity-type="item"][data-entity-id="${CSS.escape(itemId)}"]`);
+                const target = document.querySelector(`#items-list [data-item-id="${CSS.escape(itemId)}"]`);
                 if (target) {
                     target.scrollIntoView({ behavior: "smooth", block: "center" });
                 }
@@ -430,14 +289,6 @@
         async function revealAppWhenReady() {
             if (appReadyShown) return;
             appReadyShown = true;
-
-            if (!lockEnforced && typeof enforceRoleLock === "function") {
-                lockEnforced = true;
-                try {
-                    await enforceRoleLock("admin", "Countries Admin");
-                } catch (_) {}
-            }
-
             syncHistoryState();
 
             const loader = document.getElementById("osd-preloader");
@@ -451,13 +302,6 @@
                 loader.classList.add("opacity-0", "pointer-events-none");
                 setTimeout(() => loader.remove(), 520);
             }
-        }
-
-        function showToast(msg = "Saved!") {
-            const t = document.getElementById("toast");
-            t.textContent = msg;
-            t.classList.remove("hidden");
-            setTimeout(() => t.classList.add("hidden"), 1800);
         }
 
         function extractDriveFileId(rawUrl = "") {
@@ -509,28 +353,6 @@
             return formatSingleDate(obj.date);
         }
 
-        function setModalDateRangeState(prefix, enabled) {
-            const btn = document.getElementById(`${prefix}-range-toggle`);
-            const knob = document.getElementById(`${prefix}-range-knob`);
-            const singleWrap = document.getElementById(`${prefix}-single-date-wrap`);
-            const rangeWrap = document.getElementById(`${prefix}-range-date-wrap`);
-            if (btn) btn.dataset.enabled = enabled ? "true" : "false";
-            if (btn) btn.className = enabled
-                ? "w-11 h-6 rounded-full bg-blue-600 relative transition"
-                : "w-11 h-6 rounded-full bg-white/15 relative transition";
-            if (knob) knob.className = enabled
-                ? "block w-4 h-4 rounded-full bg-white translate-x-6 transition-transform"
-                : "block w-4 h-4 rounded-full bg-white translate-x-1 transition-transform";
-            if (singleWrap) singleWrap.classList.toggle("hidden", !!enabled);
-            if (rangeWrap) rangeWrap.classList.toggle("hidden", !enabled);
-        }
-
-        function toggleModalDateRange(prefix) {
-            const btn = document.getElementById(`${prefix}-range-toggle`);
-            const next = btn && btn.dataset.enabled === "true" ? false : true;
-            setModalDateRangeState(prefix, next);
-        }
-
         function normalizeFolders(raw) {
             if (!raw || typeof raw !== "object") return [];
             const arr = Array.isArray(raw) ? raw : Object.values(raw);
@@ -543,7 +365,7 @@
                     const items = rawItems
                         .filter(Boolean)
                         .map((it, iIdx) => ({
-                            id: String(it.id || `cnt_${Date.now()}_${iIdx}`),
+                            id: String(it.id || `plc_${Date.now()}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
                             date: String(it.date || ""),
@@ -557,8 +379,8 @@
                         .sort((a, b) => a.order - b.order);
 
                     return {
-                        id: String(f.id || `fld_${Date.now()}_${idx}`),
-                        title: String(f.title || "Untitled Folder"),
+                        id: String(f.id || `cnt_${Date.now()}_${idx}`),
+                        title: String(f.title || "Untitled Continent"),
                         date: String(f.date || ""),
                         dateFrom: String(f.dateFrom || ""),
                         dateTo: String(f.dateTo || ""),
@@ -572,48 +394,6 @@
                 .sort((a, b) => a.order - b.order);
         }
 
-        async function persistToFirebase(toastMsg = "Saved!") {
-            const payload = {};
-            let totalCountries = 0;
-
-            folders.forEach((f, fIdx) => {
-                f.order = fIdx;
-                const itemsObj = {};
-                (f.items || []).forEach((it, iIdx) => {
-                    it.order = iIdx;
-                    totalCountries += 1;
-                    itemsObj[it.id] = {
-                        id: it.id,
-                        name: it.name,
-                        title: it.title,
-                        date: it.date || "",
-                        dateFrom: it.dateFrom || "",
-                        dateTo: it.dateTo || "",
-                        dateRangeEnabled: !!it.dateRangeEnabled,
-                        driveLink: it.driveLink,
-                        description: it.description,
-                        order: iIdx
-                    };
-                });
-                payload[f.id] = {
-                    id: f.id,
-                    title: f.title,
-                    date: f.date || "",
-                    dateFrom: f.dateFrom || "",
-                    dateTo: f.dateTo || "",
-                    dateRangeEnabled: !!f.dateRangeEnabled,
-                    driveLink: f.driveLink,
-                    description: f.description,
-                    order: fIdx,
-                    items: itemsObj
-                };
-            });
-
-            await set(countriesRef, payload);
-            await set(telemetryCountriesRef, String(totalCountries));
-            showToast(toastMsg);
-        }
-
         function escapeHtml(str = "") {
             return String(str)
                 .replace(/&/g, "&amp;")
@@ -622,8 +402,26 @@
                 .replace(/"/g, "&quot;");
         }
 
+        function syncSearchClearButton() {
+            const input = document.getElementById("search-input");
+            const clearBtn = document.getElementById("search-clear-btn");
+            const hasVal = !!(searchQuery || (input && input.value.trim()));
+            if (clearBtn) clearBtn.classList.toggle("hidden", !hasVal);
+        }
+
         function handleSearchInput(val) {
             searchQuery = String(val || "").trim().toLowerCase();
+            saveViewStateToSession();
+            syncSearchClearButton();
+            renderAll();
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById("search-input");
+            if (input) input.value = "";
+            searchQuery = "";
+            saveViewStateToSession();
+            syncSearchClearButton();
             renderAll();
         }
 
@@ -644,56 +442,27 @@
             return fields.some(v => String(v || "").toLowerCase().includes(searchQuery));
         }
 
-        function closeFolderHeaderMenu() {
-            const menu = document.getElementById("folder-header-menu");
-            if (menu) menu.classList.add("hidden");
-        }
-
-        function toggleFolderHeaderMenu(e) {
-            e.stopPropagation();
-            closeAllCardMenus();
-            const menu = document.getElementById("folder-header-menu");
-            if (menu) menu.classList.toggle("hidden");
-        }
-
-        function closeAllCardMenus() {
-            document.querySelectorAll("[data-card-menu]").forEach(m => m.classList.add("hidden"));
-        }
-
-        function toggleCardMenu(e, kind, id) {
-            e.stopPropagation();
-            const target = document.getElementById(`card-menu-${kind}-${id}`);
-            const wasOpen = target && !target.classList.contains("hidden");
-            closeFolderHeaderMenu();
-            closeAllCardMenus();
-            if (target && !wasOpen) {
-                target.classList.remove("hidden");
-            }
-        }
-
-        document.addEventListener("click", () => {
-            closeFolderHeaderMenu();
-            closeAllCardMenus();
-        });
-
         function updateHeaderUI() {
             const titleEl = document.getElementById("page-title");
             const subEl = document.getElementById("page-subtitle");
-            const newFolderBtn = document.getElementById("btn-new-folder");
-            const folderMenuWrap = document.getElementById("folder-header-menu-wrap");
-            const fabBtn = document.getElementById("fab-add-item");
+            const badgeEl = document.getElementById("header-badge");
             const foldersView = document.getElementById("folders-view");
             const itemsView = document.getElementById("items-view");
             const folderBanner = document.getElementById("folder-banner");
+            const foldersLabelEl = document.getElementById("folders-section-label");
 
-            const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+            const totalContinents = folders.length;
+            const totalCountries = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
+
+            if (foldersLabelEl) {
+                foldersLabelEl.textContent = pluralizeEntity(totalContinents, "Continent", "Continents");
+            }
 
             if (!activeFolderId) {
-                titleEl.textContent = "Countries Explored 🌍";
-                subEl.textContent = `${folders.length} Folders • ${totalCount} Countries`;
-                newFolderBtn.classList.remove("hidden");
-                folderMenuWrap.classList.add("hidden");
-                fabBtn.classList.add("hidden");
+                const continentWord = pluralizeEntity(totalContinents, "Continent", "Continents");
+                titleEl.textContent = `${continentWord} Explored 🌍`;
+                subEl.textContent = `${formatCountLabel(totalContinents, "Continent", "Continents")} • ${formatCountLabel(totalCountries, "Country", "Countries")}`;
+                if (badgeEl) badgeEl.textContent = formatCountLabel(totalContinents, "Continent", "Continents");
                 foldersView.classList.remove("hidden");
                 itemsView.classList.add("hidden");
             } else {
@@ -701,14 +470,15 @@
                 if (!folder) {
                     activeFolderId = null;
                     expandedItemId = null;
+                    cameFromGlobalSearch = false;
+                    saveViewStateToSession();
                     updateHeaderUI();
                     return;
                 }
+                const cCount = folder.items ? folder.items.length : 0;
                 titleEl.textContent = folder.title;
-                subEl.textContent = `${folder.items.length} Countries inside`;
-                newFolderBtn.classList.add("hidden");
-                folderMenuWrap.classList.remove("hidden");
-                fabBtn.classList.remove("hidden");
+                subEl.textContent = `Continent • ${formatCountLabel(cCount, "Country", "Countries")} inside`;
+                if (badgeEl) badgeEl.textContent = formatCountLabel(cCount, "Country", "Countries");
                 foldersView.classList.add("hidden");
                 itemsView.classList.remove("hidden");
 
@@ -730,6 +500,8 @@
                     const dispDate = formatEntityDate(folder);
                     dateEl.textContent = dispDate;
                     dateEl.classList.toggle("hidden", !dispDate);
+                    const countEl = document.getElementById("folder-banner-count");
+                    if (countEl) countEl.textContent = formatCountLabel(cCount, "Country", "Countries");
                     const descEl = document.getElementById("folder-banner-desc");
                     descEl.textContent = folder.description || "";
                     descEl.classList.toggle("hidden", !folder.description);
@@ -737,17 +509,21 @@
             }
         }
 
-        function renderThreeDotsSvg() {
-            return `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="2"/>
-                <circle cx="12" cy="12" r="2"/>
-                <circle cx="12" cy="19" r="2"/>
-            </svg>`;
+        function openFolder(folderId) {
+            activeFolderId = folderId;
+            expandedItemId = null;
+            cameFromGlobalSearch = false;
+            saveViewStateToSession();
+            renderAll();
+            pushNavState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function openItemFromGlobalSearch(folderId, itemId) {
             activeFolderId = folderId;
             expandedItemId = itemId;
+            cameFromGlobalSearch = true;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -756,78 +532,47 @@
         function renderFolders() {
             const grid = document.getElementById("folders-grid");
             const empty = document.getElementById("folders-empty");
+            const emptyTitle = document.getElementById("folders-empty-title");
+            const emptyDesc = document.getElementById("folders-empty-desc");
             const globalBox = document.getElementById("global-search-items");
+            const foldersSectionLabel = document.getElementById("folders-section-label");
 
-            const matchedFolders = searchQuery
-                ? folders.filter(f => matchesSearch(f))
+            const visibleFolders = searchQuery
+                ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
                 : folders;
 
             const matchedItems = searchQuery
                 ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
                 : [];
 
-            empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
+            empty.classList.toggle("hidden", visibleFolders.length > 0 || matchedItems.length > 0);
+            if (emptyTitle && emptyDesc) {
+                if (searchQuery) {
+                    emptyTitle.textContent = "No Matching Results";
+                    emptyDesc.textContent = `Nothing matched "${searchQuery}".`;
+                } else {
+                    emptyTitle.textContent = "No Continents Found";
+                    emptyDesc.textContent = "Check back soon for new travel logs.";
+                }
+            }
 
-            grid.innerHTML = matchedFolders.map(f => {
-                const cover = resolveMediaUrl(f.driveLink);
-                const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
-                const dispDate = formatEntityDate(f);
-                const mediaHtml = cover
-                    ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
-                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
-
-                return `
-                <div
-                    data-entity-type="folder"
-                    data-entity-id="${escapeHtml(f.id)}"
-                    class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-visible transition-colors cursor-pointer"
-                >
-                    <div class="h-32 bg-black relative rounded-t-2xl overflow-hidden">
-                        ${mediaHtml}
-                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
-                            ${f.items.length}
-                        </span>
-                        <button
-                            type="button"
-                            onclick="toggleCardMenu(event, 'folder', '${escapeHtml(f.id)}')"
-                            aria-label="Folder Menu"
-                            class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
-                        >
-                            ${renderThreeDotsSvg()}
-                        </button>
-                    </div>
-                    <div id="card-menu-folder-${escapeHtml(f.id)}" data-card-menu="true" class="hidden absolute right-2 top-10 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openFolderModal('${escapeHtml(f.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                            <span>✎</span><span>Edit Folder</span>
-                        </button>
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('folder', '${escapeHtml(f.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
-                            <span>☑</span><span>Select</span>
-                        </button>
-                        <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); requestDeleteSingle('folder', '${escapeHtml(f.id)}');" class="w-full px-3 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                            <span>🗑</span><span>Delete</span>
-                        </button>
-                    </div>
-                    <div class="p-3">
-                        ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
-                        <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
-                        <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
-                    </div>
-                </div>`;
-            }).join("");
-
-            bindCardGestures(grid, "folder");
+            if (foldersSectionLabel) {
+                foldersSectionLabel.textContent = pluralizeEntity(visibleFolders.length, "Continent", "Continents");
+                foldersSectionLabel.classList.toggle("hidden", !searchQuery || visibleFolders.length === 0);
+            }
 
             if (searchQuery && matchedItems.length > 0) {
+                const matchHeading = `Matching ${pluralizeEntity(matchedItems.length, "Country", "Countries")}`;
                 globalBox.classList.remove("hidden");
                 globalBox.innerHTML = `
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Countries</div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">${matchHeading}</div>
                     ${matchedItems.map(({ folder, item }) => {
                         const folderCover = resolveMediaUrl(folder.driveLink);
                         const itemThumb = resolveMediaUrl(item.driveLink);
                         const itemDate = formatEntityDate(item);
+                        const countryLabel = item.name || item.title || "—";
                         return `
                         <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
-                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG NAME BOX MATCHING RIGHT TOP TWO SMALL BOXES -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
                                     ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🌍</span>`}
@@ -837,12 +582,11 @@
                                 </div>
                             </div>
 
-                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED ITEM -> INFO BELOW -->
                             <div class="flex flex-col gap-2 min-w-0">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
                                         <span class="text-[9px] uppercase tracking-wider text-white/45 block">Country</span>
-                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(item.name || "—")}</span>
+                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(countryLabel)}</span>
                                     </div>
                                     <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
                                         <span class="text-[9px] uppercase tracking-wider text-white/45 block">Date</span>
@@ -851,11 +595,11 @@
                                 </div>
 
                                 <div class="h-24 rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
+                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(countryLabel)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">🏳️</span>`}
                                 </div>
 
                                 <div class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0">
-                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(countryLabel)}</div>
                                     ${item.description ? `<div class="text-[10px] text-white/60 line-clamp-2 mt-0.5">${escapeHtml(item.description)}</div>` : ""}
                                 </div>
                             </div>
@@ -866,6 +610,34 @@
                 globalBox.classList.add("hidden");
                 globalBox.innerHTML = "";
             }
+
+            grid.innerHTML = visibleFolders.map(f => {
+                const cover = resolveMediaUrl(f.driveLink);
+                const dispDate = formatEntityDate(f);
+                const itemCount = f.items ? f.items.length : 0;
+                const mediaHtml = cover
+                    ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
+
+                return `
+                <div
+                    onclick="openFolder('${escapeHtml(f.id)}')"
+                    class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer"
+                >
+                    <div class="h-32 bg-black relative overflow-hidden">
+                        ${mediaHtml}
+                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-blue-300 border border-white/10">
+                            ${formatCountLabel(itemCount, "Country", "Countries")}
+                        </span>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-blue-400/80 block">Continent</span>
+                        ${dispDate ? `<span class="text-[10px] text-blue-400 block">${escapeHtml(dispDate)}</span>` : ""}
+                        <h3 class="text-sm font-bold text-white truncate">${escapeHtml(f.title)}</h3>
+                        <p class="text-[11px] text-white/60 mt-0.5 line-clamp-2">${escapeHtml(f.description || "")}</p>
+                    </div>
+                </div>`;
+            }).join("");
         }
 
         function attachExpandedSwipeGesture(cardEl, itemId, visibleItems) {
@@ -925,8 +697,9 @@
                     if (nextItem && nextItem.id !== itemId) {
                         suppressNextClick = true;
                         expandedItemId = nextItem.id;
+                        saveViewStateToSession();
                         renderAll();
-                        syncHistoryState();
+                        pushNavState();
                         window.scrollTo({ top: 0, behavior: "smooth" });
                     }
                 }
@@ -938,81 +711,57 @@
             cardEl.addEventListener("pointercancel", finishSwipe);
         }
 
-        function buildExpandedItemCardHtml(it, isSelected, indexLabel = "") {
+        function buildExpandedItemCardHtml(it, indexLabel = "") {
             const imgSrc = resolveMediaUrl(it.driveLink);
             const dispDate = formatEntityDate(it);
+            const countryName = it.name || it.title || "Untitled Country";
+            const noteLine = it.name && it.title && it.title !== it.name ? it.title : "";
+
             return `
             <div
-                data-entity-type="item"
-                data-entity-id="${escapeHtml(it.id)}"
+                data-item-id="${escapeHtml(it.id)}"
+                onclick="if (suppressNextClick) { suppressNextClick = false; return; } toggleExpandItem('${escapeHtml(it.id)}');"
                 style="touch-action: pan-y;"
-                class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-blue-400/50"} overflow-visible transition-colors cursor-pointer shadow-xl"
+                class="rounded-2xl bg-[#1E2126] border border-blue-400/50 overflow-hidden transition cursor-pointer shadow-xl"
             >
                 ${imgSrc ? `
-                <div class="h-44 bg-black relative rounded-t-2xl overflow-hidden">
-                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />
-                    <button
-                        type="button"
-                        onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                        aria-label="Country Menu"
-                        class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
-                    >
-                        ${renderThreeDotsSvg()}
-                    </button>
+                <div class="h-48 bg-black relative overflow-hidden">
+                    <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(countryName)}" class="w-full h-full object-cover" />
                 </div>` : ""}
-                <div id="card-menu-item-${escapeHtml(it.id)}" data-card-menu="true" class="hidden absolute right-3 top-11 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
-                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openItemModal('${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                        <span>✎</span><span>Edit Country</span>
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
-                        <span>☑</span><span>Select</span>
-                    </button>
-                    <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); requestDeleteSingle('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                        <span>🗑</span><span>Delete</span>
-                    </button>
-                </div>
-                <div class="p-4 flex items-start justify-between gap-2">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">${escapeHtml(it.name)}</span>
-                            <span class="text-[10px] text-white/50">${escapeHtml(dispDate || indexLabel)}</span>
-                        </div>
-                        <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(it.title || it.name)}</h3>
-                        ${it.description ? `<p class="text-xs text-white/65 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
-                        <div class="mt-2.5 flex items-center justify-between text-[10px] text-white/40">
-                            <span>← Swipe to switch →</span>
-                            ${indexLabel ? `<span>${escapeHtml(indexLabel)}</span>` : ""}
-                        </div>
+                <div class="p-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Country</span>
+                        <span class="text-[10px] text-white/50">${escapeHtml(dispDate || indexLabel)}</span>
                     </div>
-                    ${!imgSrc ? `
-                    <button
-                        type="button"
-                        onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                        aria-label="Country Menu"
-                        class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/80 flex items-center justify-center shrink-0"
-                    >
-                        ${renderThreeDotsSvg()}
-                    </button>` : ""}
+                    <h3 class="text-base font-bold text-white mt-0.5">${escapeHtml(countryName)}</h3>
+                    ${noteLine ? `<p class="text-xs font-medium text-blue-300/90 mt-0.5">${escapeHtml(noteLine)}</p>` : ""}
+                    ${it.description ? `<p class="text-xs text-white/65 mt-1.5 leading-relaxed whitespace-pre-line">${escapeHtml(it.description)}</p>` : ""}
+                    <div class="mt-3 flex items-center justify-between text-[10px] text-white/40">
+                        <span>← Swipe to switch • Tap to close →</span>
+                        ${indexLabel ? `<span>${escapeHtml(indexLabel)}</span>` : ""}
+                    </div>
                 </div>
             </div>`;
         }
 
-        function buildCompactItemCardHtml(it, isSelected, imgHeightClass = "h-20") {
+        function buildCompactItemCardHtml(it, imgHeightClass = "h-20") {
             const imgSrc = resolveMediaUrl(it.driveLink);
+            const countryName = it.name || it.title || "Untitled Country";
             const mediaHtml = imgSrc
-                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />`
+                ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(countryName)}" class="w-full h-full object-cover" />`
                 : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🌍</div>`;
+
             return `
             <div
-                data-entity-type="item"
-                data-entity-id="${escapeHtml(it.id)}"
-                class="relative rounded-2xl bg-[#1E2126] border ${isSelected ? "border-blue-400 ring-2 ring-blue-500/40" : "border-white/10"} overflow-hidden transition-colors cursor-pointer"
+                data-item-id="${escapeHtml(it.id)}"
+                onclick="toggleExpandItem('${escapeHtml(it.id)}')"
+                class="rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 overflow-hidden transition cursor-pointer"
             >
                 <div class="${imgHeightClass} bg-black relative overflow-hidden">
                     ${mediaHtml}
                 </div>
                 <div class="p-2 text-center">
-                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(it.title || it.name)}</span>
+                    <span class="text-[11px] font-bold text-white truncate block">${escapeHtml(countryName)}</span>
                 </div>
             </div>`;
         }
@@ -1030,6 +779,7 @@
 
             if (expandedItemId && !filteredItems.some(x => x.id === expandedItemId)) {
                 expandedItemId = null;
+                saveViewStateToSession();
             }
 
             const expandedIdx = expandedItemId
@@ -1038,11 +788,10 @@
             const expandedItem = expandedIdx !== -1 ? filteredItems[expandedIdx] : null;
 
             if (expandedItem) {
-                const isSel = selectionKind === "item" && selectedIds.has(expandedItem.id);
                 const posLabel = `${expandedIdx + 1} / ${filteredItems.length}`;
                 pinnedWrap.classList.remove("hidden");
-                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, isSel, posLabel);
-                const pinnedCard = pinnedWrap.querySelector(`[data-entity-type="item"]`);
+                pinnedWrap.innerHTML = buildExpandedItemCardHtml(expandedItem, posLabel);
+                const pinnedCard = pinnedWrap.querySelector(`[data-item-id]`);
                 attachExpandedSwipeGesture(pinnedCard, expandedItem.id, filteredItems);
             } else {
                 pinnedWrap.classList.add("hidden");
@@ -1050,7 +799,7 @@
             }
 
             const remainingItems = expandedItem
-                ? folder.items.filter(x => x.id !== expandedItem.id)
+                ? filteredItems.filter(x => x.id !== expandedItem.id)
                 : filteredItems;
 
             list.className = expandedItem
@@ -1058,352 +807,49 @@
                 : "grid grid-cols-3 gap-2.5";
 
             const compactHeight = expandedItem ? "h-24" : "h-20";
-            list.innerHTML = remainingItems.map(it => {
-                const isSelected = selectionKind === "item" && selectedIds.has(it.id);
-                return buildCompactItemCardHtml(it, isSelected, compactHeight);
-            }).join("");
-
-            bindCardGestures(list, "item");
+            list.innerHTML = remainingItems.map(it => buildCompactItemCardHtml(it, compactHeight)).join("");
         }
 
         function renderAll() {
+            syncSearchClearButton();
             updateHeaderUI();
             if (!activeFolderId) {
                 renderFolders();
             } else {
                 renderItems();
             }
-            updateSelectionBar();
         }
 
         function toggleExpandItem(itemId) {
             if (expandedItemId === itemId) {
                 const prevId = expandedItemId;
                 expandedItemId = null;
+                cameFromGlobalSearch = false;
+                saveViewStateToSession();
                 renderAll();
                 syncHistoryState();
                 scrollToItemCard(prevId);
                 return;
             }
             expandedItemId = itemId;
+            cameFromGlobalSearch = false;
+            saveViewStateToSession();
             renderAll();
             pushNavState();
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
-        function selectSingleEntity(kind, id) {
-            selectionKind = kind;
-            selectedIds = new Set([id]);
-            renderAll();
-        }
-
-        function toggleEntitySelection(kind, id) {
-            if (selectionKind && selectionKind !== kind) {
-                selectedIds.clear();
-            }
-            selectionKind = kind;
-            if (selectedIds.has(id)) {
-                selectedIds.delete(id);
-                if (selectedIds.size === 0) {
-                    selectionKind = null;
-                }
-            } else {
-                selectedIds.add(id);
-            }
-            renderAll();
-        }
-
-        function startItemSelectionMode() {
-            const folder = folders.find(f => f.id === activeFolderId);
-            if (!folder || !folder.items.length) {
-                showToast("No countries to select");
-                return;
-            }
-            selectionKind = "item";
-            selectedIds = new Set([folder.items[0].id]);
-            renderAll();
-        }
-
-        function updateSelectionBar() {
-            const bar = document.getElementById("selection-bar");
-            const label = document.getElementById("selection-label");
-            const editBtn = document.getElementById("btn-edit-selected");
-            const fab = document.getElementById("fab-add-item");
-
-            if (!selectionKind || selectedIds.size === 0) {
-                bar.classList.add("hidden");
-                if (activeFolderId) fab.classList.remove("hidden");
-                return;
-            }
-
-            const ids = Array.from(selectedIds);
-            if (ids.length === 1) {
-                editBtn.classList.remove("hidden");
-                if (selectionKind === "folder") {
-                    const f = folders.find(x => x.id === ids[0]);
-                    label.textContent = f ? f.title : "1 Folder";
-                } else {
-                    const folder = folders.find(x => x.id === activeFolderId);
-                    const it = folder ? folder.items.find(x => x.id === ids[0]) : null;
-                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 Country";
-                }
-            } else {
-                editBtn.classList.add("hidden");
-                label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "countries"} selected`;
-            }
-
-            fab.classList.add("hidden");
-            bar.classList.remove("hidden");
-        }
-
-        function clearSelection() {
-            selectedIds.clear();
-            selectionKind = null;
-            renderAll();
-        }
-
-        function rectsOverlap(a, b, inset = 14) {
-            return (
-                a.left + inset < b.right - inset &&
-                a.right - inset > b.left + inset &&
-                a.top + inset < b.bottom - inset &&
-                a.bottom - inset > b.top + inset
-            );
-        }
-
-        function positionCardOnFinger(el, clientX, clientY) {
-            const desiredLeft = clientX - pointerOffsetInCardX;
-            const desiredTop = clientY - pointerOffsetInCardY;
-            const dx = desiredLeft - cardInitialLeft;
-            const dy = desiredTop - cardInitialTop;
-            el.style.transition = "none";
-            el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
-        }
-
-        function swapOnOverlap(container, type, activeId, clientX, clientY, mutateFn) {
-            const cards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
-            const beforeRects = new Map();
-            cards.forEach(el => {
-                beforeRects.set(el.getAttribute("data-entity-id"), el.getBoundingClientRect());
-            });
-
-            mutateFn();
-
-            if (type === "folder") renderFolders();
-            else renderItems();
-
-            const afterCards = Array.from(container.querySelectorAll(`[data-entity-type="${type}"]`));
-            let movedActiveEl = null;
-
-            afterCards.forEach(el => {
-                const id = el.getAttribute("data-entity-id");
-                const prev = beforeRects.get(id);
-                if (!prev) return;
-                const next = el.getBoundingClientRect();
-
-                if (id === activeId) {
-                    movedActiveEl = el;
-                    cardInitialLeft = next.left;
-                    cardInitialTop = next.top;
-                    el.classList.add("card-dragging");
-                    positionCardOnFinger(el, clientX, clientY);
-                } else {
-                    const shiftX = prev.left - next.left;
-                    const shiftY = prev.top - next.top;
-                    if (shiftX !== 0 || shiftY !== 0) {
-                        el.style.transition = "none";
-                        el.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`;
-                        el.getBoundingClientRect();
-                        el.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)";
-                        el.style.transform = "translate3d(0, 0, 0)";
-                    }
-                }
-            });
-
-            if (movedActiveEl) {
-                dragCardEl = movedActiveEl;
-            }
-        }
-
-        function bindCardGestures(container, type) {
-            const cards = container.querySelectorAll(`[data-entity-type="${type}"]`);
-
-            const onWindowPointerMove = (e) => {
-                if (!isDragging || !dragCardEl) return;
-                if (e.cancelable) e.preventDefault();
-
-                positionCardOnFinger(dragCardEl, e.clientX, e.clientY);
-
-                const draggedRect = dragCardEl.getBoundingClientRect();
-                const otherCards = Array.from(container.querySelectorAll(`[data-entity-type="${dragType}"]`))
-                    .filter(el => el.getAttribute("data-entity-id") !== dragSourceId);
-
-                let overlappingTarget = null;
-                for (const other of otherCards) {
-                    if (rectsOverlap(draggedRect, other.getBoundingClientRect())) {
-                        overlappingTarget = other;
-                        break;
-                    }
-                }
-
-                if (!overlappingTarget) {
-                    lastMovedTargetId = null;
-                    return;
-                }
-
-                const targetId = overlappingTarget.getAttribute("data-entity-id");
-                if (!targetId || targetId === dragSourceId || targetId === lastMovedTargetId) return;
-
-                if (dragType === "folder") {
-                    const fromIdx = folders.findIndex(x => x.id === dragSourceId);
-                    const toIdx = folders.findIndex(x => x.id === targetId);
-                    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-                        lastMovedTargetId = targetId;
-                        orderChangedDuringDrag = true;
-                        swapOnOverlap(container, "folder", dragSourceId, e.clientX, e.clientY, () => {
-                            const [moved] = folders.splice(fromIdx, 1);
-                            folders.splice(toIdx, 0, moved);
-                        });
-                    }
-                } else if (dragType === "item") {
-                    const folder = folders.find(x => x.id === activeFolderId);
-                    if (folder) {
-                        const fromIdx = folder.items.findIndex(x => x.id === dragSourceId);
-                        const toIdx = folder.items.findIndex(x => x.id === targetId);
-                        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-                            lastMovedTargetId = targetId;
-                            orderChangedDuringDrag = true;
-                            swapOnOverlap(container, "item", dragSourceId, e.clientX, e.clientY, () => {
-                                const [moved] = folder.items.splice(fromIdx, 1);
-                                folder.items.splice(toIdx, 0, moved);
-                            });
-                        }
-                    }
-                }
-            };
-
-            const onWindowPointerUp = async () => {
-                window.removeEventListener("pointermove", onWindowPointerMove);
-                window.removeEventListener("pointerup", onWindowPointerUp);
-                window.removeEventListener("pointercancel", onWindowPointerUp);
-
-                if (!isDragging) return;
-
-                const dType = dragType;
-                const didReorder = orderChangedDuringDrag;
-                const activeEl = dragCardEl;
-
-                isDragging = false;
-                dragType = null;
-                dragSourceId = null;
-                dragCardEl = null;
-                lastMovedTargetId = null;
-                orderChangedDuringDrag = false;
-
-                if (activeEl) {
-                    activeEl.style.transition = "transform 170ms cubic-bezier(0.22, 1, 0.36, 1)";
-                    activeEl.style.transform = "translate3d(0, 0, 0)";
-                    await new Promise(resolve => setTimeout(resolve, 170));
-                }
-
-                renderAll();
-
-                if (didReorder) {
-                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "Country order updated");
-                }
-            };
-
-            cards.forEach(card => {
-                const id = card.getAttribute("data-entity-id");
-
-                card.addEventListener("pointerdown", (e) => {
-                    if (e.target.closest("button")) return;
-                    if (e.button !== 0 && e.pointerType === "mouse") return;
-                    pointerDownX = e.clientX;
-                    pointerDownY = e.clientY;
-
-                    clearTimeout(holdTimer);
-                    holdTimer = setTimeout(() => {
-                        if (selectionKind && selectionKind !== type) {
-                            selectedIds.clear();
-                        }
-                        selectionKind = type;
-                        selectedIds.add(id);
-
-                        const rect = card.getBoundingClientRect();
-                        cardInitialLeft = rect.left;
-                        cardInitialTop = rect.top;
-                        pointerOffsetInCardX = pointerDownX - rect.left;
-                        pointerOffsetInCardY = pointerDownY - rect.top;
-
-                        isDragging = true;
-                        dragType = type;
-                        dragSourceId = id;
-                        dragCardEl = card;
-                        lastMovedTargetId = null;
-                        orderChangedDuringDrag = false;
-                        suppressNextClick = true;
-
-                        card.classList.add("card-dragging");
-                        positionCardOnFinger(card, pointerDownX, pointerDownY);
-                        updateSelectionBar();
-
-                        if (navigator.vibrate) navigator.vibrate(25);
-
-                        window.addEventListener("pointermove", onWindowPointerMove, { passive: false });
-                        window.addEventListener("pointerup", onWindowPointerUp);
-                        window.addEventListener("pointercancel", onWindowPointerUp);
-                    }, 380);
-                });
-
-                const cancelHoldBeforeDrag = () => {
-                    clearTimeout(holdTimer);
-                };
-
-                card.addEventListener("pointermove", (e) => {
-                    if (!isDragging && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 10) {
-                        cancelHoldBeforeDrag();
-                    }
-                });
-
-                card.addEventListener("pointerup", () => {
-                    if (!isDragging) cancelHoldBeforeDrag();
-                });
-
-                card.addEventListener("pointercancel", () => {
-                    if (!isDragging) cancelHoldBeforeDrag();
-                });
-
-                card.addEventListener("click", (e) => {
-                    if (e.target.closest("button")) return;
-                    if (suppressNextClick) {
-                        suppressNextClick = false;
-                        return;
-                    }
-                    if (selectionKind === type && selectedIds.size > 0) {
-                        toggleEntitySelection(type, id);
-                        return;
-                    }
-                    if (type === "folder") {
-                        activeFolderId = id;
-                        expandedItemId = null;
-                        renderAll();
-                        pushNavState();
-                    } else {
-                        toggleExpandItem(id);
-                    }
-                });
-            });
-        }
-
         function stepBackOneLevel() {
-            if (selectionKind && selectedIds.size > 0) {
-                clearSelection();
-                return true;
-            }
             if (expandedItemId) {
                 const prevExpandedId = expandedItemId;
                 expandedItemId = null;
+                if (cameFromGlobalSearch) {
+                    const input = document.getElementById("search-input");
+                    if (input) input.value = "";
+                    searchQuery = "";
+                    cameFromGlobalSearch = false;
+                }
+                saveViewStateToSession();
                 renderAll();
                 scrollToItemCard(prevExpandedId);
                 return true;
@@ -1411,6 +857,8 @@
             if (activeFolderId) {
                 activeFolderId = null;
                 expandedItemId = null;
+                cameFromGlobalSearch = false;
+                saveViewStateToSession();
                 renderAll();
                 return true;
             }
@@ -1422,359 +870,39 @@
                 syncHistoryState();
                 return;
             }
-            window.location.href = "admin.html";
+            saveViewStateToSession();
+            window.location.href = "index.html";
         }
 
-        window.addEventListener("popstate", () => {
+        window.addEventListener("popstate", (event) => {
             isHandlingPopState = true;
             try {
-                if (!stepBackOneLevel()) {
-                    window.location.href = "admin.html";
+                if (stepBackOneLevel()) {
+                    const state = event.state;
+                    if (state && typeof state.step === "number" && state.step > 1) {
+                        history.replaceState({ osdDepth: getNavDepth(), folderId: activeFolderId, itemId: expandedItemId, step: state.step - 1 }, "");
+                    } else {
+                        syncHistoryState();
+                    }
+                } else {
+                    window.location.href = "index.html";
                 }
             } finally {
                 isHandlingPopState = false;
             }
         });
 
-        function openFolderModal(folderId = null) {
-            editingFolderId = folderId;
-            const heading = document.getElementById("folder-modal-heading");
-            const titleInp = document.getElementById("fld-title");
-            const dateInp = document.getElementById("fld-date");
-            const fromInp = document.getElementById("fld-date-from");
-            const toInp = document.getElementById("fld-date-to");
-            const driveInp = document.getElementById("fld-drive");
-            const descInp = document.getElementById("fld-desc");
-
-            if (folderId) {
-                const f = folders.find(x => x.id === folderId);
-                heading.textContent = "Edit Folder";
-                titleInp.value = f ? f.title : "";
-                dateInp.value = f ? (f.date || "") : "";
-                fromInp.value = f ? (f.dateFrom || "") : "";
-                toInp.value = f ? (f.dateTo || "") : "";
-                setModalDateRangeState("fld", f ? !!f.dateRangeEnabled : false);
-                driveInp.value = f ? f.driveLink : "";
-                descInp.value = f ? f.description : "";
-            } else {
-                heading.textContent = "New Folder";
-                titleInp.value = "";
-                dateInp.value = "";
-                fromInp.value = "";
-                toInp.value = "";
-                setModalDateRangeState("fld", false);
-                driveInp.value = "";
-                descInp.value = "";
-            }
-            document.getElementById("folder-modal").classList.remove("hidden");
-        }
-
-        function closeFolderModal() {
-            document.getElementById("folder-modal").classList.add("hidden");
-            editingFolderId = null;
-        }
-
-        async function saveFolderModal() {
-            const title = document.getElementById("fld-title").value.trim();
-            const rangeBtn = document.getElementById("fld-range-toggle");
-            const dateRangeEnabled = !!(rangeBtn && rangeBtn.dataset.enabled === "true");
-            const date = document.getElementById("fld-date").value.trim();
-            const dateFrom = document.getElementById("fld-date-from").value.trim();
-            const dateTo = document.getElementById("fld-date-to").value.trim();
-            const driveLink = document.getElementById("fld-drive").value.trim();
-            const description = document.getElementById("fld-desc").value.trim();
-
-            if (!title) {
-                showToast("Enter folder title");
-                return;
-            }
-
-            if (editingFolderId) {
-                const f = folders.find(x => x.id === editingFolderId);
-                if (f) {
-                    f.title = title;
-                    f.date = date;
-                    f.dateFrom = dateFrom;
-                    f.dateTo = dateTo;
-                    f.dateRangeEnabled = dateRangeEnabled;
-                    f.driveLink = driveLink;
-                    f.description = description;
-                }
-            } else {
-                folders.push({
-                    id: `fld_${Date.now()}`,
-                    title,
-                    date,
-                    dateFrom,
-                    dateTo,
-                    dateRangeEnabled,
-                    driveLink,
-                    description,
-                    order: folders.length,
-                    items: []
-                });
-            }
-
-            const wasEditingId = editingFolderId;
-            closeFolderModal();
-            selectedIds.clear();
-            selectionKind = null;
-            renderAll();
-            await persistToFirebase(wasEditingId ? "Folder updated!" : "Folder saved!");
-        }
-
-        function openItemModal(itemId = null) {
-            editingItemId = itemId;
-            const heading = document.getElementById("item-modal-heading");
-            const nameInp = document.getElementById("itm-name");
-            const titleInp = document.getElementById("itm-title");
-            const dateInp = document.getElementById("itm-date");
-            const fromInp = document.getElementById("itm-date-from");
-            const toInp = document.getElementById("itm-date-to");
-            const driveInp = document.getElementById("itm-drive");
-            const descInp = document.getElementById("itm-desc");
-
-            if (itemId) {
-                const folder = folders.find(x => x.id === activeFolderId);
-                const it = folder ? folder.items.find(x => x.id === itemId) : null;
-                heading.textContent = "Edit Country";
-                nameInp.value = it ? it.name : "";
-                titleInp.value = it ? it.title : "";
-                dateInp.value = it ? (it.date || "") : "";
-                fromInp.value = it ? (it.dateFrom || "") : "";
-                toInp.value = it ? (it.dateTo || "") : "";
-                setModalDateRangeState("itm", it ? !!it.dateRangeEnabled : false);
-                driveInp.value = it ? it.driveLink : "";
-                descInp.value = it ? it.description : "";
-            } else {
-                heading.textContent = "Add Country";
-                nameInp.value = "";
-                titleInp.value = "";
-                dateInp.value = "";
-                fromInp.value = "";
-                toInp.value = "";
-                setModalDateRangeState("itm", false);
-                driveInp.value = "";
-                descInp.value = "";
-            }
-            document.getElementById("item-modal").classList.remove("hidden");
-        }
-
-        function closeItemModal() {
-            document.getElementById("item-modal").classList.add("hidden");
-            editingItemId = null;
-        }
-
-        async function saveItemModal() {
-            const name = document.getElementById("itm-name").value.trim();
-            const title = document.getElementById("itm-title").value.trim();
-            const rangeBtn = document.getElementById("itm-range-toggle");
-            const dateRangeEnabled = !!(rangeBtn && rangeBtn.dataset.enabled === "true");
-            const date = document.getElementById("itm-date").value.trim();
-            const dateFrom = document.getElementById("itm-date-from").value.trim();
-            const dateTo = document.getElementById("itm-date-to").value.trim();
-            const driveLink = document.getElementById("itm-drive").value.trim();
-            const description = document.getElementById("itm-desc").value.trim();
-
-            if (!name) {
-                showToast("Enter country name");
-                return;
-            }
-
-            const folder = folders.find(x => x.id === activeFolderId);
-            if (!folder) return;
-
-            if (editingItemId) {
-                const it = folder.items.find(x => x.id === editingItemId);
-                if (it) {
-                    it.name = name;
-                    it.title = title;
-                    it.date = date;
-                    it.dateFrom = dateFrom;
-                    it.dateTo = dateTo;
-                    it.dateRangeEnabled = dateRangeEnabled;
-                    it.driveLink = driveLink;
-                    it.description = description;
-                }
-            } else {
-                folder.items.push({
-                    id: `cnt_${Date.now()}`,
-                    name,
-                    title,
-                    date,
-                    dateFrom,
-                    dateTo,
-                    dateRangeEnabled,
-                    driveLink,
-                    description,
-                    order: folder.items.length
-                });
-            }
-
-            closeItemModal();
-            selectedIds.clear();
-            selectionKind = null;
-            renderAll();
-            await persistToFirebase("Country saved!");
-        }
-
-        function editSelectedEntity() {
-            if (!selectionKind || selectedIds.size !== 1) return;
-            const id = Array.from(selectedIds)[0];
-            const kind = selectionKind;
-            selectedIds.clear();
-            selectionKind = null;
-            updateSelectionBar();
-            if (id) {
-                if (kind === "folder") openFolderModal(id);
-                else openItemModal(id);
-            }
-        }
-
-        function openConfirmModal(title, message, actionFn) {
-            pendingDeleteAction = actionFn;
-            document.getElementById("confirm-title").textContent = title;
-            document.getElementById("confirm-message").textContent = message;
-            document.getElementById("confirm-modal").classList.remove("hidden");
-        }
-
-        function closeConfirmModal() {
-            pendingDeleteAction = null;
-            document.getElementById("confirm-modal").classList.add("hidden");
-        }
-
-        async function executeConfirmedAction() {
-            const fn = pendingDeleteAction;
-            closeConfirmModal();
-            if (typeof fn === "function") {
-                await fn();
-            }
-        }
-
-        function requestDeleteSingle(kind, id) {
-            if (kind === "folder") {
-                const f = folders.find(x => x.id === id);
-                openConfirmModal(
-                    "Delete Folder?",
-                    `Delete "${f ? f.title : "this folder"}" and all countries inside it?`,
-                    async () => {
-                        folders = folders.filter(x => x.id !== id);
-                        if (activeFolderId === id) {
-                            activeFolderId = null;
-                            expandedItemId = null;
-                        }
-                        selectedIds.clear();
-                        selectionKind = null;
-                        renderAll();
-                        syncHistoryState();
-                        await persistToFirebase("Folder deleted!");
-                    }
-                );
-            } else {
-                const folder = folders.find(x => x.id === activeFolderId);
-                const it = folder ? folder.items.find(x => x.id === id) : null;
-                openConfirmModal(
-                    "Delete Country?",
-                    `Delete "${it ? (it.name || it.title || "this country") : "this country"}"?`,
-                    async () => {
-                        if (folder) {
-                            folder.items = folder.items.filter(x => x.id !== id);
-                        }
-                        if (expandedItemId === id) expandedItemId = null;
-                        selectedIds.clear();
-                        selectionKind = null;
-                        renderAll();
-                        syncHistoryState();
-                        await persistToFirebase("Country deleted!");
-                    }
-                );
-            }
-        }
-
-        function requestDeleteActiveFolder() {
-            if (!activeFolderId) return;
-            requestDeleteSingle("folder", activeFolderId);
-        }
-
-        function requestDeleteSelected() {
-            if (!selectionKind || selectedIds.size === 0) return;
-            const ids = Array.from(selectedIds);
-            const count = ids.length;
-
-            if (selectionKind === "folder") {
-                openConfirmModal(
-                    count > 1 ? `Delete ${count} Folders?` : "Delete Folder?",
-                    count > 1
-                        ? `Delete ${count} selected folders and all countries inside them?`
-                        : "Delete the selected folder and all countries inside it?",
-                    async () => {
-                        const removeSet = new Set(ids);
-                        folders = folders.filter(x => !removeSet.has(x.id));
-                        if (activeFolderId && removeSet.has(activeFolderId)) {
-                            activeFolderId = null;
-                            expandedItemId = null;
-                        }
-                        selectedIds.clear();
-                        selectionKind = null;
-                        renderAll();
-                        syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} folders deleted!` : "Folder deleted!");
-                    }
-                );
-            } else {
-                openConfirmModal(
-                    count > 1 ? `Delete ${count} Countries?` : "Delete Country?",
-                    count > 1
-                        ? `Delete ${count} selected countries from this folder?`
-                        : "Delete the selected country from this folder?",
-                    async () => {
-                        const folder = folders.find(x => x.id === activeFolderId);
-                        if (folder) {
-                            const removeSet = new Set(ids);
-                            folder.items = folder.items.filter(x => !removeSet.has(x.id));
-                        }
-                        if (expandedItemId && ids.includes(expandedItemId)) {
-                            expandedItemId = null;
-                        }
-                        selectedIds.clear();
-                        selectionKind = null;
-                        renderAll();
-                        syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} countries deleted!` : "Country deleted!");
-                    }
-                );
-            }
-        }
-
         window.handleSearchInput = handleSearchInput;
-        window.toggleModalDateRange = toggleModalDateRange;
+        window.clearSearchInput = clearSearchInput;
+        window.openFolder = openFolder;
         window.openItemFromGlobalSearch = openItemFromGlobalSearch;
+        window.toggleExpandItem = toggleExpandItem;
         window.handleHeaderBack = handleHeaderBack;
-        window.toggleFolderHeaderMenu = toggleFolderHeaderMenu;
-        window.closeFolderHeaderMenu = closeFolderHeaderMenu;
-        window.toggleCardMenu = toggleCardMenu;
-        window.closeAllCardMenus = closeAllCardMenus;
-        window.openFolderModal = openFolderModal;
-        window.closeFolderModal = closeFolderModal;
-        window.saveFolderModal = saveFolderModal;
-        window.openItemModal = openItemModal;
-        window.closeItemModal = closeItemModal;
-        window.saveItemModal = saveItemModal;
-        window.selectSingleEntity = selectSingleEntity;
-        window.startItemSelectionMode = startItemSelectionMode;
-        window.editSelectedEntity = editSelectedEntity;
-        window.requestDeleteSingle = requestDeleteSingle;
-        window.requestDeleteActiveFolder = requestDeleteActiveFolder;
-        window.requestDeleteSelected = requestDeleteSelected;
-        window.closeConfirmModal = closeConfirmModal;
-        window.executeConfirmedAction = executeConfirmedAction;
-        window.clearSelection = clearSelection;
 
         onValue(countriesRef, async (snap) => {
             folders = normalizeFolders(snap.val());
-            if (!isDragging) {
-                renderAll();
-            }
+            restoreViewStateFromSession();
+            renderAll();
             await revealAppWhenReady();
         });
     </script>
