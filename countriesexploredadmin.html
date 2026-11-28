@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Countries Admin — Off Script Diaries</title>
+    <title>Cities Admin — Off Script Diaries</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -86,7 +86,7 @@
 
             <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-blue-400">Off Script Diaries</p>
             <h2 id="preloader-status" class="text-base font-bold text-white mt-1.5">Preparing our little world...</h2>
-            <p class="text-xs text-white/50 mt-1">Countries Explored 🌍 • Syncing records</p>
+            <p class="text-xs text-white/50 mt-1">Cities Explored 🇮🇳 • Syncing records</p>
 
             <div class="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden mt-6 relative">
                 <div class="w-20 h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500 osd-shimmer-bar"></div>
@@ -105,7 +105,7 @@
                         ←
                     </button>
                     <div class="min-w-0">
-                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Countries Explored 🌍</h1>
+                        <h1 id="page-title" class="text-sm font-bold text-white truncate">Cities Explored 🇮🇳</h1>
                         <p id="page-subtitle" class="text-[10px] text-blue-400 truncate">Synced</p>
                     </div>
                 </div>
@@ -125,13 +125,13 @@
                         </button>
                         <div id="folder-header-menu" class="hidden absolute right-0 mt-2 w-44 rounded-2xl bg-[#1E2126] border border-white/15 shadow-2xl py-1.5 z-50 text-xs">
                             <button type="button" onclick="closeFolderHeaderMenu(); openItemModal(null);" class="w-full px-3.5 py-2 text-left text-blue-300 hover:bg-white/5 font-semibold flex items-center gap-2">
-                                <span>+</span><span>Add Country</span>
+                                <span>+</span><span>Add City</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); openFolderModal(activeFolderId);" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
                                 <span>✎</span><span>Edit Folder</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); startItemSelectionMode();" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                                <span>☑</span><span>Select Countries</span>
+                                <span>☑</span><span>Select Cities</span>
                             </button>
                             <div class="my-1 border-t border-white/10"></div>
                             <button type="button" onclick="closeFolderHeaderMenu(); requestDeleteActiveFolder();" class="w-full px-3.5 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
@@ -151,13 +151,13 @@
         <!-- MAIN VIEWER-STYLE CONTAINER -->
         <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, COUNTRY NAME) -->
+            <!-- SEARCH BAR (FILTERS BY DATE, TITLE, CITY NAME) -->
             <div>
                 <input
                     id="search-input"
                     type="text"
                     oninput="handleSearchInput(this.value)"
-                    placeholder="Search by date, title, or country name..."
+                    placeholder="Search by date, title, or city name..."
                     class="w-full h-11 px-4 rounded-2xl bg-[#1E2126] border border-white/10 text-xs text-white placeholder-white/45 focus:outline-none focus:border-blue-500"
                 />
             </div>
@@ -165,12 +165,13 @@
             <!-- FOLDERS VIEW (LEVEL 1) -->
             <div id="folders-view" class="space-y-4">
                 <div id="folders-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
-                    <div class="text-2xl">🌍</div>
-                    <p class="text-sm font-bold text-white">No Country Folders Yet</p>
+                    <div class="text-2xl">🇮🇳</div>
+                    <p class="text-sm font-bold text-white">No City Folders Yet</p>
                     <p class="text-xs text-white/55">Tap "+ New Folder" at the top to create your first folder.</p>
                 </div>
-                <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
                 <div id="global-search-items" class="hidden space-y-2"></div>
+                <div id="folders-section-label" class="hidden text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">All Folders</div>
+                <div id="folders-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
 
             <!-- ITEMS INSIDE FOLDER VIEW (LEVEL 2) -->
@@ -191,8 +192,8 @@
 
                 <div id="items-empty" class="hidden rounded-2xl bg-[#1E2126] border border-white/10 p-8 text-center space-y-2">
                     <div class="text-2xl">📍</div>
-                    <p class="text-sm font-bold text-white">No Countries in This Folder</p>
-                    <p class="text-xs text-white/55">Tap the + button below to add a country.</p>
+                    <p class="text-sm font-bold text-white">No Cities in This Folder</p>
+                    <p class="text-xs text-white/55">Tap the + button below to add a city.</p>
                 </div>
 
                 <div id="pinned-item-wrap" class="hidden sticky top-16 z-30 pt-1 pb-2 bg-[#121417]/95 backdrop-blur-md"></div>
@@ -202,7 +203,7 @@
         </main>
 
         <!-- FLOATING PLUS BUTTON (INSIDE FOLDER ONLY) -->
-        <button id="fab-add-item" type="button" onclick="openItemModal(null)" title="Add Country" class="hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold shadow-2xl shadow-blue-950/80 flex items-center justify-center active:scale-95 transition">
+        <button id="fab-add-item" type="button" onclick="openItemModal(null)" title="Add City" class="hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold shadow-2xl shadow-blue-950/80 flex items-center justify-center active:scale-95 transition">
             +
         </button>
 
@@ -298,16 +299,16 @@
             </div>
         </div>
 
-        <!-- COUNTRY CREATE / EDIT MODAL -->
+        <!-- CITY CREATE / EDIT MODAL -->
         <div id="item-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1E2126] border border-white/15 p-5 space-y-3.5 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                    <h3 id="item-modal-heading" class="text-sm font-bold text-white">Add Country</h3>
+                    <h3 id="item-modal-heading" class="text-sm font-bold text-white">Add City</h3>
                     <button type="button" onclick="closeItemModal()" class="text-xs text-white/60 hover:text-white px-2 py-1">✕</button>
                 </div>
                 <div>
-                    <label class="block text-[11px] text-white/70 mb-1">Country name</label>
-                    <input id="itm-name" type="text" placeholder="Country name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <label class="block text-[11px] text-white/70 mb-1">City name</label>
+                    <input id="itm-name" type="text" placeholder="City name" class="w-full h-11 px-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                     <label class="block text-[11px] text-white/70 mb-1">Title</label>
@@ -342,7 +343,7 @@
                     <textarea id="itm-desc" rows="3" placeholder="Description" class="w-full p-3.5 rounded-xl bg-[#121417] border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
                 </div>
                 <button type="button" onclick="saveItemModal()" class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition">
-                    Save Country
+                    Save City
                 </button>
             </div>
         </div>
@@ -367,8 +368,8 @@
 
         const app = initializeApp(firebaseConfig);
         const rtdb = getDatabase(app, firebaseConfig.databaseURL);
-        const countriesRef = ref(rtdb, "countriesData");
-        const telemetryCountriesRef = ref(rtdb, "siteContent/sections/telemetry/countriesExplored");
+        const citiesRef = ref(rtdb, "citiesData");
+        const telemetryCitiesRef = ref(rtdb, "siteContent/sections/telemetry/citiesExplored");
 
         let folders = [];
         let activeFolderId = null;
@@ -434,7 +435,7 @@
             if (!lockEnforced && typeof enforceRoleLock === "function") {
                 lockEnforced = true;
                 try {
-                    await enforceRoleLock("admin", "Countries Admin");
+                    await enforceRoleLock("admin", "Cities Admin");
                 } catch (_) {}
             }
 
@@ -543,7 +544,7 @@
                     const items = rawItems
                         .filter(Boolean)
                         .map((it, iIdx) => ({
-                            id: String(it.id || `cnt_${Date.now()}_${iIdx}`),
+                            id: String(it.id || `cty_${Date.now()}_${iIdx}`),
                             name: String(it.name || ""),
                             title: String(it.title || ""),
                             date: String(it.date || ""),
@@ -574,14 +575,14 @@
 
         async function persistToFirebase(toastMsg = "Saved!") {
             const payload = {};
-            let totalCountries = 0;
+            let totalCities = 0;
 
             folders.forEach((f, fIdx) => {
                 f.order = fIdx;
                 const itemsObj = {};
                 (f.items || []).forEach((it, iIdx) => {
                     it.order = iIdx;
-                    totalCountries += 1;
+                    totalCities += 1;
                     itemsObj[it.id] = {
                         id: it.id,
                         name: it.name,
@@ -609,8 +610,8 @@
                 };
             });
 
-            await set(countriesRef, payload);
-            await set(telemetryCountriesRef, String(totalCountries));
+            await set(citiesRef, payload);
+            await set(telemetryCitiesRef, String(totalCities));
             showToast(toastMsg);
         }
 
@@ -689,8 +690,8 @@
             const totalCount = folders.reduce((acc, f) => acc + (f.items ? f.items.length : 0), 0);
 
             if (!activeFolderId) {
-                titleEl.textContent = "Countries Explored 🌍";
-                subEl.textContent = `${folders.length} Folders • ${totalCount} Countries`;
+                titleEl.textContent = "Cities Explored 🇮🇳";
+                subEl.textContent = `${folders.length} Folders • ${totalCount} Cities`;
                 newFolderBtn.classList.remove("hidden");
                 folderMenuWrap.classList.add("hidden");
                 fabBtn.classList.add("hidden");
@@ -705,7 +706,7 @@
                     return;
                 }
                 titleEl.textContent = folder.title;
-                subEl.textContent = `${folder.items.length} Countries inside`;
+                subEl.textContent = `${folder.items.length} Cities inside`;
                 newFolderBtn.classList.add("hidden");
                 folderMenuWrap.classList.remove("hidden");
                 fabBtn.classList.remove("hidden");
@@ -757,24 +758,74 @@
             const grid = document.getElementById("folders-grid");
             const empty = document.getElementById("folders-empty");
             const globalBox = document.getElementById("global-search-items");
-
-            const matchedFolders = searchQuery
-                ? folders.filter(f => matchesSearch(f) || (f.items || []).some(matchesSearch))
-                : folders;
+            const foldersSectionLabel = document.getElementById("folders-section-label");
 
             const matchedItems = searchQuery
                 ? folders.flatMap(f => (f.items || []).filter(matchesSearch).map(it => ({ folder: f, item: it })))
                 : [];
 
-            empty.classList.toggle("hidden", matchedFolders.length > 0 || matchedItems.length > 0);
+            empty.classList.toggle("hidden", folders.length > 0 || matchedItems.length > 0);
+            if (foldersSectionLabel) {
+                foldersSectionLabel.classList.toggle("hidden", !searchQuery || folders.length === 0);
+            }
 
-            grid.innerHTML = matchedFolders.map(f => {
+            if (searchQuery && matchedItems.length > 0) {
+                globalBox.classList.remove("hidden");
+                globalBox.innerHTML = `
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Cities</div>
+                    ${matchedItems.map(({ folder, item }) => {
+                        const folderCover = resolveMediaUrl(folder.driveLink);
+                        const itemThumb = resolveMediaUrl(item.driveLink);
+                        const itemDate = formatEntityDate(item);
+                        return `
+                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
+                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG NAME BOX MATCHING RIGHT TOP TWO SMALL BOXES -->
+                            <div class="flex flex-col gap-2 min-w-0">
+                                <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
+                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🇮🇳</span>`}
+                                </div>
+                                <div class="px-3 py-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0 flex items-center">
+                                    <div class="text-sm font-extrabold text-white truncate">${escapeHtml(folder.title)}</div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED ITEM -> INFO BELOW -->
+                            <div class="flex flex-col gap-2 min-w-0">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
+                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">City</span>
+                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(item.name || "—")}</span>
+                                    </div>
+                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
+                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">Date</span>
+                                        <span class="text-[11px] font-semibold text-white truncate block">${escapeHtml(itemDate || "—")}</span>
+                                    </div>
+                                </div>
+
+                                <div class="h-24 rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
+                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
+                                </div>
+
+                                <div class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0">
+                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
+                                    ${item.description ? `<div class="text-[10px] text-white/60 line-clamp-2 mt-0.5">${escapeHtml(item.description)}</div>` : ""}
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join("")}
+                `;
+            } else {
+                globalBox.classList.add("hidden");
+                globalBox.innerHTML = "";
+            }
+
+            grid.innerHTML = folders.map(f => {
                 const cover = resolveMediaUrl(f.driveLink);
                 const isSelected = selectionKind === "folder" && selectedIds.has(f.id);
                 const dispDate = formatEntityDate(f);
                 const mediaHtml = cover
                     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(f.title)}" class="w-full h-full object-cover pointer-events-none" />`
-                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🌍</div>`;
+                    : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-2xl text-white/30">🇮🇳</div>`;
 
                 return `
                 <div
@@ -816,56 +867,6 @@
             }).join("");
 
             bindCardGestures(grid, "folder");
-
-            if (searchQuery && matchedItems.length > 0) {
-                globalBox.classList.remove("hidden");
-                globalBox.innerHTML = `
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-1">Matching Countries</div>
-                    ${matchedItems.map(({ folder, item }) => {
-                        const folderCover = resolveMediaUrl(folder.driveLink);
-                        const itemThumb = resolveMediaUrl(item.driveLink);
-                        const itemDate = formatEntityDate(item);
-                        return `
-                        <div onclick="openItemFromGlobalSearch('${escapeHtml(folder.id)}', '${escapeHtml(item.id)}')" class="grid grid-cols-2 gap-3 items-stretch cursor-pointer">
-                            <!-- LEFT SIDE: BIG THUMBNAIL + BIG NAME BOX MATCHING RIGHT TOP TWO SMALL BOXES -->
-                            <div class="flex flex-col gap-2 min-w-0">
-                                <div class="flex-1 min-h-[112px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${folderCover ? `<img src="${escapeHtml(folderCover)}" alt="${escapeHtml(folder.title)}" class="w-full h-full object-cover" />` : `<span class="text-2xl text-white/30">🌍</span>`}
-                                </div>
-                                <div class="px-3 py-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0 flex items-center">
-                                    <div class="text-sm font-extrabold text-white truncate">${escapeHtml(folder.title)}</div>
-                                </div>
-                            </div>
-
-                            <!-- RIGHT SIDE: TWO SMALL BOXES ABOVE -> THUMBNAIL OF SEARCHED ITEM -> INFO BELOW -->
-                            <div class="flex flex-col gap-2 min-w-0">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
-                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">Country</span>
-                                        <span class="text-[11px] font-bold text-blue-300 truncate block">${escapeHtml(item.name || "—")}</span>
-                                    </div>
-                                    <div class="px-2 py-1.5 rounded-xl bg-[#1E2126] border border-white/10 min-w-0">
-                                        <span class="text-[9px] uppercase tracking-wider text-white/45 block">Date</span>
-                                        <span class="text-[11px] font-semibold text-white truncate block">${escapeHtml(itemDate || "—")}</span>
-                                    </div>
-                                </div>
-
-                                <div class="h-24 rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
-                                    ${itemThumb ? `<img src="${escapeHtml(itemThumb)}" alt="${escapeHtml(item.title || item.name)}" class="w-full h-full object-cover" />` : `<span class="text-lg text-white/30">📍</span>`}
-                                </div>
-
-                                <div class="p-2.5 rounded-2xl bg-[#1E2126] border border-white/10 hover:border-blue-400/40 transition min-w-0">
-                                    <div class="text-xs font-bold text-white truncate">${escapeHtml(item.title || item.name)}</div>
-                                    ${item.description ? `<div class="text-[10px] text-white/60 line-clamp-2 mt-0.5">${escapeHtml(item.description)}</div>` : ""}
-                                </div>
-                            </div>
-                        </div>`;
-                    }).join("")}
-                `;
-            } else {
-                globalBox.classList.add("hidden");
-                globalBox.innerHTML = "";
-            }
         }
 
         function attachExpandedSwipeGesture(cardEl, itemId, visibleItems) {
@@ -954,7 +955,7 @@
                     <button
                         type="button"
                         onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                        aria-label="Country Menu"
+                        aria-label="City Menu"
                         class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center border border-white/10"
                     >
                         ${renderThreeDotsSvg()}
@@ -962,7 +963,7 @@
                 </div>` : ""}
                 <div id="card-menu-item-${escapeHtml(it.id)}" data-card-menu="true" class="hidden absolute right-3 top-11 w-36 rounded-xl bg-[#171A1F] border border-white/15 shadow-2xl py-1 z-30 text-xs">
                     <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); openItemModal('${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
-                        <span>✎</span><span>Edit Country</span>
+                        <span>✎</span><span>Edit City</span>
                     </button>
                     <button type="button" onclick="event.stopPropagation(); closeAllCardMenus(); selectSingleEntity('item', '${escapeHtml(it.id)}');" class="w-full px-3 py-2 text-left text-blue-300 hover:bg-white/5 flex items-center gap-2">
                         <span>☑</span><span>Select</span>
@@ -988,7 +989,7 @@
                     <button
                         type="button"
                         onclick="toggleCardMenu(event, 'item', '${escapeHtml(it.id)}')"
-                        aria-label="Country Menu"
+                        aria-label="City Menu"
                         class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/80 flex items-center justify-center shrink-0"
                     >
                         ${renderThreeDotsSvg()}
@@ -1001,7 +1002,7 @@
             const imgSrc = resolveMediaUrl(it.driveLink);
             const mediaHtml = imgSrc
                 ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(it.title || it.name)}" class="w-full h-full object-cover pointer-events-none" />`
-                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🌍</div>`;
+                : `<div class="w-full h-full bg-[#121417] flex items-center justify-center text-base text-white/30">🇮🇳</div>`;
             return `
             <div
                 data-entity-type="item"
@@ -1116,7 +1117,7 @@
         function startItemSelectionMode() {
             const folder = folders.find(f => f.id === activeFolderId);
             if (!folder || !folder.items.length) {
-                showToast("No countries to select");
+                showToast("No cities to select");
                 return;
             }
             selectionKind = "item";
@@ -1145,11 +1146,11 @@
                 } else {
                     const folder = folders.find(x => x.id === activeFolderId);
                     const it = folder ? folder.items.find(x => x.id === ids[0]) : null;
-                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 Country";
+                    label.textContent = it ? `${it.name}${it.title ? " • " + it.title : ""}` : "1 City";
                 }
             } else {
                 editBtn.classList.add("hidden");
-                label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "countries"} selected`;
+                label.textContent = `${ids.length} ${selectionKind === "folder" ? "folders" : "cities"} selected`;
             }
 
             fab.classList.add("hidden");
@@ -1309,7 +1310,7 @@
                 renderAll();
 
                 if (didReorder) {
-                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "Country order updated");
+                    await persistToFirebase(dType === "folder" ? "Folder order updated" : "City order updated");
                 }
             };
 
@@ -1537,7 +1538,7 @@
             if (itemId) {
                 const folder = folders.find(x => x.id === activeFolderId);
                 const it = folder ? folder.items.find(x => x.id === itemId) : null;
-                heading.textContent = "Edit Country";
+                heading.textContent = "Edit City";
                 nameInp.value = it ? it.name : "";
                 titleInp.value = it ? it.title : "";
                 dateInp.value = it ? (it.date || "") : "";
@@ -1547,7 +1548,7 @@
                 driveInp.value = it ? it.driveLink : "";
                 descInp.value = it ? it.description : "";
             } else {
-                heading.textContent = "Add Country";
+                heading.textContent = "Add City";
                 nameInp.value = "";
                 titleInp.value = "";
                 dateInp.value = "";
@@ -1577,7 +1578,7 @@
             const description = document.getElementById("itm-desc").value.trim();
 
             if (!name) {
-                showToast("Enter country name");
+                showToast("Enter city name");
                 return;
             }
 
@@ -1598,7 +1599,7 @@
                 }
             } else {
                 folder.items.push({
-                    id: `cnt_${Date.now()}`,
+                    id: `cty_${Date.now()}`,
                     name,
                     title,
                     date,
@@ -1615,7 +1616,7 @@
             selectedIds.clear();
             selectionKind = null;
             renderAll();
-            await persistToFirebase("Country saved!");
+            await persistToFirebase("City saved!");
         }
 
         function editSelectedEntity() {
@@ -1656,7 +1657,7 @@
                 const f = folders.find(x => x.id === id);
                 openConfirmModal(
                     "Delete Folder?",
-                    `Delete "${f ? f.title : "this folder"}" and all countries inside it?`,
+                    `Delete "${f ? f.title : "this folder"}" and all cities inside it?`,
                     async () => {
                         folders = folders.filter(x => x.id !== id);
                         if (activeFolderId === id) {
@@ -1674,8 +1675,8 @@
                 const folder = folders.find(x => x.id === activeFolderId);
                 const it = folder ? folder.items.find(x => x.id === id) : null;
                 openConfirmModal(
-                    "Delete Country?",
-                    `Delete "${it ? (it.name || it.title || "this country") : "this country"}"?`,
+                    "Delete City?",
+                    `Delete "${it ? (it.name || it.title || "this city") : "this city"}"?`,
                     async () => {
                         if (folder) {
                             folder.items = folder.items.filter(x => x.id !== id);
@@ -1685,7 +1686,7 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase("Country deleted!");
+                        await persistToFirebase("City deleted!");
                     }
                 );
             }
@@ -1705,8 +1706,8 @@
                 openConfirmModal(
                     count > 1 ? `Delete ${count} Folders?` : "Delete Folder?",
                     count > 1
-                        ? `Delete ${count} selected folders and all countries inside them?`
-                        : "Delete the selected folder and all countries inside it?",
+                        ? `Delete ${count} selected folders and all cities inside them?`
+                        : "Delete the selected folder and all cities inside it?",
                     async () => {
                         const removeSet = new Set(ids);
                         folders = folders.filter(x => !removeSet.has(x.id));
@@ -1723,10 +1724,10 @@
                 );
             } else {
                 openConfirmModal(
-                    count > 1 ? `Delete ${count} Countries?` : "Delete Country?",
+                    count > 1 ? `Delete ${count} Cities?` : "Delete City?",
                     count > 1
-                        ? `Delete ${count} selected countries from this folder?`
-                        : "Delete the selected country from this folder?",
+                        ? `Delete ${count} selected cities from this folder?`
+                        : "Delete the selected city from this folder?",
                     async () => {
                         const folder = folders.find(x => x.id === activeFolderId);
                         if (folder) {
@@ -1740,7 +1741,7 @@
                         selectionKind = null;
                         renderAll();
                         syncHistoryState();
-                        await persistToFirebase(count > 1 ? `${count} countries deleted!` : "Country deleted!");
+                        await persistToFirebase(count > 1 ? `${count} cities deleted!` : "City deleted!");
                     }
                 );
             }
@@ -1770,7 +1771,7 @@
         window.executeConfirmedAction = executeConfirmedAction;
         window.clearSelection = clearSelection;
 
-        onValue(countriesRef, async (snap) => {
+        onValue(citiesRef, async (snap) => {
             folders = normalizeFolders(snap.val());
             if (!isDragging) {
                 renderAll();
