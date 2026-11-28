@@ -293,12 +293,29 @@
                 <!-- SECTION 2: ORIGIN -->
                 <section id="sec-origin" data-section-card class="lg:col-span-6 p-4 lg:p-6 rounded-2xl bg-[#1E2126] border border-white/10">
                     <h2 onclick="openSectionAsPage(this.parentElement)" class="text-sm lg:text-base font-bold text-white cursor-pointer select-none">Section 2 • Origin</h2>
-                    <div data-section-body class="hidden space-y-2.5 mt-2.5">
+                    <div data-section-body class="hidden space-y-3 mt-2.5">
                         <div class="grid grid-cols-2 gap-2.5">
                             <input id="inp-origin-title" type="text" placeholder="Title" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                             <input id="inp-origin-date" type="text" placeholder="Date" class="h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         </div>
-                        <textarea id="inp-origin-story" rows="12" placeholder="Story" class="w-full min-h-[260px] p-3 rounded-xl bg-[#121417] border border-white/10 text-xs"></textarea>
+
+                        <!-- STORY BOXES WITH + BUTTON (EACH HAS HEADING & TALL DESCRIPTION) -->
+                        <div class="space-y-3 pt-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-blue-400">Story Boxes</span>
+                                <button
+                                    type="button"
+                                    onclick="addOriginStoryBox()"
+                                    aria-label="Add Story Box"
+                                    title="Add Story Box"
+                                    class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-base font-bold flex items-center justify-center transition shrink-0"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <div id="admin-origin-story-boxes" class="space-y-3"></div>
+                        </div>
+
                         <input id="inp-origin-quote" type="text" placeholder="Quote" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                         <input id="inp-origin-img" type="text" placeholder="Photo / Drive Link" class="w-full h-10 px-3 rounded-xl bg-[#121417] border border-white/10 text-xs" />
                     </div>
@@ -596,6 +613,7 @@
                         title: '',
                         date: '',
                         story: '',
+                        storyBlocks: [],
                         quote: '',
                         image: ''
                     },
@@ -631,6 +649,34 @@
             };
         }
 
+        function normalizeOriginStoryBlocks(originSrc) {
+            const rawBlocks = originSrc && originSrc.storyBlocks;
+            const list = Array.isArray(rawBlocks)
+                ? rawBlocks
+                : (rawBlocks && typeof rawBlocks === 'object' ? Object.values(rawBlocks) : []);
+
+            const cleaned = list
+                .filter(Boolean)
+                .map((b, idx) => ({
+                    id: b.id || `${Date.now()}_${idx}`,
+                    heading: String(b.heading || ''),
+                    description: String(b.description || '')
+                }));
+
+            if (cleaned.length > 0) {
+                return cleaned;
+            }
+
+            const legacyStory = originSrc && typeof originSrc.story === 'string' ? originSrc.story : '';
+            return [
+                {
+                    id: 'origin_box_1',
+                    heading: '',
+                    description: legacyStory
+                }
+            ];
+        }
+
         function normalizeSiteData(raw) {
             const base = createEmptySiteData();
             const src = raw && typeof raw === "object" ? raw : {};
@@ -640,6 +686,12 @@
 
             base.sections.hero = { ...base.sections.hero, ...(s.hero || {}) };
             base.sections.origin = { ...base.sections.origin, ...(s.origin || {}) };
+            base.sections.origin.storyBlocks = normalizeOriginStoryBlocks(s.origin || {});
+            base.sections.origin.story = base.sections.origin.storyBlocks
+                .map((b) => b.description)
+                .filter(Boolean)
+                .join('\n\n');
+
             base.sections.telemetry = { ...base.sections.telemetry, ...(s.telemetry || {}) };
             delete base.sections.telemetry.startDate;
 
@@ -667,6 +719,62 @@
 
             base.sections.capsule = { ...base.sections.capsule, ...(s.capsule || {}) };
             return base;
+        }
+
+        function renderOriginStoryBoxes() {
+            const container = document.getElementById('admin-origin-story-boxes');
+            if (!container) return;
+            const blocks = currentData.sections.origin.storyBlocks || [];
+            container.innerHTML = blocks.map((block, idx) => `
+                <div class="p-3 rounded-2xl bg-[#121417] border border-white/10 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-semibold text-white/60">Box ${idx + 1}</span>
+                        ${blocks.length > 1 ? `<button type="button" onclick="removeOriginStoryBox(${idx})" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-0.5">✕</button>` : ''}
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Heading"
+                        value="${(block.heading || '').replace(/"/g, '&quot;')}"
+                        oninput="updateOriginStoryBoxHeading(${idx}, this.value)"
+                        class="w-full h-10 px-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs font-semibold text-white"
+                    />
+                    <textarea
+                        rows="12"
+                        placeholder="Write your story description..."
+                        oninput="updateOriginStoryBoxDescription(${idx}, this.value)"
+                        class="w-full min-h-[260px] p-3 rounded-xl bg-[#1E2126] border border-white/10 text-xs leading-relaxed text-white"
+                    >${(block.description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                </div>
+            `).join('');
+        }
+
+        function addOriginStoryBox() {
+            if (!currentData) currentData = normalizeSiteData(null);
+            currentData.sections.origin.storyBlocks.push({
+                id: `${Date.now()}_${currentData.sections.origin.storyBlocks.length}`,
+                heading: '',
+                description: ''
+            });
+            renderOriginStoryBoxes();
+        }
+
+        function updateOriginStoryBoxHeading(idx, val) {
+            if (currentData?.sections?.origin?.storyBlocks?.[idx]) {
+                currentData.sections.origin.storyBlocks[idx].heading = val;
+            }
+        }
+
+        function updateOriginStoryBoxDescription(idx, val) {
+            if (currentData?.sections?.origin?.storyBlocks?.[idx]) {
+                currentData.sections.origin.storyBlocks[idx].description = val;
+            }
+        }
+
+        function removeOriginStoryBox(idx) {
+            if (currentData?.sections?.origin?.storyBlocks && currentData.sections.origin.storyBlocks.length > 1) {
+                currentData.sections.origin.storyBlocks.splice(idx, 1);
+                renderOriginStoryBoxes();
+            }
         }
 
         function getActiveAuthConfig() {
@@ -858,7 +966,7 @@
 
             document.getElementById('inp-origin-title').value = s.origin.title || '';
             document.getElementById('inp-origin-date').value = s.origin.date || '';
-            document.getElementById('inp-origin-story').value = s.origin.story || '';
+            renderOriginStoryBoxes();
             document.getElementById('inp-origin-quote').value = s.origin.quote || '';
             document.getElementById('inp-origin-img').value = s.origin.image || '';
 
@@ -955,10 +1063,20 @@
                 bgImage: document.getElementById('inp-hero-bg').value
             };
 
+            const storyBlocks = normalizeOriginStoryBlocks({
+                storyBlocks: currentData?.sections?.origin?.storyBlocks,
+                story: ''
+            });
+            const combinedStoryText = storyBlocks
+                .map((b) => [b.heading.trim(), b.description.trim()].filter(Boolean).join('\n\n'))
+                .filter(Boolean)
+                .join('\n\n');
+
             fresh.sections.origin = {
                 title: document.getElementById('inp-origin-title').value,
                 date: document.getElementById('inp-origin-date').value,
-                story: document.getElementById('inp-origin-story').value,
+                story: combinedStoryText,
+                storyBlocks,
                 quote: document.getElementById('inp-origin-quote').value,
                 image: document.getElementById('inp-origin-img').value
             };
@@ -1027,6 +1145,10 @@
         window.handleToggleLock = handleToggleLock;
         window.applyPasswordChanges = applyPasswordChanges;
         window.updateLogoPreview = updateLogoPreview;
+        window.addOriginStoryBox = addOriginStoryBox;
+        window.updateOriginStoryBoxHeading = updateOriginStoryBoxHeading;
+        window.updateOriginStoryBoxDescription = updateOriginStoryBoxDescription;
+        window.removeOriginStoryBox = removeOriginStoryBox;
         window.addBucketItem = addBucketItem;
         window.updateBucketChecked = updateBucketChecked;
         window.updateBucketTask = updateBucketTask;
