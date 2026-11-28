@@ -127,7 +127,7 @@
                             <button type="button" onclick="closeFolderHeaderMenu(); openItemModal(null);" class="w-full px-3.5 py-2 text-left text-blue-300 hover:bg-white/5 font-semibold flex items-center gap-2">
                                 <span>+</span><span>Add City</span>
                             </button>
-                            <button type="button" onclick="closeFolderHeaderMenu(); openFolderModal(activeFolderId);" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
+                            <button type="button" onclick="editActiveFolderFromMenu(event);" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
                                 <span>✎</span><span>Edit State</span>
                             </button>
                             <button type="button" onclick="closeFolderHeaderMenu(); startItemSelectionMode();" class="w-full px-3.5 py-2 text-left text-white/90 hover:bg-white/5 flex items-center gap-2">
@@ -693,6 +693,18 @@
             closeAllCardMenus();
             const menu = document.getElementById("folder-header-menu");
             if (menu) menu.classList.toggle("hidden");
+        }
+
+        function editActiveFolderFromMenu(e) {
+            if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+            closeFolderHeaderMenu();
+            closeAllCardMenus();
+            const currentTitle = (document.getElementById("page-title")?.textContent || "").trim();
+            const matchedByTitle = !activeFolderId && currentTitle
+                ? folders.find(x => String(x.title || "").trim() === currentTitle)
+                : null;
+            const targetId = activeFolderId || (matchedByTitle ? matchedByTitle.id : null);
+            openFolderModal(targetId);
         }
 
         function closeAllCardMenus() {
@@ -1844,6 +1856,7 @@
         window.openItemFromGlobalSearch = openItemFromGlobalSearch;
         window.handleHeaderBack = handleHeaderBack;
         window.toggleFolderHeaderMenu = toggleFolderHeaderMenu;
+        window.editActiveFolderFromMenu = editActiveFolderFromMenu;
         window.closeFolderHeaderMenu = closeFolderHeaderMenu;
         window.toggleCardMenu = toggleCardMenu;
         window.closeAllCardMenus = closeAllCardMenus;
